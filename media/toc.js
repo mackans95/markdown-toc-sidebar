@@ -13,6 +13,19 @@
 	}
 	window.__mdTocSidebarInitialized = true;
 
+	// Written into every rendered preview by src/extension.js, which can read VS Code settings.
+	const CONFIG_ID = 'md-toc-sidebar-config';
+	const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+	// 'smooth' or 'instant', from the markdownTocSidebar.scrollBehavior setting.
+	function scrollBehavior() {
+		if (reducedMotion.matches) {
+			return 'instant';
+		}
+		const config = document.getElementById(CONFIG_ID);
+		return config && config.dataset.scrollBehavior === 'instant' ? 'instant' : 'smooth';
+	}
+
 	// A double-click in the preview can jump to the editor; our UI shouldn't trigger that.
 	// Stopping it on the element itself (not at the document) still lets the element's own
 	// dblclick handlers run first.
@@ -250,18 +263,38 @@
 	// While a TOC click's scroll is in flight, keep the clicked entry highlighted instead of
 	// recomputing from scroll position (short sections or the end of the page would pick another).
 	let pinnedId = null;
-	let unpinTimer = 0;
+	// Heading to flash once the scroll arrives, so a smooth scroll doesn't fade it before it's in view.
+	let pinnedHeading = null;
+	let settleTimer = 0;
+	// How long the page has to be still before a click's scroll counts as finished. Covers clicks
+	// that don't scroll at all, where no scrollend event fires.
+	const SETTLE_MS = 150;
 
-	function pinActive(id) {
-		pinnedId = id;
-		clearTimeout(unpinTimer);
-		// Fallback for when the click causes no scroll at all, so no scrollend fires.
-		unpinTimer = setTimeout(unpin, 300);
+	function pinActive(heading) {
+		pinnedId = heading.id;
+		pinnedHeading = heading;
+		restartSettleTimer();
 	}
 
-	function unpin() {
-		clearTimeout(unpinTimer);
+	function restartSettleTimer() {
+		clearTimeout(settleTimer);
+		settleTimer = setTimeout(settle, SETTLE_MS);
+	}
+
+	function settle() {
+		clearTimeout(settleTimer);
+		if (!pinnedId) {
+			return;
+		}
+		// Drop any recompute queued by the scroll so it can't override the clicked entry.
+		cancelAnimationFrame(scrollFrame);
+		scrollFrame = 0;
+		const heading = pinnedHeading;
 		pinnedId = null;
+		pinnedHeading = null;
+		if (heading && heading.isConnected) {
+			flashHeading(heading);
+		}
 	}
 
 	function findActiveHeading(headings) {
@@ -346,25 +379,77 @@
 		event.stopPropagation();
 		const target = document.getElementById(link.dataset.target);
 		if (target) {
-			pinActive(target.id);
+			pinActive(target);
 			setActiveLink(target.id);
-			target.scrollIntoView({ block: 'start' });
-			flashHeading(target);
+			if (scrollBehavior() === 'smooth') {
+				animateScrollTo(headingScrollTop(target));
+			} else {
+				stopScrollAnimation();
+				target.scrollIntoView({ block: 'start' });
+			}
 		}
 	}, true);
 
+	// Where the page has to scroll for a heading to sit at the top, honoring its scroll-margin-top.
+	function headingScrollTop(heading) {
+		const margin = parseFloat(getComputedStyle(heading).scrollMarginTop) || 0;
+		const top = window.scrollY + heading.getBoundingClientRect().top - margin;
+		const max = document.documentElement.scrollHeight - window.innerHeight;
+		return Math.min(Math.max(0, top), Math.max(0, max));
+	}
+
+	// Our own animation rather than scrollIntoView's smooth behavior: the browser's takes up to
+	// ~1.5s for long jumps, which feels sluggish for navigation. This one stays within 250-600ms.
+	let scrollAnimation = 0;
+
+	function animateScrollTo(top) {
+		stopScrollAnimation();
+		const start = window.scrollY;
+		const distance = top - start;
+		if (Math.abs(distance) < 1) {
+			return;
+		}
+		const duration = Math.min(600, Math.max(250, Math.abs(distance) * 0.15));
+		const startTime = performance.now();
+		const step = now => {
+			const t = Math.min(1, (now - startTime) / duration);
+			const eased = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+			window.scrollTo({ top: start + distance * eased, behavior: 'instant' });
+			if (t < 1) {
+				scrollAnimation = requestAnimationFrame(step);
+			} else {
+				scrollAnimation = 0;
+				// Arrived: settle on the next frame, after the last scroll event has been handled.
+				requestAnimationFrame(settle);
+			}
+		};
+		scrollAnimation = requestAnimationFrame(step);
+	}
+
+	function stopScrollAnimation() {
+		cancelAnimationFrame(scrollAnimation);
+		scrollAnimation = 0;
+	}
+
+	// The user taking over cancels the animation.
+	for (const type of ['wheel', 'touchstart', 'keydown', 'mousedown']) {
+		window.addEventListener(type, stopScrollAnimation, { capture: true, passive: true });
+	}
+
 	// Once the click-triggered scroll settles, go back to tracking the scroll position.
+	// Each animation frame can fire its own scrollend, so ignore those until the animation is done.
 	window.addEventListener('scrollend', () => {
-		if (pinnedId) {
-			// Drop any recompute queued by that scroll so it can't override the clicked entry.
-			cancelAnimationFrame(scrollFrame);
-			scrollFrame = 0;
-			unpin();
+		if (!scrollAnimation) {
+			settle();
 		}
 	});
 
 	let scrollFrame = 0;
 	function onScroll() {
+		if (pinnedId) {
+			// Still moving towards the clicked heading.
+			restartSettleTimer();
+		}
 		if (!scrollFrame) {
 			scrollFrame = requestAnimationFrame(() => {
 				scrollFrame = 0;

@@ -8,7 +8,7 @@ Adds a table of contents sidebar to VS Code's built-in Markdown preview, built f
 
 - **Table of contents for every preview.** Headings `h1`–`h6` are listed and nested by level. There's nothing to configure and no command to run.
 - **Live updates.** Add, rename or remove a heading and the sidebar updates as you type.
-- **Click to jump.** Clicking an entry scrolls the preview to that heading, leaving a little space above it, and the heading flashes briefly so you can see where you landed.
+- **Click to jump.** Clicking an entry smoothly scrolls the preview to that heading, leaving a little space above it, and the heading flashes briefly so you can see where you landed. Prefer an instant jump? See [Settings](#settings).
 - **Current section highlight.** The entry for the section you're reading is highlighted as you scroll, and the list keeps it in view. The sections it belongs to are highlighted more lightly, so you can see where you are in the structure.
 - **Hide and show.** The button in the sidebar's top-right corner hides it when you want the full width, and brings it back.
 - **Resizable.** Drag the sidebar's left edge to change its width, or double-click the edge to reset it. With the edge focused, the arrow keys work too.
@@ -30,6 +30,14 @@ Install the extension and open any Markdown file as a preview. The sidebar appea
 
 If the preview is very narrow (under 360px), the sidebar hides itself so the document keeps enough room.
 
+## Settings
+
+| Setting | Default | Description |
+|---|---|---|
+| `markdownTocSidebar.scrollBehavior` | `smooth` | How the preview scrolls when you click an entry: `smooth` animates the scroll, `instant` jumps straight there. When your system is set to reduce motion, it always jumps instantly. |
+
+Changes apply to open previews right away.
+
 ## Tips
 
 These are VS Code settings, not settings of this extension:
@@ -48,15 +56,16 @@ VS Code 1.80 or later. The extension only adds to the built-in Markdown preview,
 
 ## Privacy
 
-The extension has no settings and no telemetry, and it makes no network requests. Everything runs inside the preview.
+The extension has no telemetry and makes no network requests.
 
 ## How it works
 
-The extension uses VS Code's Markdown preview extension points (`markdown.previewScripts` and `markdown.previewStyles`) and has no code of its own outside the preview.
+The extension uses VS Code's Markdown preview extension points (`markdown.previewScripts`, `markdown.previewStyles` and `markdown.markdownItPlugins`).
 
 - `media/toc.js` builds the sidebar from the rendered headings, which already have `id`s, and rebuilds it whenever the preview content changes.
 - `media/smooth-scroll-sync.js` takes over the preview's scroll-sync jumps and animates them instead.
 - `media/toc.css` styles the sidebar using your theme's colors.
+- `src/extension.js` passes the extension's settings to the preview, which can't read VS Code settings itself. It adds a hidden element carrying the settings to each rendered preview, and refreshes open previews when a setting changes.
 
 ## Development
 

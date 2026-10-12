@@ -217,6 +217,8 @@ body.md-toc-resizing {
 /* Sections that contain the current one: tinted, but quieter than the current entry itself. */
 #md-toc-sidebar a.active-ancestor {
 	color: var(--vscode-textLink-foreground);
+	/* Same bar as the current entry, in the parent's own quieter color. */
+	border-left-color: currentColor;
 	opacity: 0.85;
 }
 

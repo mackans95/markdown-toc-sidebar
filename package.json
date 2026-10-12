@@ -30,7 +30,28 @@
     "headings",
     "navigation"
   ],
+  "activationEvents": [],
+  "main": "./src/extension.js",
   "contributes": {
+    "configuration": {
+      "title": "Markdown TOC Sidebar",
+      "properties": {
+        "markdownTocSidebar.scrollBehavior": {
+          "type": "string",
+          "enum": [
+            "smooth",
+            "instant"
+          ],
+          "enumDescriptions": [
+            "Animate the scroll to the heading.",
+            "Jump straight to the heading."
+          ],
+          "default": "smooth",
+          "markdownDescription": "How the preview scrolls when you click an entry in the table of contents. When your system is set to reduce motion, the preview always jumps instantly."
+        }
+      }
+    },
+    "markdown.markdownItPlugins": true,
     "markdown.previewScripts": [
       "./media/smooth-scroll-sync.js",
       "./media/toc.js"
