@@ -1,0 +1,241 @@
+:root {
+	/* Scales with the preview width so it still fits in a split pane. */
+	--md-toc-width: clamp(140px, 30vw, 260px);
+	/* Space left above a heading after jumping to it. */
+	--md-toc-scroll-margin: 16px;
+	--md-toc-flash-color: color-mix(in srgb, var(--vscode-textLink-foreground) 25%, transparent);
+}
+
+.markdown-body :is(h1, h2, h3, h4, h5, h6)[id] {
+	scroll-margin-top: var(--md-toc-scroll-margin);
+}
+
+/* Short highlight on a heading after jumping to it from the sidebar. The box-shadow widens the
+   highlight past the text without changing the layout. */
+.markdown-body .md-toc-flash {
+	border-radius: 3px;
+	animation: md-toc-flash 1.2s ease-out;
+}
+
+@keyframes md-toc-flash {
+	0%,
+	25% {
+		background-color: var(--md-toc-flash-color);
+		box-shadow: 0 0 0 6px var(--md-toc-flash-color);
+	}
+	100% {
+		background-color: transparent;
+		box-shadow: 0 0 0 6px transparent;
+	}
+}
+
+#md-toc-sidebar {
+	position: fixed;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	width: var(--md-toc-width);
+	box-sizing: border-box;
+	overflow-y: auto;
+	padding: 0 12px 16px;
+	font-size: 0.85em;
+	line-height: 1.4;
+	background: var(--vscode-sideBar-background, var(--vscode-editor-background));
+	border-left: 1px solid var(--vscode-panel-border, rgba(128, 128, 128, 0.35));
+	z-index: 10;
+}
+
+#md-toc-sidebar:empty {
+	display: none;
+}
+
+body.md-toc-visible {
+	padding-right: calc(var(--md-toc-width) + 20px) !important;
+}
+
+#md-toc-toggle {
+	position: fixed;
+	top: 16px;
+	right: 12px;
+	z-index: 11;
+	display: none;
+	align-items: center;
+	justify-content: center;
+	width: 24px;
+	height: 24px;
+	padding: 0;
+	border: 1px solid transparent;
+	border-radius: 4px;
+	background: transparent;
+	color: var(--vscode-foreground);
+	opacity: 0.75;
+	cursor: pointer;
+}
+
+body.md-toc-visible #md-toc-toggle {
+	display: flex;
+}
+
+#md-toc-toggle:hover {
+	background: var(--vscode-toolbar-hoverBackground, var(--vscode-list-hoverBackground));
+	opacity: 1;
+}
+
+#md-toc-toggle:focus-visible {
+	outline: 1px solid var(--vscode-focusBorder);
+	outline-offset: -1px;
+}
+
+/* Collapsed: the toggle floats over the content, so give it a solid backing. */
+body.md-toc-collapsed #md-toc-toggle {
+	background: var(--vscode-sideBar-background, var(--vscode-editor-background));
+	border-color: var(--vscode-panel-border, rgba(128, 128, 128, 0.35));
+}
+
+body.md-toc-collapsed #md-toc-toggle:hover {
+	background: var(--vscode-toolbar-hoverBackground, var(--vscode-list-hoverBackground));
+}
+
+body.md-toc-collapsed #md-toc-sidebar {
+	display: none;
+}
+
+body.md-toc-visible.md-toc-collapsed {
+	padding-right: 26px !important;
+}
+
+/* Drag handle straddling the sidebar's left border, styled like VS Code's own sashes. */
+#md-toc-resizer {
+	position: fixed;
+	top: 0;
+	bottom: 0;
+	right: calc(var(--md-toc-width) - 3px);
+	z-index: 12;
+	display: none;
+	width: 6px;
+	cursor: col-resize;
+	touch-action: none;
+	user-select: none;
+}
+
+body.md-toc-visible:not(.md-toc-collapsed) #md-toc-resizer {
+	display: block;
+}
+
+#md-toc-resizer::after {
+	content: '';
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 2px;
+	width: 2px;
+	background: transparent;
+	transition: background-color 0.1s ease-out;
+}
+
+#md-toc-resizer:hover::after,
+#md-toc-resizer:focus-visible::after,
+body.md-toc-resizing #md-toc-resizer::after {
+	background: var(--vscode-sash-hoverBorder, var(--vscode-focusBorder));
+}
+
+#md-toc-resizer:hover::after {
+	/* Same short delay as VS Code's sashes, so just passing over the edge doesn't flash. */
+	transition-delay: 0.2s;
+}
+
+#md-toc-resizer:focus-visible {
+	outline: none;
+}
+
+/* While dragging: keep the resize cursor everywhere and don't select text. */
+body.md-toc-resizing {
+	cursor: col-resize;
+	user-select: none;
+}
+
+#md-toc-sidebar .md-toc-title {
+	/* Stays pinned while the list scrolls, so the toggle button always sits in a header. */
+	position: sticky;
+	top: 0;
+	z-index: 1;
+	/* Lines the text up with the toggle (top: 16px, 24px tall); right padding leaves room for it. */
+	padding: 16px 28px 8px 0;
+	line-height: 24px;
+	background: var(--vscode-sideBar-background, var(--vscode-editor-background));
+	font-weight: 600;
+	text-transform: uppercase;
+	font-size: 0.85em;
+	letter-spacing: 0.04em;
+	/* Dimmed via color rather than opacity so the sticky background stays opaque. */
+	color: color-mix(in srgb, var(--vscode-foreground) 80%, transparent);
+	user-select: none;
+}
+
+#md-toc-sidebar ul {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+#md-toc-sidebar li {
+	margin: 0;
+	padding-left: calc(var(--md-toc-depth, 0) * 12px);
+}
+
+#md-toc-sidebar a {
+	/* Keeps the active entry clear of the sticky header when it's scrolled into view. */
+	scroll-margin-top: 56px;
+	display: block;
+	padding: 2px 6px;
+	border-left: 2px solid transparent;
+	border-radius: 2px;
+	color: var(--vscode-foreground);
+	text-decoration: none;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	opacity: 0.85;
+}
+
+/* The preview's own stylesheet outlines every focused link, which made clicked entries look boxed in.
+   Keep a focus ring for keyboard navigation only, in the theme's focus color. */
+#md-toc-sidebar a:focus {
+	outline: none;
+}
+
+#md-toc-sidebar a:focus-visible {
+	outline: 1px solid var(--vscode-focusBorder);
+	outline-offset: -1px;
+}
+
+#md-toc-sidebar a:hover {
+	background: var(--vscode-list-hoverBackground);
+	opacity: 1;
+}
+
+/* Sections that contain the current one: tinted, but quieter than the current entry itself. */
+#md-toc-sidebar a.active-ancestor {
+	color: var(--vscode-textLink-foreground);
+	opacity: 0.85;
+}
+
+#md-toc-sidebar a.active {
+	color: var(--vscode-textLink-foreground);
+	border-left-color: var(--vscode-textLink-foreground);
+	opacity: 1;
+	font-weight: 600;
+}
+
+/* Too narrow for a sidebar: hide it and give the content the full width back. */
+@media (max-width: 360px) {
+	#md-toc-sidebar,
+	body.md-toc-visible #md-toc-toggle,
+	body.md-toc-visible:not(.md-toc-collapsed) #md-toc-resizer {
+		display: none;
+	}
+
+	body.md-toc-visible {
+		padding-right: 26px !important;
+	}
+}

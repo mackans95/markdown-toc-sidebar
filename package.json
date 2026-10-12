@@ -1,0 +1,42 @@
+{
+  "name": "markdown-toc-sidebar",
+  "displayName": "Markdown TOC Sidebar",
+  "description": "Shows a table of contents sidebar inside the built-in Markdown preview.",
+  "version": "0.1.0",
+  "publisher": "mackans95",
+  "license": "MIT",
+  "icon": "images/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mackans95/markdown-toc-sidebar.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mackans95/markdown-toc-sidebar/issues"
+  },
+  "homepage": "https://github.com/mackans95/markdown-toc-sidebar#readme",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "markdown",
+    "preview",
+    "toc",
+    "table of contents",
+    "outline",
+    "sidebar",
+    "headings",
+    "navigation"
+  ],
+  "contributes": {
+    "markdown.previewScripts": [
+      "./media/smooth-scroll-sync.js",
+      "./media/toc.js"
+    ],
+    "markdown.previewStyles": [
+      "./media/toc.css"
+    ]
+  }
+}
