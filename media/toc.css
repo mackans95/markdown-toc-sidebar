@@ -53,10 +53,12 @@ body.md-toc-visible {
 	padding-right: calc(var(--md-toc-width) + 20px) !important;
 }
 
-#md-toc-toggle {
+/* Header buttons: the hide/show toggle and the settings cog. Fixed rather than inside the nav so
+   the toggle stays visible while the sidebar is hidden. */
+#md-toc-toggle,
+#md-toc-settings-button {
 	position: fixed;
 	top: 16px;
-	right: 12px;
 	z-index: 11;
 	display: none;
 	align-items: center;
@@ -72,16 +74,28 @@ body.md-toc-visible {
 	cursor: pointer;
 }
 
-body.md-toc-visible #md-toc-toggle {
+#md-toc-toggle {
+	right: 12px;
+}
+
+#md-toc-settings-button {
+	right: 40px;
+}
+
+body.md-toc-visible #md-toc-toggle,
+body.md-toc-visible.md-toc-configurable:not(.md-toc-collapsed) #md-toc-settings-button {
 	display: flex;
 }
 
-#md-toc-toggle:hover {
+#md-toc-toggle:hover,
+#md-toc-settings-button:hover,
+#md-toc-settings-button[aria-expanded="true"] {
 	background: var(--vscode-toolbar-hoverBackground, var(--vscode-list-hoverBackground));
 	opacity: 1;
 }
 
-#md-toc-toggle:focus-visible {
+#md-toc-toggle:focus-visible,
+#md-toc-settings-button:focus-visible {
 	outline: 1px solid var(--vscode-focusBorder);
 	outline-offset: -1px;
 }
@@ -102,6 +116,131 @@ body.md-toc-collapsed #md-toc-sidebar {
 
 body.md-toc-visible.md-toc-collapsed {
 	padding-right: 26px !important;
+}
+
+/* Settings menu, dropping down from the header inside the sidebar. */
+#md-toc-settings-menu {
+	position: fixed;
+	top: 46px;
+	right: 12px;
+	z-index: 13;
+	box-sizing: border-box;
+	width: max(180px, calc(var(--md-toc-width) - 24px));
+	padding: 10px;
+	border: 1px solid var(--vscode-menu-border, var(--vscode-widget-border, var(--vscode-panel-border, rgba(128, 128, 128, 0.35))));
+	border-radius: 6px;
+	background: var(--vscode-menu-background, var(--vscode-editorWidget-background, var(--vscode-editor-background)));
+	color: var(--vscode-menu-foreground, var(--vscode-foreground));
+	box-shadow: 0 2px 8px var(--vscode-widget-shadow, rgba(0, 0, 0, 0.36));
+	font-size: 0.85em;
+	line-height: 1.4;
+}
+
+#md-toc-settings-menu[hidden] {
+	display: none;
+}
+
+#md-toc-settings-menu .md-toc-menu-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin: -2px -4px 8px 0;
+	font-weight: 600;
+	user-select: none;
+}
+
+#md-toc-settings-menu .md-toc-menu-close {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 20px;
+	height: 20px;
+	padding: 0;
+	border: none;
+	border-radius: 4px;
+	background: transparent;
+	color: inherit;
+	opacity: 0.75;
+	cursor: pointer;
+}
+
+#md-toc-settings-menu .md-toc-menu-close:hover {
+	background: var(--vscode-toolbar-hoverBackground, var(--vscode-list-hoverBackground));
+	opacity: 1;
+}
+
+#md-toc-settings-menu .md-toc-menu-close:focus-visible {
+	outline: 1px solid var(--vscode-focusBorder);
+	outline-offset: -1px;
+}
+
+#md-toc-settings-menu .md-toc-menu-label {
+	margin-bottom: 4px;
+	font-weight: 600;
+	opacity: 0.8;
+	user-select: none;
+}
+
+#md-toc-settings-menu .md-toc-menu-options {
+	display: flex;
+	gap: 4px;
+	margin-bottom: 12px;
+}
+
+#md-toc-settings-menu a {
+	color: inherit;
+	text-decoration: none;
+	user-select: none;
+}
+
+#md-toc-settings-menu a:focus {
+	outline: none;
+}
+
+#md-toc-settings-menu a:focus-visible {
+	outline: 1px solid var(--vscode-focusBorder);
+	outline-offset: 1px;
+}
+
+/* Segmented choice; the current value is drawn like a primary button with a strong border. */
+#md-toc-settings-menu .md-toc-menu-option {
+	flex: 1;
+	padding: 2px 6px;
+	/* Same border width on every option, so selecting one doesn't shift the layout. The faint
+	   outline keeps unselected options looking like buttons, even in themes where the secondary
+	   button background is transparent. */
+	border: 2px solid color-mix(in srgb, var(--vscode-foreground) 20%, transparent);
+	border-radius: 4px;
+	background: var(--vscode-button-secondaryBackground, rgba(128, 128, 128, 0.2));
+	color: var(--vscode-button-secondaryForeground, inherit);
+	text-align: center;
+	cursor: pointer;
+}
+
+#md-toc-settings-menu .md-toc-menu-option:hover {
+	background: var(--vscode-button-secondaryHoverBackground, rgba(128, 128, 128, 0.3));
+}
+
+#md-toc-settings-menu .md-toc-menu-option[aria-checked="true"] {
+	background: var(--vscode-button-background);
+	color: var(--vscode-button-foreground);
+	/* The text color contrasts with the menu background in every theme (the focus color is too
+	   close to the button fill, and the button text color disappears on light menus). */
+	border-color: var(--vscode-contrastActiveBorder, var(--vscode-foreground));
+	font-weight: 600;
+	cursor: default;
+}
+
+#md-toc-settings-menu .md-toc-menu-link {
+	display: block;
+	padding-top: 8px;
+	border-top: 1px solid var(--vscode-menu-separatorBackground, var(--vscode-panel-border, rgba(128, 128, 128, 0.35)));
+	color: var(--vscode-textLink-foreground);
+	cursor: pointer;
+}
+
+#md-toc-settings-menu .md-toc-menu-link:hover {
+	text-decoration: underline;
 }
 
 /* Drag handle straddling the sidebar's left border, styled like VS Code's own sashes. */
@@ -159,8 +298,8 @@ body.md-toc-resizing {
 	position: sticky;
 	top: 0;
 	z-index: 1;
-	/* Lines the text up with the toggle (top: 16px, 24px tall); right padding leaves room for it. */
-	padding: 16px 28px 8px 0;
+	/* Lines the text up with the header buttons (top: 16px, 24px tall); right padding leaves room for them. */
+	padding: 16px 56px 8px 0;
 	line-height: 24px;
 	background: var(--vscode-sideBar-background, var(--vscode-editor-background));
 	font-weight: 600;
@@ -229,15 +368,61 @@ body.md-toc-resizing {
 	font-weight: 600;
 }
 
+/* Sidebar on the left (markdownTocSidebar.position): everything mirrored. The header buttons stay at
+   the end of the sidebar's header; collapsed, the toggle sits at the left edge. */
+body.md-toc-left #md-toc-sidebar {
+	right: auto;
+	left: 0;
+	border-left: none;
+	border-right: 1px solid var(--vscode-panel-border, rgba(128, 128, 128, 0.35));
+}
+
+body.md-toc-visible.md-toc-left {
+	padding-right: 26px !important;
+	padding-left: calc(var(--md-toc-width) + 20px) !important;
+}
+
+body.md-toc-visible.md-toc-left.md-toc-collapsed {
+	padding-left: 26px !important;
+}
+
+body.md-toc-left #md-toc-toggle {
+	right: auto;
+	left: calc(var(--md-toc-width) - 36px);
+}
+
+body.md-toc-left.md-toc-collapsed #md-toc-toggle {
+	left: 12px;
+}
+
+body.md-toc-left #md-toc-settings-button {
+	right: auto;
+	left: calc(var(--md-toc-width) - 64px);
+}
+
+body.md-toc-left #md-toc-settings-menu {
+	right: auto;
+	left: 12px;
+}
+
+body.md-toc-left #md-toc-resizer {
+	right: auto;
+	left: calc(var(--md-toc-width) - 3px);
+}
+
 /* Too narrow for a sidebar: hide it and give the content the full width back. */
 @media (max-width: 360px) {
 	#md-toc-sidebar,
 	body.md-toc-visible #md-toc-toggle,
+	body.md-toc-visible.md-toc-configurable:not(.md-toc-collapsed) #md-toc-settings-button,
+	#md-toc-settings-menu,
 	body.md-toc-visible:not(.md-toc-collapsed) #md-toc-resizer {
 		display: none;
 	}
 
-	body.md-toc-visible {
+	body.md-toc-visible,
+	body.md-toc-visible.md-toc-left {
 		padding-right: 26px !important;
+		padding-left: 26px !important;
 	}
 }

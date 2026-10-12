@@ -4,6 +4,8 @@
 	const NAV_ID = 'md-toc-sidebar';
 	const TOGGLE_ID = 'md-toc-toggle';
 	const RESIZER_ID = 'md-toc-resizer';
+	const SETTINGS_BUTTON_ID = 'md-toc-settings-button';
+	const SETTINGS_MENU_ID = 'md-toc-settings-menu';
 	const HEADING_SELECTOR = '.markdown-body :is(h1, h2, h3, h4, h5, h6)[id]';
 
 	// Contributed scripts may be re-evaluated on content changes; only wire up once.
@@ -17,13 +19,23 @@
 	const CONFIG_ID = 'md-toc-sidebar-config';
 	const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
+	// Current value of a setting, or the fallback when the config element isn't there (yet).
+	function readConfig(key, fallback) {
+		const config = document.getElementById(CONFIG_ID);
+		return (config && config.dataset[key]) || fallback;
+	}
+
 	// 'smooth' or 'instant', from the markdownTocSidebar.scrollBehavior setting.
 	function scrollBehavior() {
 		if (reducedMotion.matches) {
 			return 'instant';
 		}
-		const config = document.getElementById(CONFIG_ID);
-		return config && config.dataset.scrollBehavior === 'instant' ? 'instant' : 'smooth';
+		return readConfig('scrollBehavior', 'smooth') === 'instant' ? 'instant' : 'smooth';
+	}
+
+	// 'left' or 'right', from the markdownTocSidebar.position setting.
+	function sidebarPosition() {
+		return readConfig('position', 'right') === 'left' ? 'left' : 'right';
 	}
 
 	// A double-click in the preview can jump to the editor; our UI shouldn't trigger that.
@@ -47,7 +59,9 @@
 	}
 
 	const COLLAPSED_KEY = 'md-toc-sidebar.collapsed';
-	const ICON_HIDE = '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
+	// The hide arrow points towards the edge the sidebar collapses into.
+	const ICON_HIDE_RIGHT = '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
+	const ICON_HIDE_LEFT = '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M10 3l-5 5 5 5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
 	const ICON_SHOW = '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
 
 	function readCollapsed() {
@@ -83,16 +97,214 @@
 
 	function setCollapsed(collapsed) {
 		document.body.classList.toggle('md-toc-collapsed', collapsed);
-		const toggle = getToggle();
-		const label = collapsed ? 'Show table of contents' : 'Hide table of contents';
-		toggle.innerHTML = collapsed ? ICON_SHOW : ICON_HIDE;
-		toggle.title = label;
-		toggle.setAttribute('aria-label', label);
-		toggle.setAttribute('aria-expanded', String(!collapsed));
+		updateToggle();
+		closeSettingsMenu();
 		writeCollapsed(collapsed);
 		if (!collapsed) {
 			updateActive();
 		}
+	}
+
+	function updateToggle() {
+		const collapsed = document.body.classList.contains('md-toc-collapsed');
+		const toggle = getToggle();
+		const label = collapsed ? 'Show table of contents' : 'Hide table of contents';
+		const icon = collapsed ? 'show' : sidebarPosition() === 'left' ? 'hide-left' : 'hide-right';
+		// Compare by name: the browser re-serializes innerHTML, so comparing markup never matches,
+		// and replacing the icon on every update would swallow clicks on the button.
+		if (toggle.dataset.icon !== icon) {
+			toggle.dataset.icon = icon;
+			toggle.innerHTML = icon === 'show' ? ICON_SHOW : icon === 'hide-left' ? ICON_HIDE_LEFT : ICON_HIDE_RIGHT;
+		}
+		toggle.title = label;
+		toggle.setAttribute('aria-label', label);
+		toggle.setAttribute('aria-expanded', String(!collapsed));
+	}
+
+	// Settings menu behind the cog button. Its options are vscode:// links: the preview can't change
+	// VS Code settings itself, so VS Code hands those links to src/extension.js, which updates the
+	// setting and refreshes the preview (which then shows the new value here).
+	const ICON_CLOSE = '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
+	const ICON_SETTINGS = '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="5.6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-dasharray="2.2 2.2"/><circle cx="8" cy="8" r="3.6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
+	const SETTING_GROUPS = [
+		{ key: 'scrollBehavior', label: 'Scroll on click', options: [['smooth', 'Smooth'], ['instant', 'Instant']] },
+		{ key: 'position', label: 'Sidebar position', options: [['left', 'Left'], ['right', 'Right']] },
+	];
+
+	function initSettings() {
+		const button = document.createElement('button');
+		button.id = SETTINGS_BUTTON_ID;
+		button.type = 'button';
+		button.innerHTML = ICON_SETTINGS;
+		button.title = 'Table of contents settings';
+		button.setAttribute('aria-label', 'Table of contents settings');
+		button.setAttribute('aria-haspopup', 'menu');
+		button.setAttribute('aria-controls', SETTINGS_MENU_ID);
+		button.setAttribute('aria-expanded', 'false');
+		keepDoubleClickInside(button);
+
+		const menu = document.createElement('div');
+		menu.id = SETTINGS_MENU_ID;
+		menu.setAttribute('role', 'menu');
+		menu.setAttribute('aria-label', 'Table of contents settings');
+		menu.hidden = true;
+		keepDoubleClickInside(menu);
+
+		const header = document.createElement('div');
+		header.className = 'md-toc-menu-header';
+		const heading = document.createElement('span');
+		heading.textContent = 'Settings';
+		const close = document.createElement('button');
+		close.type = 'button';
+		close.className = 'md-toc-menu-close';
+		close.innerHTML = ICON_CLOSE;
+		close.title = 'Close';
+		close.setAttribute('aria-label', 'Close settings');
+		close.addEventListener('click', () => {
+			closeSettingsMenu();
+			button.focus();
+		});
+		header.append(heading, close);
+		menu.appendChild(header);
+
+		for (const group of SETTING_GROUPS) {
+			const label = document.createElement('div');
+			label.className = 'md-toc-menu-label';
+			label.textContent = group.label;
+			const options = document.createElement('div');
+			options.className = 'md-toc-menu-options';
+			options.setAttribute('role', 'group');
+			options.setAttribute('aria-label', group.label);
+			for (const [value, text] of group.options) {
+				const option = document.createElement('a');
+				option.className = 'md-toc-menu-option';
+				option.setAttribute('role', 'menuitemradio');
+				option.dataset.key = group.key;
+				option.dataset.value = value;
+				option.textContent = text;
+				options.appendChild(option);
+			}
+			menu.append(label, options);
+		}
+		const allSettings = document.createElement('a');
+		allSettings.className = 'md-toc-menu-link';
+		allSettings.setAttribute('role', 'menuitem');
+		allSettings.dataset.path = '/open-settings';
+		allSettings.textContent = 'Open all settings…';
+		menu.appendChild(allSettings);
+
+		document.body.append(button, menu);
+
+		button.addEventListener('click', event => {
+			if (menu.hidden) {
+				openSettingsMenu(event.detail === 0);
+			} else {
+				closeSettingsMenu();
+			}
+		});
+		// Picking an option applies it right away, here and in other open previews; the link itself
+		// then goes to VS Code (via src/extension.js) to save the setting. The menu stays open.
+		menu.addEventListener('click', event => {
+			const option = event.target instanceof Element && event.target.closest('.md-toc-menu-option');
+			if (!option) {
+				return;
+			}
+			if (option.getAttribute('aria-checked') === 'true') {
+				// Already the current value: nothing to save.
+				event.preventDefault();
+				return;
+			}
+			applySettingLocally(option.dataset.key, option.dataset.value);
+			broadcastSetting(option.dataset.key, option.dataset.value);
+		});
+		document.addEventListener('pointerdown', event => {
+			if (!menu.hidden && event.target instanceof Node && !menu.contains(event.target) && !button.contains(event.target)) {
+				closeSettingsMenu();
+			}
+		}, true);
+		document.addEventListener('keydown', event => {
+			if (event.key === 'Escape' && !menu.hidden) {
+				closeSettingsMenu();
+				button.focus();
+			}
+		});
+	}
+
+	function openSettingsMenu(fromKeyboard) {
+		const menu = document.getElementById(SETTINGS_MENU_ID);
+		menu.hidden = false;
+		document.getElementById(SETTINGS_BUTTON_ID).setAttribute('aria-expanded', 'true');
+		if (fromKeyboard) {
+			menu.querySelector('[aria-checked="true"]')?.focus();
+		}
+	}
+
+	function closeSettingsMenu() {
+		const menu = document.getElementById(SETTINGS_MENU_ID);
+		if (menu && !menu.hidden) {
+			menu.hidden = true;
+			document.getElementById(SETTINGS_BUTTON_ID).setAttribute('aria-expanded', 'false');
+		}
+	}
+
+	// Other open previews share this page's storage, so a key written here reaches them as a
+	// 'storage' event. That lets a choice from the menu show up everywhere without a reload.
+	const LIVE_SETTING_KEY = 'md-toc-sidebar.live-setting';
+
+	function applySettingLocally(key, value) {
+		const config = document.getElementById(CONFIG_ID);
+		if (config) {
+			config.dataset[key] = value;
+			applyConfig();
+		}
+	}
+
+	function broadcastSetting(key, value) {
+		try {
+			// The timestamp makes every write a change, so repeated choices still fire the event.
+			localStorage.setItem(LIVE_SETTING_KEY, JSON.stringify({ key, value, time: Date.now() }));
+		} catch {
+			// Storage unavailable; other previews update when they next re-render.
+		}
+	}
+
+	window.addEventListener('storage', event => {
+		if (event.key !== LIVE_SETTING_KEY || !event.newValue) {
+			return;
+		}
+		try {
+			const { key, value } = JSON.parse(event.newValue);
+			if (SETTING_GROUPS.some(group => group.key === key && group.options.some(([v]) => v === value))) {
+				applySettingLocally(key, value);
+			}
+		} catch {
+			// Ignore malformed values.
+		}
+	});
+
+	// Applies the settings from the config element: sidebar side, toggle icon and the menu's links.
+	function applyConfig() {
+		const config = document.getElementById(CONFIG_ID);
+		// Without the config element (src/extension.js not active), settings can't be changed from here.
+		document.body.classList.toggle('md-toc-configurable', !!(config && config.dataset.uriBase));
+		document.body.classList.toggle('md-toc-left', sidebarPosition() === 'left');
+		updateToggle();
+
+		const menu = document.getElementById(SETTINGS_MENU_ID);
+		if (!menu || !config) {
+			return;
+		}
+		const uriBase = config.dataset.uriBase || '';
+		for (const option of menu.querySelectorAll('.md-toc-menu-option')) {
+			const { key, value } = option.dataset;
+			const href = uriBase + '/set?' + new URLSearchParams({ [key]: value });
+			if (option.getAttribute('href') !== href) {
+				option.setAttribute('href', href);
+			}
+			option.setAttribute('aria-checked', String(readConfig(key, '') === value));
+		}
+		const allSettings = menu.querySelector('.md-toc-menu-link');
+		allSettings.setAttribute('href', uriBase + allSettings.dataset.path);
 	}
 
 	const WIDTH_KEY = 'md-toc-sidebar.width';
@@ -183,8 +395,9 @@
 			if (!resizer.hasPointerCapture(event.pointerId)) {
 				return;
 			}
-			// The sidebar is pinned to the right edge, so its width is the distance from the pointer to it.
-			dragWidth = clampWidth(viewportWidth() - event.clientX);
+			// The sidebar is pinned to one edge, so its width is the pointer's distance from that edge.
+			const distance = sidebarPosition() === 'left' ? event.clientX : viewportWidth() - event.clientX;
+			dragWidth = clampWidth(distance);
 			applyWidth(dragWidth);
 		});
 
@@ -205,8 +418,10 @@
 		});
 
 		resizer.addEventListener('keydown', event => {
-			// Left widens (the handle moves left), right narrows.
-			const delta = event.key === 'ArrowLeft' ? KEYBOARD_STEP : event.key === 'ArrowRight' ? -KEYBOARD_STEP : 0;
+			// Moving the handle away from the sidebar's edge widens it.
+			const outward = sidebarPosition() === 'left' ? 'ArrowRight' : 'ArrowLeft';
+			const inward = sidebarPosition() === 'left' ? 'ArrowLeft' : 'ArrowRight';
+			const delta = event.key === outward ? KEYBOARD_STEP : event.key === inward ? -KEYBOARD_STEP : 0;
 			if (!delta) {
 				return;
 			}
@@ -470,6 +685,7 @@
 		}
 		buildFrame = requestAnimationFrame(() => {
 			buildFrame = 0;
+			applyConfig();
 			const signature = Array.from(document.querySelectorAll(HEADING_SELECTOR))
 				.map(h => h.tagName + '#' + h.id + ':' + h.textContent)
 				.join('\n');
@@ -482,9 +698,11 @@
 
 	// Our script loads async, so the preview content may arrive before or after we run.
 	// Watching the DOM catches the initial render and every later update regardless of timing.
+	// Changes inside our own UI (sidebar, buttons, menu) are ignored, or updating it would loop.
+	const OWN_UI_SELECTOR = [NAV_ID, TOGGLE_ID, RESIZER_ID, SETTINGS_BUTTON_ID, SETTINGS_MENU_ID].map(id => '#' + id).join(', ');
 	new MutationObserver(records => {
-		const nav = document.getElementById(NAV_ID);
-		if (records.some(r => !nav || !nav.contains(r.target))) {
+		const isOwnUi = node => (node instanceof Element ? node : node.parentElement)?.closest(OWN_UI_SELECTOR);
+		if (records.some(r => !isOwnUi(r.target))) {
 			scheduleBuild();
 		}
 	}).observe(document.body, { childList: true, subtree: true, characterData: true });
@@ -493,6 +711,7 @@
 	window.addEventListener('vscode.markdown.updateContent', scheduleBuild);
 
 	initResizer();
+	initSettings();
 	setCollapsed(readCollapsed());
 	scheduleBuild();
 })();

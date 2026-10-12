@@ -8,6 +8,8 @@ Initial release.
 - Nested entries for `h1`–`h6`, updated live as you edit.
 - Click an entry to scroll to its heading, which flashes briefly to show where you landed.
 - `markdownTocSidebar.scrollBehavior` setting to choose between a smooth scroll (default) and an instant jump.
+- `markdownTocSidebar.position` setting to show the sidebar on the right (default) or left.
+- Cog menu in the sidebar's header for changing the settings without opening VS Code's Settings.
 - The current section is highlighted while scrolling, with the sections it belongs to highlighted more lightly.
 - Button to hide and show the sidebar.
 - Drag the sidebar's edge to resize it; double-click to reset, or use the arrow keys.

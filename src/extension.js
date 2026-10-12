@@ -1,36 +1,100 @@
-// Runs in the extension host. The preview scripts can't read VS Code settings themselves, so this
-// passes them along: a markdown-it plugin adds a hidden element with the settings as data
-// attributes to every rendered preview, and media/toc.js reads it from there.
+// Runs in the extension host and connects the preview scripts to VS Code settings, which they
+// can't access themselves:
+// - Settings -> preview: a markdown-it plugin adds a hidden element with the current settings as
+//   data attributes to every rendered preview; media/toc.js reads it from there.
+// - Preview -> settings: the sidebar's settings menu is made of vscode:// links, which VS Code
+//   routes to the URI handler registered below. The preview has already applied the choice
+//   itself, so saving it doesn't need to refresh the previews.
 const vscode = require('vscode');
 
 const SECTION = 'markdownTocSidebar';
 const CONFIG_ELEMENT_ID = 'md-toc-sidebar-config';
+const CONFIG_TOKEN_TYPE = 'md_toc_sidebar_config';
 
-function readScrollBehavior() {
-	const value = vscode.workspace.getConfiguration(SECTION).get('scrollBehavior');
-	return value === 'instant' ? 'instant' : 'smooth';
+// Allowed values for each setting; the first one is the default.
+const SETTINGS = {
+	scrollBehavior: ['smooth', 'instant'],
+	position: ['right', 'left'],
+};
+
+function readSetting(key) {
+	const value = vscode.workspace.getConfiguration(SECTION).get(key);
+	return SETTINGS[key].includes(value) ? value : SETTINGS[key][0];
+}
+
+// Writes where the value currently comes from, so a workspace setting isn't silently shadowed
+// by a user setting that has no effect.
+function writeSetting(key, value) {
+	const config = vscode.workspace.getConfiguration(SECTION);
+	const inspected = config.inspect(key);
+	const target = inspected?.workspaceFolderValue !== undefined ? vscode.ConfigurationTarget.WorkspaceFolder
+		: inspected?.workspaceValue !== undefined ? vscode.ConfigurationTarget.Workspace
+			: vscode.ConfigurationTarget.Global;
+	return config.update(key, value, target);
+}
+
+function escapeAttribute(value) {
+	return String(value).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 }
 
 function activate(context) {
+	const extensionId = context.extension.id;
+	const uriBase = `${vscode.env.uriScheme}://${extensionId}`;
+
+	// Settings currently being saved from the sidebar's menu. Open previews already show those
+	// values, so the change doesn't need the (slow, full-reload) preview refresh.
+	const savingFromMenu = new Set();
+
 	context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(event => {
-		if (event.affectsConfiguration(SECTION)) {
-			// Clears the markdown extension's render cache and re-renders open previews,
-			// so they pick up the new value without being reopened.
-			vscode.commands.executeCommand('markdown.preview.refresh');
+		const changed = Object.keys(SETTINGS).filter(key => event.affectsConfiguration(`${SECTION}.${key}`));
+		if (changed.length === 0 || changed.every(key => savingFromMenu.has(key))) {
+			return;
 		}
+		// Changed elsewhere, e.g. in the Settings editor: re-render open previews so they pick it up.
+		vscode.commands.executeCommand('markdown.preview.refresh');
+	}));
+
+	context.subscriptions.push(vscode.window.registerUriHandler({
+		async handleUri(uri) {
+			if (uri.path === '/set') {
+				const params = new URLSearchParams(uri.query);
+				for (const [key, value] of params) {
+					if (SETTINGS[key]?.includes(value)) {
+						savingFromMenu.add(key);
+						try {
+							await writeSetting(key, value);
+						} finally {
+							// The change event may arrive just after the write resolves.
+							setTimeout(() => savingFromMenu.delete(key), 1000);
+						}
+					}
+				}
+			} else if (uri.path === '/open-settings') {
+				await vscode.commands.executeCommand('workbench.action.openSettings', `@ext:${extensionId}`);
+			}
+		},
 	}));
 
 	return {
 		extendMarkdownIt(md) {
-			md.core.ruler.push('md_toc_sidebar_config', state => {
+			md.core.ruler.push(CONFIG_TOKEN_TYPE, state => {
 				// Inline-only renders (e.g. a single line) have no document to attach the element to.
-				if (state.inlineMode) {
-					return;
+				if (!state.inlineMode) {
+					const token = new state.Token(CONFIG_TOKEN_TYPE, '', 0);
+					token.block = true;
+					state.tokens.unshift(token);
 				}
-				const token = new state.Token('html_block', '', 0);
-				token.content = `<div id="${CONFIG_ELEMENT_ID}" data-scroll-behavior="${readScrollBehavior()}" hidden></div>\n`;
-				state.tokens.unshift(token);
 			});
+			// The values are filled in when rendering rather than when parsing: the markdown extension
+			// caches parsed tokens, so values baked in at parse time could be stale.
+			md.renderer.rules[CONFIG_TOKEN_TYPE] = () => {
+				const attributes = [
+					`data-scroll-behavior="${readSetting('scrollBehavior')}"`,
+					`data-position="${readSetting('position')}"`,
+					`data-uri-base="${escapeAttribute(uriBase)}"`,
+				].join(' ');
+				return `<div id="${CONFIG_ELEMENT_ID}" ${attributes} hidden></div>\n`;
+			};
 			return md;
 		},
 	};

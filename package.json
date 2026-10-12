@@ -47,7 +47,22 @@
             "Jump straight to the heading."
           ],
           "default": "smooth",
-          "markdownDescription": "How the preview scrolls when you click an entry in the table of contents. When your system is set to reduce motion, the preview always jumps instantly."
+          "markdownDescription": "How the preview scrolls when you click an entry in the table of contents. When your system is set to reduce motion, the preview always jumps instantly.",
+          "order": 1
+        },
+        "markdownTocSidebar.position": {
+          "type": "string",
+          "enum": [
+            "right",
+            "left"
+          ],
+          "enumDescriptions": [
+            "Show the sidebar on the right side of the preview.",
+            "Show the sidebar on the left side of the preview."
+          ],
+          "default": "right",
+          "markdownDescription": "Which side of the preview the table of contents sidebar is shown on.",
+          "order": 2
         }
       }
     },
