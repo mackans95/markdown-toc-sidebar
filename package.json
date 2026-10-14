@@ -6,6 +6,9 @@
   "publisher": "mackans95",
   "license": "MIT",
   "icon": "images/icon.png",
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/mackans95/markdown-toc-sidebar.git"

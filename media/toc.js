@@ -8,9 +8,46 @@
 	const SETTINGS_MENU_ID = 'md-toc-settings-menu';
 	const HEADING_SELECTOR = '.markdown-body :is(h1, h2, h3, h4, h5, h6)[id]';
 
-	// Contributed scripts may be re-evaluated on content changes; only wire up once.
+	// Pure functions, no DOM, tested in test/toc.test.js.
+	/** @param {{ id: string, text: string, level: number}[]} headings */
+	function buildEntries(headings) {
+		const baseLevel = Math.min(...headings.map(h => h.level));
+
+		return headings.map(h => {
+			return {
+				...h,
+				depth: h.level - baseLevel,
+			};
+		});
+	}
+
+	// The sections containing the active one: walking back up the list, each entry with a
+	// lower level than the last one found is the next enclosing section.
+	function ancestorIndices(entries, index) {
+		const ancestors = new Set();
+		if (index >= 0) {
+			let level = entries[index].level;
+
+			for (let i = index - 1; i >= 0 && level > 1; i--) {
+				const entryLevel = entries[i].level;
+				if (entryLevel < level) {
+					ancestors.add(i);
+					level = entryLevel;
+				}
+			}
+		}
+
+		return ancestors;
+	}
+
+	// Means we are in Node, export and stop here.
+	if (typeof module === 'object' && module.exports) {
+		module.exports = { buildEntries, ancestorIndices };
+		return;
+	}
+
+	// Protects the script from running twice on the same page, no double initialization.
 	if (window.__mdTocSidebarInitialized) {
-		buildToc();
 		return;
 	}
 	window.__mdTocSidebarInitialized = true;
@@ -448,19 +485,18 @@
 			return;
 		}
 
-		const baseLevel = Math.min(...headings.map(h => Number(h.tagName[1])));
+		const entries = buildEntries(headings.map(h => ({ id: h.id, text: h.textContent.trim(), level: Number(h.tagName[1]) })));
 		const list = document.createElement('ul');
 
-		for (const heading of headings) {
-			const level = Number(heading.tagName[1]);
+		for (const entry of entries) {
 			const item = document.createElement('li');
-			item.style.setProperty('--md-toc-depth', String(level - baseLevel));
+			item.style.setProperty('--md-toc-depth', String(entry.depth));
 
 			const link = document.createElement('a');
-			link.href = '#' + heading.id;
-			link.textContent = heading.textContent.trim();
-			link.dataset.target = heading.id;
-			link.dataset.level = String(level);
+			link.href = '#' + entry.id;
+			link.textContent = entry.text;
+			link.dataset.target = entry.id;
+			link.dataset.level = String(entry.level);
 			link.title = link.textContent;
 
 			item.appendChild(link);
@@ -555,19 +591,7 @@
 		const links = Array.from(nav.querySelectorAll('a'));
 		const activeIndex = links.findIndex(link => link.dataset.target === id);
 
-		// The sections containing the active one: walking back up the list, each entry with a
-		// lower level than the last one found is the next enclosing section.
-		const ancestors = new Set();
-		if (activeIndex >= 0) {
-			let level = Number(links[activeIndex].dataset.level);
-			for (let i = activeIndex - 1; i >= 0 && level > 1; i--) {
-				const linkLevel = Number(links[i].dataset.level);
-				if (linkLevel < level) {
-					ancestors.add(links[i]);
-					level = linkLevel;
-				}
-			}
-		}
+		const ancestors = ancestorIndices(links.map(l => ({ level: Number(l.dataset.level) })), activeIndex);
 
 		links.forEach((link, i) => {
 			link.classList.toggle('active', i === activeIndex);
@@ -576,7 +600,7 @@
 			} else {
 				link.removeAttribute('aria-current');
 			}
-			link.classList.toggle('active-ancestor', ancestors.has(link));
+			link.classList.toggle('active-ancestor', ancestors.has(i));
 		});
 		if (activeIndex >= 0) {
 			links[activeIndex].scrollIntoView({ block: 'nearest' });

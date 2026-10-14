@@ -1,0 +1,19 @@
+{
+  // The code is formatted with VS Code's built-in formatters (tabs, semicolons). These override
+  // personal defaults such as Prettier, so Format Document keeps the existing style.
+  "[javascript]": {
+    "editor.defaultFormatter": "TypeScriptTeam.native-preview",
+    "editor.insertSpaces": false,
+    "editor.tabSize": 4
+  },
+  "[css]": {
+    "editor.defaultFormatter": "vscode.css-language-features",
+    "editor.insertSpaces": false,
+    "editor.tabSize": 4
+  },
+  "[json]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  },
+  "js/ts.format.semicolons": "insert",
+  "files.insertFinalNewline": true
+}
