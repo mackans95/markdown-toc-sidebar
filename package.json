@@ -15,7 +15,7 @@
   },
   "homepage": "https://github.com/mackans95/markdown-toc-sidebar#readme",
   "engines": {
-    "vscode": "^1.80.0"
+    "vscode": "^1.82.0"
   },
   "categories": [
     "Other"
@@ -32,6 +32,7 @@
   ],
   "activationEvents": [],
   "main": "./src/extension.js",
+  "browser": "./src/extension.js",
   "contributes": {
     "configuration": {
       "title": "Markdown TOC Sidebar",

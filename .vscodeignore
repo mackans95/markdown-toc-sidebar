@@ -1,4 +1,5 @@
 .vscode/**
+.vscode-test-web/**
 .gitignore
 sample.md
 # README images are loaded from the repository, so they don't need to be in the package.

@@ -75,7 +75,7 @@ These are VS Code settings, not settings of this extension:
 
 ## Requirements
 
-VS Code 1.80 or later. The extension only adds to the built-in Markdown preview, so it doesn't work with other preview extensions such as Markdown Preview Enhanced.
+VS Code 1.82 or later. The extension only adds to the built-in Markdown preview, so it doesn't work with other preview extensions such as Markdown Preview Enhanced.
 
 ## Known limitations
 
