@@ -96,6 +96,7 @@
 	}
 
 	function setCollapsed(collapsed) {
+		latestActiveId = null;
 		document.body.classList.toggle('md-toc-collapsed', collapsed);
 		updateToggle();
 		closeSettingsMenu();
@@ -437,6 +438,7 @@
 	}
 
 	function buildToc() {
+		latestActiveId = null;
 		const headings = Array.from(document.querySelectorAll(HEADING_SELECTOR));
 		const nav = getNav();
 
@@ -535,11 +537,21 @@
 		return active;
 	}
 
+	// Contains the entry that was last highlighted, so we don't update the DOM unnecessarily.
+	let latestActiveId = null;
+
 	function setActiveLink(id) {
+		if (latestActiveId === id) {
+			return;
+		}
+
 		const nav = document.getElementById(NAV_ID);
 		if (!nav) {
 			return;
 		}
+
+		latestActiveId = id;
+
 		const links = Array.from(nav.querySelectorAll('a'));
 		const activeIndex = links.findIndex(link => link.dataset.target === id);
 
@@ -559,6 +571,11 @@
 
 		links.forEach((link, i) => {
 			link.classList.toggle('active', i === activeIndex);
+			if (i === activeIndex) {
+				link.setAttribute('aria-current', 'location');
+			} else {
+				link.removeAttribute('aria-current');
+			}
 			link.classList.toggle('active-ancestor', ancestors.has(link));
 		});
 		if (activeIndex >= 0) {
