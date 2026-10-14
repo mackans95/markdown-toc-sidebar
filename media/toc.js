@@ -293,7 +293,7 @@
 		const config = document.getElementById(CONFIG_ID);
 		if (config) {
 			config.dataset[key] = value;
-			applyConfig();
+			scheduleBuild();
 		}
 	}
 
@@ -717,7 +717,7 @@
 	// smooth-scroll-sync.js hides its gliding scroll events from regular listeners and fires this instead.
 	window.addEventListener('md-toc-sidebar:synced-scroll', onScroll);
 
-	// Rebuild at most once per frame, and only when the headings actually changed.
+	// Rebuild at most once per frame, and only when the headings or the settings changed.
 	let lastSignature = '';
 	let buildFrame = 0;
 	function scheduleBuild() {
@@ -727,7 +727,9 @@
 		buildFrame = requestAnimationFrame(() => {
 			buildFrame = 0;
 			applyConfig();
-			const signature = Array.from(document.querySelectorAll(HEADING_SELECTOR))
+			const config = document.getElementById(CONFIG_ID);
+			const settings = config ? JSON.stringify(config.dataset) : '';
+			const signature = settings + '\n' + Array.from(document.querySelectorAll(HEADING_SELECTOR))
 				.map(h => h.tagName + '#' + h.id + ':' + h.textContent)
 				.join('\n');
 			if (signature !== lastSignature || !document.getElementById(NAV_ID)) {
