@@ -10,16 +10,23 @@
 	const HEADING_SELECTOR = '.markdown-body :is(h1, h2, h3, h4, h5, h6)[id]';
 
 	// Pure functions, no DOM, tested in test/toc.test.js.
-	/** @param {{ id: string, text: string, level: number}[]} headings */
-	function buildEntries(headings) {
+	/**
+	 * @param {{ id: string, text: string, level: number}[]} headings
+	 * @param {{ maxDepth?: number }} options maxDepth: deepest heading level to list (1-6).
+	 */
+	function buildEntries(headings, options = {}) {
+		const maxDepth = options.maxDepth ?? 6;
 		const baseLevel = Math.min(...headings.map(h => h.level));
+		// Never hide the document's top level: an empty list would hide the sidebar, and with it the
+		// settings menu needed to change maxDepth back.
+		const limit = Math.max(maxDepth, baseLevel);
 
 		return headings.map(h => {
 			return {
 				...h,
 				depth: h.level - baseLevel,
 			};
-		});
+		}).filter(h => h.level <= limit);
 	}
 
 	// The sections containing the active one: walking back up the list, each entry with a
@@ -168,6 +175,7 @@
 	const SETTING_GROUPS = [
 		{ key: 'scrollBehavior', label: 'Scroll on click', options: [['smooth', 'Smooth'], ['instant', 'Instant']] },
 		{ key: 'position', label: 'Sidebar position', options: [['left', 'Left'], ['right', 'Right']] },
+		{ key: 'maxDepth', label: 'Show headings down to', options: [['1', 'H1'], ['2', 'H2'], ['3', 'H3'], ['4', 'H4'], ['5', 'H5'], ['6', 'H6']] },
 	];
 
 	function initSettings() {
@@ -497,12 +505,15 @@
 		const nav = getNav();
 
 		if (headings.length === 0) {
+			tocIds = new Set();
 			nav.replaceChildren();
 			document.body.classList.remove('md-toc-visible');
 			return;
 		}
 
-		const entries = buildEntries(headings.map(h => ({ id: h.id, text: h.textContent.trim(), level: Number(h.tagName[1]) })));
+		const maxDepth = Number(readConfig('maxDepth', '6'));
+		const entries = buildEntries(headings.map(h => ({ id: h.id, text: h.textContent.trim(), level: Number(h.tagName[1]) })), { maxDepth });
+		tocIds = new Set(entries.map(entry => entry.id));
 		const list = document.createElement('ul');
 
 		for (const entry of entries) {
@@ -590,6 +601,9 @@
 		return active;
 	}
 
+	// Ids of the headings listed in the sidebar; headings deeper than maxDepth aren't in it.
+	let tocIds = new Set();
+
 	// Contains the entry that was last highlighted, so we don't update the DOM unnecessarily.
 	let latestActiveId = null;
 
@@ -638,7 +652,9 @@
 			setActiveLink(pinnedId);
 			return;
 		}
-		const active = findActiveHeading(Array.from(document.querySelectorAll(HEADING_SELECTOR)));
+		// Only listed headings: inside a section deeper than maxDepth, its listed parent is the active one.
+		const listed = Array.from(document.querySelectorAll(HEADING_SELECTOR)).filter(h => tocIds.has(h.id));
+		const active = findActiveHeading(listed);
 		setActiveLink(active?.id);
 	}
 

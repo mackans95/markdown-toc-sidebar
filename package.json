@@ -67,6 +67,28 @@
           "default": "right",
           "markdownDescription": "Which side of the preview the table of contents sidebar is shown on.",
           "order": 2
+        },
+        "markdownTocSidebar.maxDepth": {
+          "type": "number",
+          "enum": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "enumDescriptions": [
+            "Only `#` headings.",
+            "Headings down to `##`.",
+            "Headings down to `###`.",
+            "Headings down to `####`.",
+            "Headings down to `#####`.",
+            "All headings."
+          ],
+          "default": 6,
+          "markdownDescription": "The deepest heading level listed in the table of contents. The document's top level is always listed, even when it's deeper than this.",
+          "order": 3
         }
       }
     },

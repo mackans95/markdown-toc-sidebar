@@ -10,6 +10,10 @@ function depths(...ls) {
 	return buildEntries(levels(...ls)).map(e => e.depth);
 }
 
+function levelsShown(maxDepth, ...ls) {
+	return buildEntries(levels(...ls), { maxDepth }).map(e => e.level);
+}
+
 describe('ancestorIndices', () => {
 	// 0 h1
 	// 1   h2
@@ -55,5 +59,23 @@ describe('buildEntries', () => {
 		const headings = [{ id: 'intro', text: 'Intro', level: 2 }];
 		assert.deepEqual(buildEntries(headings), [{ id: 'intro', text: 'Intro', level: 2, depth: 0 }]);
 		assert.deepEqual(headings, [{ id: 'intro', text: 'Intro', level: 2 }]);
+	});
+
+	describe('maxDepth', () => {
+		test('hides deeper levels', () => {
+			assert.deepEqual(levelsShown(2, 1, 2, 3, 2), [1, 2, 2]);
+		});
+		test('shows everything at 6', () => {
+			assert.deepEqual(levelsShown(6, 1, 2, 3, 4, 5, 6), [1, 2, 3, 4, 5, 6]);
+		});
+		test('shows everything when not given', () => {
+			assert.deepEqual(buildEntries(levels(1, 2, 3)).map(e => e.level), [1, 2, 3]);
+		});
+		test('never hides the top level', () => {
+			assert.deepEqual(levelsShown(1, 2, 3, 2), [2, 2]);
+		});
+		test('does not change the depth of what is shown', () => {
+			assert.deepEqual(buildEntries(levels(2, 3, 4), { maxDepth: 3 }).map(e => e.depth), [0, 1]);
+		});
 	});
 });
