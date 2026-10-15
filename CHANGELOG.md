@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Refresh button in the sidebar's header that re-renders the preview from the file (VS Code's *Markdown: Refresh Preview*).
+- The sidebar's "Contents" title no longer wraps onto several lines when the sidebar is narrow; it's hidden instead.
+
 ## 0.1.0
 
 Initial release.

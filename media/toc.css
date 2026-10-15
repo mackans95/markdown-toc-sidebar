@@ -43,6 +43,8 @@
 	background: var(--vscode-sideBar-background, var(--vscode-editor-background));
 	border-left: 1px solid var(--vscode-panel-border, rgba(128, 128, 128, 0.35));
 	z-index: 10;
+	/* Lets the title react to the sidebar's own width. */
+	container: md-toc-sidebar / inline-size;
 }
 
 #md-toc-sidebar:empty {
@@ -53,10 +55,11 @@ body.md-toc-visible {
 	padding-right: calc(var(--md-toc-width) + 20px) !important;
 }
 
-/* Header buttons: the hide/show toggle and the settings cog. Fixed rather than inside the nav so
-   the toggle stays visible while the sidebar is hidden. */
+/* Header buttons: the hide/show toggle, the settings cog and refresh. Fixed rather than inside the
+   nav so the toggle stays visible while the sidebar is hidden. */
 #md-toc-toggle,
-#md-toc-settings-button {
+#md-toc-settings-button,
+#md-toc-refresh-button {
 	position: fixed;
 	top: 16px;
 	z-index: 11;
@@ -82,20 +85,30 @@ body.md-toc-visible {
 	right: 40px;
 }
 
+#md-toc-refresh-button {
+	right: 68px;
+	box-sizing: border-box;
+	text-decoration: none;
+}
+
 body.md-toc-visible #md-toc-toggle,
-body.md-toc-visible.md-toc-configurable:not(.md-toc-collapsed) #md-toc-settings-button {
+body.md-toc-visible.md-toc-configurable:not(.md-toc-collapsed) #md-toc-settings-button,
+body.md-toc-visible.md-toc-configurable:not(.md-toc-collapsed) #md-toc-refresh-button {
 	display: flex;
 }
 
 #md-toc-toggle:hover,
 #md-toc-settings-button:hover,
-#md-toc-settings-button[aria-expanded="true"] {
+#md-toc-settings-button[aria-expanded="true"],
+#md-toc-refresh-button:hover {
 	background: var(--vscode-toolbar-hoverBackground, var(--vscode-list-hoverBackground));
+	color: var(--vscode-foreground);
 	opacity: 1;
 }
 
 #md-toc-toggle:focus-visible,
-#md-toc-settings-button:focus-visible {
+#md-toc-settings-button:focus-visible,
+#md-toc-refresh-button:focus-visible {
 	outline: 1px solid var(--vscode-focusBorder);
 	outline-offset: -1px;
 }
@@ -299,7 +312,7 @@ body.md-toc-resizing {
 	top: 0;
 	z-index: 1;
 	/* Lines the text up with the header buttons (top: 16px, 24px tall); right padding leaves room for them. */
-	padding: 16px 56px 8px 0;
+	padding: 16px 84px 8px 0;
 	line-height: 24px;
 	background: var(--vscode-sideBar-background, var(--vscode-editor-background));
 	font-weight: 600;
@@ -308,7 +321,15 @@ body.md-toc-resizing {
 	letter-spacing: 0.04em;
 	/* Dimmed via color rather than opacity so the sticky background stays opaque. */
 	color: color-mix(in srgb, var(--vscode-foreground) 80%, transparent);
+	white-space: nowrap;
 	user-select: none;
+}
+
+/* Too narrow for the title next to the header buttons: hide the text but keep the header. */
+@container md-toc-sidebar (max-width: 144px) {
+	#md-toc-sidebar .md-toc-title {
+		color: transparent;
+	}
 }
 
 #md-toc-sidebar ul {
@@ -400,6 +421,11 @@ body.md-toc-left #md-toc-settings-button {
 	left: calc(var(--md-toc-width) - 64px);
 }
 
+body.md-toc-left #md-toc-refresh-button {
+	right: auto;
+	left: calc(var(--md-toc-width) - 92px);
+}
+
 body.md-toc-left #md-toc-settings-menu {
 	right: auto;
 	left: 12px;
@@ -415,6 +441,7 @@ body.md-toc-left #md-toc-resizer {
 	#md-toc-sidebar,
 	body.md-toc-visible #md-toc-toggle,
 	body.md-toc-visible.md-toc-configurable:not(.md-toc-collapsed) #md-toc-settings-button,
+	body.md-toc-visible.md-toc-configurable:not(.md-toc-collapsed) #md-toc-refresh-button,
 	#md-toc-settings-menu,
 	body.md-toc-visible:not(.md-toc-collapsed) #md-toc-resizer {
 		display: none;

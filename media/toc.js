@@ -6,6 +6,7 @@
 	const RESIZER_ID = 'md-toc-resizer';
 	const SETTINGS_BUTTON_ID = 'md-toc-settings-button';
 	const SETTINGS_MENU_ID = 'md-toc-settings-menu';
+	const REFRESH_BUTTON_ID = 'md-toc-refresh-button';
 	const HEADING_SELECTOR = '.markdown-body :is(h1, h2, h3, h4, h5, h6)[id]';
 
 	// Pure functions, no DOM, tested in test/toc.test.js.
@@ -268,6 +269,21 @@
 		});
 	}
 
+	// Refresh button next to the cog. Like the settings menu it's a vscode:// link: src/extension.js
+	// runs the built-in "Markdown: Refresh Preview", which re-renders all previews from the source.
+	const ICON_REFRESH = '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M13 8a5 5 0 1 1-1.46-3.54" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M12.5 1.5v3.5H9" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
+
+	function initRefresh() {
+		const button = document.createElement('a');
+		button.id = REFRESH_BUTTON_ID;
+		button.setAttribute('role', 'button');
+		button.innerHTML = ICON_REFRESH;
+		button.title = 'Refresh preview';
+		button.setAttribute('aria-label', 'Refresh preview');
+		keepDoubleClickInside(button);
+		document.body.appendChild(button);
+	}
+
 	function openSettingsMenu(fromKeyboard) {
 		const menu = document.getElementById(SETTINGS_MENU_ID);
 		menu.hidden = false;
@@ -333,6 +349,7 @@
 			return;
 		}
 		const uriBase = config.dataset.uriBase || '';
+		document.getElementById(REFRESH_BUTTON_ID)?.setAttribute('href', uriBase + '/refresh');
 		for (const option of menu.querySelectorAll('.md-toc-menu-option')) {
 			const { key, value } = option.dataset;
 			const href = uriBase + '/set?' + new URLSearchParams({ [key]: value });
@@ -742,7 +759,7 @@
 	// Our script loads async, so the preview content may arrive before or after we run.
 	// Watching the DOM catches the initial render and every later update regardless of timing.
 	// Changes inside our own UI (sidebar, buttons, menu) are ignored, or updating it would loop.
-	const OWN_UI_SELECTOR = [NAV_ID, TOGGLE_ID, RESIZER_ID, SETTINGS_BUTTON_ID, SETTINGS_MENU_ID].map(id => '#' + id).join(', ');
+	const OWN_UI_SELECTOR = [NAV_ID, TOGGLE_ID, RESIZER_ID, SETTINGS_BUTTON_ID, SETTINGS_MENU_ID, REFRESH_BUTTON_ID].map(id => '#' + id).join(', ');
 	new MutationObserver(records => {
 		const isOwnUi = node => (node instanceof Element ? node : node.parentElement)?.closest(OWN_UI_SELECTOR);
 		if (records.some(r => !isOwnUi(r.target))) {
@@ -755,6 +772,7 @@
 
 	initResizer();
 	initSettings();
+	initRefresh();
 	setCollapsed(readCollapsed());
 	scheduleBuild();
 })();

@@ -13,6 +13,7 @@ Adds a table of contents sidebar to VS Code's built-in Markdown preview, built f
 - **Hide and show.** The arrow button in the sidebar's header hides it when you want the full width, and brings it back.
 - **Left or right.** Put the sidebar on whichever side of the preview you prefer.
 - **Settings at hand.** The cog button in the sidebar's header opens a small menu for the extension's settings, so you don't have to go to VS Code's Settings. VS Code asks for permission the first time; see [Changing settings from the sidebar](#changing-settings-from-the-sidebar).
+- **Refresh button.** The circular arrow in the sidebar's header re-renders the preview from the file, the same as VS Code's *Markdown: Refresh Preview*. Useful when something the preview doesn't watch has changed, like a stylesheet. Like the settings menu, VS Code asks for permission the first time.
 - **Resizable.** Drag the sidebar's inner edge to change its width, or double-click the edge to reset it. With the edge focused, the arrow keys work too.
 - **Remembered.** The width and the hidden/shown choice carry over to other previews, including after restarting VS Code. VS Code keeps side-by-side previews and the Markdown Preview editor separate, so each of those remembers its own.
 - **Smoother scroll sync.** When you scroll the editor, the preview glides to its new position instead of jumping.
@@ -60,7 +61,7 @@ Click the **cog** in the sidebar's header to open the settings menu. A choice ta
 
 Other open previews of the same kind (side-by-side, or the Markdown Preview editor) follow along immediately. An open preview of the other kind picks the change up the next time it updates, for example when you edit the file.
 
-**Why VS Code asks:** the preview can't change VS Code settings by itself. Each option in the menu is a `vscode://` link to this extension, and VS Code checks with you before an extension handles such a link. The extension only uses these links to update its own two settings and to open the Settings editor (*Open all settings…*).
+**Why VS Code asks:** the preview can't change VS Code settings by itself. Each option in the menu is a `vscode://` link to this extension, and VS Code checks with you before an extension handles such a link. The extension only uses these links to update its own two settings, to open the Settings editor (*Open all settings…*) and to refresh the preview (the refresh button). Allowing them once covers all of these.
 
 If you click **Cancel**, the setting isn't saved. The preview keeps showing your choice for now, but goes back to the saved setting the next time it reloads. If you'd rather not allow the links at all, change the settings in VS Code's Settings instead.
 
@@ -93,7 +94,7 @@ The extension uses VS Code's Markdown preview extension points (`markdown.previe
 - `media/toc.js` builds the sidebar from the rendered headings, which already have `id`s, and rebuilds it whenever the preview content changes.
 - `media/smooth-scroll-sync.js` takes over the preview's scroll-sync jumps and animates them instead.
 - `media/toc.css` styles the sidebar using your theme's colors.
-- `src/extension.js` connects the preview to VS Code settings, which the preview can't access itself. It adds a hidden element carrying the settings to each rendered preview, and refreshes open previews when a setting changes. The cog menu's options are `vscode://` links, which VS Code hands to this file's URI handler to update the setting.
+- `src/extension.js` connects the preview to VS Code settings, which the preview can't access itself. It adds a hidden element carrying the settings to each rendered preview, and refreshes open previews when a setting changes. The cog menu's options are `vscode://` links, which VS Code hands to this file's URI handler to update the setting. The refresh button is such a link too, and runs VS Code's *Markdown: Refresh Preview*.
 
 ## Development
 

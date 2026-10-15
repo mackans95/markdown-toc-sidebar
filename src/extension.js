@@ -4,7 +4,8 @@
 //   data attributes to every rendered preview; media/toc.js reads it from there.
 // - Preview -> settings: the sidebar's settings menu is made of vscode:// links, which VS Code
 //   routes to the URI handler registered below. The preview has already applied the choice
-//   itself, so saving it doesn't need to refresh the previews.
+//   itself, so saving it doesn't need to refresh the previews. The sidebar's refresh button is
+//   such a link too.
 const vscode = require('vscode');
 
 const SECTION = 'markdownTocSidebar';
@@ -88,6 +89,8 @@ function activate(context) {
 				}
 			} else if (uri.path === '/open-settings') {
 				await vscode.commands.executeCommand('workbench.action.openSettings', `@ext:${extensionId}`);
+			} else if (uri.path === '/refresh') {
+				await vscode.commands.executeCommand('markdown.preview.refresh');
 			}
 		},
 	}));
