@@ -17,6 +17,7 @@ Adds a table of contents sidebar to VS Code's built-in Markdown preview, built f
 - **Resizable.** Drag the sidebar's inner edge to change its width, or double-click the edge to reset it. With the edge focused, the arrow keys work too.
 - **Remembered.** The width and the hidden/shown choice carry over to other previews, including after restarting VS Code. VS Code keeps side-by-side previews and the Markdown Preview editor separate, so each of those remembers its own.
 - **Smoother scroll sync.** When you scroll the editor, the preview glides to its new position instead of jumping.
+- **Keeps your place.** Switch to another tab and back, and the preview is still where you left it. Without this, VS Code's preview often jumps back to where it was when it was opened, typically the top.
 - **Matches your theme.** The sidebar uses your color theme's colors.
 
 ## Usage
@@ -80,6 +81,7 @@ VS Code 1.82 or later. The extension only adds to the built-in Markdown preview,
 
 ## Known limitations
 
+- When a preview's tab comes back from the background, VS Code shows it as it was last fully rendered. Edits you made while the preview was visible may be missing until you edit again; run **Markdown: Refresh Preview** from the Command Palette to update it right away.
 - Only Markdown headings (`#`, `##`, …) are listed. Headings written as raw HTML, like `<h2>`, are not.
 - The sidebar width and the hidden/shown state are saved per kind of preview (side-by-side, or the Markdown Preview editor), not per file.
 
@@ -93,6 +95,7 @@ The extension uses VS Code's Markdown preview extension points (`markdown.previe
 
 - `media/toc.js` builds the sidebar from the rendered headings, which already have `id`s, and rebuilds it whenever the preview content changes.
 - `media/smooth-scroll-sync.js` takes over the preview's scroll-sync jumps and animates them instead.
+- `media/scroll-restore.js` remembers where you are in the preview. VS Code rebuilds a preview from its last full render when its tab comes back from the background, and the preview then scrolls to the position saved in that render; this puts it back where you were.
 - `media/toc.css` styles the sidebar using your theme's colors.
 - `src/extension.js` connects the preview to VS Code settings, which the preview can't access itself. It adds a hidden element carrying the settings to each rendered preview, and refreshes open previews when a setting changes. The cog menu's options are `vscode://` links, which VS Code hands to this file's URI handler to update the setting. The refresh button is such a link too, and runs VS Code's *Markdown: Refresh Preview*.
 

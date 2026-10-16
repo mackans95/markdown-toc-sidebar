@@ -5,6 +5,10 @@
 - Refresh button in the sidebar's header that re-renders the preview from the file (VS Code's *Markdown: Refresh Preview*).
 - The sidebar's "Contents" title no longer wraps onto several lines when the sidebar is narrow; it's hidden instead.
 
+## 0.1.1
+
+- The preview keeps its scroll position when you switch to another tab and back, instead of jumping back to where it was when it was opened.
+
 ## 0.1.0
 
 Initial release.
