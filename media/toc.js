@@ -12,8 +12,9 @@
 	// Pure functions, no DOM, tested in test/toc.test.js.
 	/**
 	 * @param {{ id: string, text: string, level: number}[]} headings
-	 * @param {{ maxDepth?: number, topHeading?: 'list' | 'title' }} options maxDepth: deepest heading
-	 *   level to list (1-6). topHeading: 'title' marks a lone top heading with isTitle.
+	 * @param {{ maxDepth?: number, topHeading?: 'list' | 'title', numbering?: boolean }} options
+	 *   maxDepth: deepest heading level to list (1-6). topHeading: 'title' marks a lone top heading
+	 *   with isTitle. numbering: gives every entry but the title a number like '2.1'.
 	 */
 	function buildEntries(headings, options = {}) {
 		const maxDepth = options.maxDepth ?? 6;
@@ -32,12 +33,39 @@
 		const rest = hasTitle ? headings.slice(1) : headings;
 		const listBase = Math.min(...rest.map(h => h.level));
 
-		return headings.map((h, i) => {
+		const entries = headings.map((h, i) => {
 			if (hasTitle && i === 0) {
 				return { ...h, depth: 0, isTitle: true };
 			}
 			return { ...h, depth: h.level - listBase };
 		}).filter(h => h.level <= limit);
+
+		if (options.numbering) {
+			addNumbers(entries.filter(entry => !entry.isTitle));
+		}
+		return entries;
+	}
+
+	// Numbers entries by their place in the outline: an entry's parent is the closest earlier one
+	// with a lower level, the same rule ancestorIndices uses. A skipped level (## then ####) doesn't
+	// add a 0, and a heading that comes back up past a deeper one (#### then ###) continues its count.
+	function addNumbers(entries) {
+		// The open sections from the outermost in, with how many entries each level has had so far.
+		const stack = [];
+		for (const entry of entries) {
+			let closed;
+			while (stack.length > 0 && stack[stack.length - 1].level > entry.level) {
+				closed = stack.pop();
+			}
+			const top = stack[stack.length - 1];
+			if (top && top.level === entry.level) {
+				top.count++;
+			} else {
+				// A new level here; if a deeper one was just closed, this entry is its next sibling.
+				stack.push({ level: entry.level, count: closed ? closed.count + 1 : 1 });
+			}
+			entry.number = stack.map(section => section.count).join('.');
+		}
 	}
 
 	// The sections containing the active one: walking back up the list, each entry with a
@@ -188,6 +216,7 @@
 		{ key: 'position', label: 'Sidebar position', options: [['left', 'Left'], ['right', 'Right']] },
 		{ key: 'maxDepth', label: 'Show headings down to', options: [['1', 'H1'], ['2', 'H2'], ['3', 'H3'], ['4', 'H4'], ['5', 'H5'], ['6', 'H6']] },
 		{ key: 'topHeading', label: 'Single top heading', options: [['list', 'In list'], ['title', 'As title']] },
+		{ key: 'numbering', label: 'Numbering', options: [['false', 'Off'], ['true', 'On']] },
 	];
 
 	function initSettings() {
@@ -525,7 +554,8 @@
 
 		const maxDepth = Number(readConfig('maxDepth', '6'));
 		const topHeading = readConfig('topHeading', 'list');
-		const entries = buildEntries(headings.map(h => ({ id: h.id, text: h.textContent.trim(), level: Number(h.tagName[1]) })), { maxDepth, topHeading });
+		const numbering = readConfig('numbering', 'false') === 'true';
+		const entries = buildEntries(headings.map(h => ({ id: h.id, text: h.textContent.trim(), level: Number(h.tagName[1]) })), { maxDepth, topHeading, numbering });
 		tocIds = new Set(entries.map(entry => entry.id));
 
 		const createLink = entry => {
@@ -534,7 +564,13 @@
 			link.textContent = entry.text;
 			link.dataset.target = entry.id;
 			link.dataset.level = String(entry.level);
-			link.title = link.textContent;
+			link.title = entry.text;
+			if (entry.number) {
+				const number = document.createElement('span');
+				number.className = 'md-toc-number';
+				number.textContent = entry.number;
+				link.prepend(number);
+			}
 			return link;
 		};
 

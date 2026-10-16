@@ -103,6 +103,12 @@
           "default": "list",
           "markdownDescription": "How to show a document's single top heading, such as a `#` title above `##` sections. Only applies when the first heading is the only one at the document's top level.",
           "order": 4
+        },
+        "markdownTocSidebar.numbering": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Number the entries in the table of contents by their place in the outline, like `1`, `1.1` and `1.2`. Only the sidebar is numbered, not the headings in the document.",
+          "order": 5
         }
       }
     },

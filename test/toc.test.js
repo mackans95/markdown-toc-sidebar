@@ -19,6 +19,11 @@ function shape(options, ...ls) {
 	return buildEntries(levels(...ls), options).map(e => (e.isTitle ? 'title' : e.depth));
 }
 
+// The title as 'title', every other entry as its number.
+function numbers(options, ...ls) {
+	return buildEntries(levels(...ls), { numbering: true, ...options }).map(e => (e.isTitle ? 'title' : e.number));
+}
+
 describe('ancestorIndices', () => {
 	// 0 h1
 	// 1   h2
@@ -111,6 +116,36 @@ describe('buildEntries', () => {
 		test('keeps the title entry otherwise unchanged', () => {
 			const [title] = buildEntries([{ id: 'doc', text: 'Doc', level: 1 }, { id: 'a', text: 'A', level: 2 }], asTitle);
 			assert.deepEqual(title, { id: 'doc', text: 'Doc', level: 1, depth: 0, isTitle: true });
+		});
+	});
+
+	describe('numbering', () => {
+		test('numbers by place in the outline', () => {
+			assert.deepEqual(numbers({}, 1, 2, 3, 2, 1), ['1', '1.1', '1.1.1', '1.2', '2']);
+		});
+		test('restarts the count under each parent', () => {
+			assert.deepEqual(numbers({}, 2, 3, 3, 2, 3), ['1', '1.1', '1.2', '2', '2.1']);
+		});
+		test('adds no 0 for a skipped level', () => {
+			assert.deepEqual(numbers({}, 2, 4), ['1', '1.1']);
+		});
+		test('continues the count when coming back up past a deeper level', () => {
+			assert.deepEqual(numbers({}, 2, 4, 3, 4), ['1', '1.1', '1.2', '1.2.1']);
+		});
+		test('continues the count when a skipped level is closed by a shallower one', () => {
+			assert.deepEqual(numbers({}, 1, 3, 4, 2), ['1', '1.1', '1.1.1', '1.2']);
+		});
+		test('starts at 1 when the document starts on h2', () => {
+			assert.deepEqual(numbers({}, 2, 2, 3), ['1', '2', '2.1']);
+		});
+		test('numbers only what maxDepth shows', () => {
+			assert.deepEqual(numbers({ maxDepth: 2 }, 1, 2, 3, 2), ['1', '1.1', '1.2']);
+		});
+		test('leaves the title unnumbered and starts the list at 1', () => {
+			assert.deepEqual(numbers({ topHeading: 'title' }, 1, 2, 3, 2), ['title', '1', '1.1', '2']);
+		});
+		test('is off by default', () => {
+			assert.deepEqual(buildEntries(levels(1, 2)).map(e => 'number' in e), [false, false]);
 		});
 	});
 });

@@ -375,6 +375,13 @@ body.md-toc-resizing {
 	opacity: 0.85;
 }
 
+/* Outline number before the text (markdownTocSidebar.numbering), quieter than the text itself. */
+#md-toc-sidebar .md-toc-number {
+	margin-right: 0.4em;
+	opacity: 0.7;
+	font-variant-numeric: tabular-nums;
+}
+
 /* The document title makes the sticky header taller. */
 #md-toc-sidebar.md-toc-has-doc-title a {
 	scroll-margin-top: 88px;
