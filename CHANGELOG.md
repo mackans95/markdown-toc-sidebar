@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.1.1
 
 - The preview keeps its scroll position when you switch to another tab and back, instead of jumping back to where it was when it was opened.
 
