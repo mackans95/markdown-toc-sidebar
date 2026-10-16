@@ -1,9 +1,20 @@
 # Changelog
 
-## Unreleased
+## 0.2.0
 
+- `markdownTocSidebar.maxDepth` setting to list headings only down to a chosen level.
+- `markdownTocSidebar.topHeading` setting to show a document's single `#` title as a title above the list, with the sections listed from the top level.
+- `markdownTocSidebar.numbering` setting to number the entries by their place in the outline, like `1`, `1.1` and `1.2`.
+- `markdownTocSidebar.collapsible` setting for arrows that collapse and expand sections. Collapsed sections are remembered for each file.
+- All new settings are in the cog menu too. The menu now opens next to the sidebar instead of over it, so you can see each change in the list.
+- Right-click an entry, or a heading in the document, to copy a link to it: *Copy Link to Heading* or *Copy Markdown Link to Heading*.
+- Headings written as HTML, like `<h2>`, are listed.
+- Keyboard navigation: the list is a single Tab stop that lands on the current section; the arrow keys, `Home` and `End` move within it, and `Left`/`Right` also collapse and expand sections.
+- The current entry is announced to screen readers (`aria-current`).
 - Refresh button in the sidebar's header that re-renders the preview from the file (VS Code's *Markdown: Refresh Preview*).
 - The sidebar's "Contents" title no longer wraps onto several lines when the sidebar is narrow; it's hidden instead.
+- Works in vscode.dev and github.dev.
+- Requires VS Code 1.82 or later (was 1.80).
 
 ## 0.1.1
 
