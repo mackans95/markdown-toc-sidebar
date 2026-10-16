@@ -109,6 +109,12 @@
           "default": false,
           "markdownDescription": "Number the entries in the table of contents by their place in the outline, like `1`, `1.1` and `1.2`. Only the sidebar is numbered, not the headings in the document.",
           "order": 5
+        },
+        "markdownTocSidebar.collapsible": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Show an arrow before entries that have sections under them, to collapse and expand those sections in the table of contents. Collapsed sections stay collapsed while the preview is open.",
+          "order": 6
         }
       }
     },

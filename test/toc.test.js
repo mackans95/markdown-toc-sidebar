@@ -1,4 +1,4 @@
-const { ancestorIndices, buildEntries } = require('../media/toc');
+const { ancestorIndices, buildEntries, hasChildren, hiddenIndices, storeCollapsed } = require('../media/toc');
 const { test, describe } = require('node:test');
 const assert = require('node:assert/strict');
 
@@ -52,6 +52,80 @@ describe('ancestorIndices', () => {
 	});
 	test('is empty when no entry is active', () => {
 		assert.deepEqual(ancestorIndices(levels(1, 2), -1), new Set());
+	});
+});
+
+describe('hasChildren', () => {
+	test('is true when the next entry is deeper', () => {
+		assert.equal(hasChildren(levels(2, 3), 0), true);
+	});
+	test('counts a skipped level as a child', () => {
+		assert.equal(hasChildren(levels(2, 4), 0), true);
+	});
+	test('is false for a sibling or a shallower entry next', () => {
+		assert.equal(hasChildren(levels(2, 2), 0), false);
+		assert.equal(hasChildren(levels(3, 2), 0), false);
+	});
+	test('is false for the last entry', () => {
+		assert.equal(hasChildren(levels(2, 3), 1), false);
+	});
+});
+
+describe('hiddenIndices', () => {
+	// Ids a-f, so collapsed sections can be named.
+	// a h1
+	// b   h2
+	// c     h3
+	// d     h3
+	// e   h2
+	// f     h3
+	const outline = [1, 2, 3, 3, 2, 3].map((level, i) => ({ id: 'abcdef'[i], level }));
+	const hidden = (...ids) => hiddenIndices(outline, new Set(ids));
+
+	test('hides nothing when nothing is collapsed', () => {
+		assert.deepEqual(hidden(), new Set());
+	});
+	test('hides the sections under a collapsed entry, not its siblings', () => {
+		assert.deepEqual(hidden('b'), new Set([2, 3]));
+	});
+	test('hides everything under a collapsed top entry', () => {
+		assert.deepEqual(hidden('a'), new Set([1, 2, 3, 4, 5]));
+	});
+	test('keeps hiding inside a collapsed section that contains another', () => {
+		assert.deepEqual(hidden('a', 'b'), new Set([1, 2, 3, 4, 5]));
+	});
+	test('handles several collapsed sections', () => {
+		assert.deepEqual(hidden('b', 'e'), new Set([2, 3, 5]));
+	});
+	test('hides nothing for a collapsed entry without children', () => {
+		assert.deepEqual(hidden('c'), new Set());
+	});
+	test('hides a skipped-level child', () => {
+		const skipped = [{ id: 'x', level: 2 }, { id: 'y', level: 4 }, { id: 'z', level: 2 }];
+		assert.deepEqual(hiddenIndices(skipped, new Set(['x'])), new Set([1]));
+	});
+});
+
+describe('storeCollapsed', () => {
+	test('adds a file', () => {
+		assert.deepEqual(storeCollapsed({}, 'a.md', ['x'], 1, 50), { 'a.md': { ids: ['x'], time: 1 } });
+	});
+	test('replaces a file and keeps the others', () => {
+		const store = { 'a.md': { ids: ['x'], time: 1 }, 'b.md': { ids: ['y'], time: 2 } };
+		assert.deepEqual(storeCollapsed(store, 'a.md', ['z'], 3, 50), { 'a.md': { ids: ['z'], time: 3 }, 'b.md': { ids: ['y'], time: 2 } });
+	});
+	test('drops a file with nothing collapsed', () => {
+		const store = { 'a.md': { ids: ['x'], time: 1 }, 'b.md': { ids: ['y'], time: 2 } };
+		assert.deepEqual(storeCollapsed(store, 'a.md', [], 3, 50), { 'b.md': { ids: ['y'], time: 2 } });
+	});
+	test('keeps only the most recently changed files', () => {
+		const store = { 'a.md': { ids: ['x'], time: 1 }, 'b.md': { ids: ['y'], time: 2 } };
+		assert.deepEqual(Object.keys(storeCollapsed(store, 'c.md', ['z'], 3, 2)).sort(), ['b.md', 'c.md']);
+	});
+	test('does not change the stored map', () => {
+		const store = { 'a.md': { ids: ['x'], time: 1 } };
+		storeCollapsed(store, 'a.md', [], 2, 50);
+		assert.deepEqual(store, { 'a.md': { ids: ['x'], time: 1 } });
 	});
 });
 

@@ -87,9 +87,44 @@
 		return ancestors;
 	}
 
+	// Whether an entry has sections under it: the next entry is deeper. Same rule as ancestorIndices,
+	// so a skipped level (## then ####) still counts as a child.
+	function hasChildren(entries, index) {
+		return index + 1 < entries.length && entries[index + 1].level > entries[index].level;
+	}
+
+	// The entries hidden by collapsed sections: everything after a collapsed entry that is deeper than
+	// it, up to the next entry at its level or above. A collapsed section inside a hidden one changes
+	// nothing, and a collapsed entry without children hides nothing.
+	function hiddenIndices(entries, collapsedIds) {
+		const hidden = new Set();
+		let collapsedLevel = null;
+		entries.forEach((entry, i) => {
+			if (collapsedLevel !== null && entry.level > collapsedLevel) {
+				hidden.add(i);
+				return;
+			}
+			collapsedLevel = collapsedIds.has(entry.id) ? entry.level : null;
+		});
+		return hidden;
+	}
+
+	// Stores one file's collapsed sections in a map of { [file]: { ids, time } }. A file with nothing
+	// collapsed is dropped, and only the `max` most recently changed files are kept.
+	function storeCollapsed(store, source, ids, time, max) {
+		const next = { ...store };
+		if (ids.length > 0) {
+			next[source] = { ids, time };
+		} else {
+			delete next[source];
+		}
+		const newest = Object.entries(next).sort((a, b) => b[1].time - a[1].time).slice(0, max);
+		return Object.fromEntries(newest);
+	}
+
 	// Means we are in Node, export and stop here.
 	if (typeof module === 'object' && module.exports) {
-		module.exports = { buildEntries, ancestorIndices };
+		module.exports = { buildEntries, ancestorIndices, hasChildren, hiddenIndices, storeCollapsed };
 		return;
 	}
 
@@ -217,6 +252,7 @@
 		{ key: 'maxDepth', label: 'Show headings down to', options: [['1', 'H1'], ['2', 'H2'], ['3', 'H3'], ['4', 'H4'], ['5', 'H5'], ['6', 'H6']] },
 		{ key: 'topHeading', label: 'Single top heading', options: [['list', 'In list'], ['title', 'As title']] },
 		{ key: 'numbering', label: 'Numbering', options: [['false', 'Off'], ['true', 'On']] },
+		{ key: 'collapsible', label: 'Collapsible sections', options: [['false', 'Off'], ['true', 'On']] },
 	];
 
 	function initSettings() {
@@ -574,13 +610,19 @@
 			return link;
 		};
 
+		const collapsible = readConfig('collapsible', 'false') === 'true';
+		const listEntries = entries.filter(entry => !entry.isTitle);
 		const list = document.createElement('ul');
-		for (const entry of entries.filter(entry => !entry.isTitle)) {
+		listEntries.forEach((entry, i) => {
 			const item = document.createElement('li');
 			item.style.setProperty('--md-toc-depth', String(entry.depth));
+			if (collapsible) {
+				item.appendChild(hasChildren(listEntries, i) ? createChevron(entry) : createChevronSpacer());
+			}
 			item.appendChild(createLink(entry));
 			list.appendChild(item);
-		}
+		});
+		nav.classList.toggle('md-toc-collapsible', collapsible);
 
 		// Pinned while the list scrolls: the "Contents" row next to the header buttons, and the
 		// document's title below it when topHeading is 'title'.
@@ -600,8 +642,113 @@
 
 		nav.replaceChildren(header, list);
 		document.body.classList.add('md-toc-visible');
+		loadCollapsedIds();
+		applyCollapsed();
 		updateResizerValue();
 		updateActive();
+	}
+
+	// Collapsed sections (markdownTocSidebar.collapsible) of the file in the preview, by heading id.
+	// Saved per file, so they're still collapsed after switching files, editing or reopening the preview.
+	let collapsedIds = new Set();
+	// The file collapsedIds belongs to.
+	let collapsedSource;
+	const COLLAPSED_SECTIONS_KEY = 'md-toc-sidebar.collapsed-sections';
+	const MAX_REMEMBERED_FILES = 50;
+
+	// The file shown in the preview, from the data the built-in preview renders into the page.
+	function previewSource() {
+		try {
+			return JSON.parse(document.getElementById('vscode-markdown-preview-data').dataset.settings).source;
+		} catch {
+			return undefined;
+		}
+	}
+
+	function readCollapsedSections() {
+		try {
+			return JSON.parse(localStorage.getItem(COLLAPSED_SECTIONS_KEY)) || {};
+		} catch {
+			return {};
+		}
+	}
+
+	// Picks up the saved sections when the preview shows a different file than before.
+	function loadCollapsedIds() {
+		const source = previewSource();
+		if (source === collapsedSource) {
+			return;
+		}
+		collapsedSource = source;
+		collapsedIds = new Set((source && readCollapsedSections()[source]?.ids) || []);
+	}
+
+	function saveCollapsedIds() {
+		if (!collapsedSource) {
+			return;
+		}
+		// Only headings still in the document, so renamed or removed ones drop out.
+		const ids = [...collapsedIds].filter(id => document.getElementById(id));
+		try {
+			const store = storeCollapsed(readCollapsedSections(), collapsedSource, ids, Date.now(), MAX_REMEMBERED_FILES);
+			localStorage.setItem(COLLAPSED_SECTIONS_KEY, JSON.stringify(store));
+		} catch {
+			// Storage unavailable; the sections stay collapsed until the preview reloads.
+		}
+	}
+
+	const ICON_CHEVRON = '<svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
+
+	// The button before an entry that has sections under it. A sibling of the link rather than inside
+	// it, so clicking it never scrolls.
+	function createChevron(entry) {
+		const chevron = document.createElement('button');
+		chevron.type = 'button';
+		chevron.className = 'md-toc-chevron';
+		chevron.innerHTML = ICON_CHEVRON;
+		chevron.dataset.target = entry.id;
+		chevron.dataset.text = entry.text;
+		chevron.addEventListener('click', () => {
+			if (collapsedIds.has(entry.id)) {
+				collapsedIds.delete(entry.id);
+			} else {
+				collapsedIds.add(entry.id);
+			}
+			saveCollapsedIds();
+			applyCollapsed();
+			// The active entry may have been hidden or shown: pick it again.
+			latestActiveId = null;
+			updateActive();
+		});
+		return chevron;
+	}
+
+	// Takes a chevron's place on entries without sections, so all the text lines up.
+	function createChevronSpacer() {
+		const spacer = document.createElement('span');
+		spacer.className = 'md-toc-chevron-spacer';
+		return spacer;
+	}
+
+	// Hides the entries inside collapsed sections and updates the chevrons to match.
+	function applyCollapsed() {
+		const nav = document.getElementById(NAV_ID);
+		const items = Array.from(nav.querySelectorAll('ul > li'));
+		const entries = items.map(item => {
+			const link = item.querySelector('a');
+			return { id: link.dataset.target, level: Number(link.dataset.level) };
+		});
+		const hidden = nav.classList.contains('md-toc-collapsible') ? hiddenIndices(entries, collapsedIds) : new Set();
+		items.forEach((item, i) => {
+			item.hidden = hidden.has(i);
+			const chevron = item.querySelector('.md-toc-chevron');
+			if (chevron) {
+				const collapsed = collapsedIds.has(entries[i].id);
+				chevron.setAttribute('aria-expanded', String(!collapsed));
+				chevron.setAttribute('aria-label', (collapsed ? 'Expand ' : 'Collapse ') + chevron.dataset.text);
+				chevron.title = collapsed ? 'Expand section' : 'Collapse section';
+			}
+		});
 	}
 
 	// While a TOC click's scroll is in flight, keep the clicked entry highlighted instead of
@@ -686,19 +833,26 @@
 		const activeIndex = links.findIndex(link => link.dataset.target === id);
 
 		const ancestors = ancestorIndices(links.map(l => ({ level: Number(l.dataset.level) })), activeIndex);
+		// Inside a collapsed section the active entry is hidden; show its closest visible parent as active
+		// instead. The ancestors come closest first.
+		const isHidden = link => !!link.closest('li')?.hidden;
+		const shownIndex = activeIndex >= 0 && isHidden(links[activeIndex])
+			? [...ancestors].find(i => !isHidden(links[i])) ?? -1
+			: activeIndex;
 
 		links.forEach((link, i) => {
-			link.classList.toggle('active', i === activeIndex);
-			if (i === activeIndex) {
+			link.classList.toggle('active', i === shownIndex);
+			if (i === shownIndex) {
 				link.setAttribute('aria-current', 'location');
 			} else {
 				link.removeAttribute('aria-current');
 			}
-			// The document title contains everything, so as a parent it would always be tinted.
-			link.classList.toggle('active-ancestor', ancestors.has(i) && !link.classList.contains('md-toc-doc-title'));
+			// Parents above the entry shown as active (any below it are inside the collapsed section). The
+			// document title contains everything, so as a parent it would always be tinted.
+			link.classList.toggle('active-ancestor', ancestors.has(i) && i < shownIndex && !link.classList.contains('md-toc-doc-title'));
 		});
-		if (activeIndex >= 0) {
-			links[activeIndex].scrollIntoView({ block: 'nearest' });
+		if (shownIndex >= 0) {
+			links[shownIndex].scrollIntoView({ block: 'nearest' });
 		}
 	}
 
