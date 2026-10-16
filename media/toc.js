@@ -109,6 +109,34 @@
 		return hidden;
 	}
 
+	// Where a key moves focus in the list: the index of the entry to focus, the same index when there's
+	// nowhere to go, or undefined for keys the list doesn't use. Entries hidden in collapsed sections
+	// are skipped. ArrowRight goes to the first child and ArrowLeft to the parent; expanding and
+	// collapsing with those keys is handled before this.
+	function focusTarget(entries, index, key) {
+		const visible = entries.flatMap((entry, i) => (entry.hidden ? [] : [i]));
+		const position = visible.indexOf(index);
+		switch (key) {
+			case 'ArrowDown':
+				return visible[Math.min(position + 1, visible.length - 1)];
+			case 'ArrowUp':
+				return visible[Math.max(position - 1, 0)];
+			case 'Home':
+				return visible[0];
+			case 'End':
+				return visible[visible.length - 1];
+			case 'ArrowRight':
+				return hasChildren(entries, index) && !entries[index + 1].hidden ? index + 1 : index;
+			case 'ArrowLeft': {
+				// ancestorIndices lists the closest parent first.
+				const [parent] = ancestorIndices(entries, index);
+				return parent ?? index;
+			}
+			default:
+				return undefined;
+		}
+	}
+
 	// Stores one file's collapsed sections in a map of { [file]: { ids, time } }. A file with nothing
 	// collapsed is dropped, and only the `max` most recently changed files are kept.
 	function storeCollapsed(store, source, ids, time, max) {
@@ -124,7 +152,7 @@
 
 	// Means we are in Node, export and stop here.
 	if (typeof module === 'object' && module.exports) {
-		module.exports = { buildEntries, ancestorIndices, hasChildren, hiddenIndices, storeCollapsed };
+		module.exports = { buildEntries, ancestorIndices, hasChildren, hiddenIndices, focusTarget, storeCollapsed };
 		return;
 	}
 
@@ -171,6 +199,14 @@
 			nav.id = NAV_ID;
 			nav.setAttribute('aria-label', 'Table of contents');
 			keepDoubleClickInside(nav);
+			nav.addEventListener('keydown', onNavKeydown);
+			// Whichever entry gets focus, by keyboard or mouse, becomes the list's tab stop.
+			nav.addEventListener('focusin', event => {
+				const link = event.target instanceof Element && event.target.closest('a');
+				if (link) {
+					setTabStop(nav, link);
+				}
+			});
 			// Lives directly under <body>, outside .markdown-body, so preview re-renders leave it alone.
 			document.body.appendChild(nav);
 		}
@@ -601,6 +637,8 @@
 			link.dataset.target = entry.id;
 			link.dataset.level = String(entry.level);
 			link.title = entry.text;
+			// setActiveLink makes one entry the tab stop; the arrow keys move between them.
+			link.tabIndex = -1;
 			if (entry.number) {
 				const number = document.createElement('span');
 				number.className = 'md-toc-number';
@@ -705,6 +743,8 @@
 		const chevron = document.createElement('button');
 		chevron.type = 'button';
 		chevron.className = 'md-toc-chevron';
+		// Not a tab stop: from the keyboard, ArrowLeft and ArrowRight on the entry collapse and expand.
+		chevron.tabIndex = -1;
 		chevron.innerHTML = ICON_CHEVRON;
 		chevron.dataset.target = entry.id;
 		chevron.dataset.text = entry.text;
@@ -853,6 +893,59 @@
 		});
 		if (shownIndex >= 0) {
 			links[shownIndex].scrollIntoView({ block: 'nearest' });
+		}
+
+		// Tabbing into the list lands on the entry shown as active. While focus is in the list, the
+		// focused entry stays the tab stop, unless a collapsed section has just hidden it.
+		const stop = links.find(link => link.tabIndex === 0);
+		if (!nav.contains(document.activeElement) || !stop || isHidden(stop)) {
+			setTabStop(nav, links[shownIndex] ?? links.find(link => !isHidden(link)));
+		}
+	}
+
+	// The whole list is a single tab stop (the arrow keys move within it), so Tab gets past it in one go.
+	function setTabStop(nav, stop) {
+		for (const link of nav.querySelectorAll('a')) {
+			link.tabIndex = link === stop ? 0 : -1;
+		}
+	}
+
+	// Arrow keys, Home and End move between the visible entries. On an entry with sections under it,
+	// ArrowRight expands and ArrowLeft collapses (markdownTocSidebar.collapsible) before moving.
+	function onNavKeydown(event) {
+		if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || !(event.target instanceof Element)) {
+			return;
+		}
+		const nav = event.currentTarget;
+		// A chevron focused by a click stands in for its entry.
+		const current = event.target.closest('a') ?? event.target.closest('li')?.querySelector('a');
+		const links = Array.from(nav.querySelectorAll('a'));
+		const index = links.indexOf(current);
+		if (index < 0) {
+			return;
+		}
+
+		const chevron = current.closest('li')?.querySelector('.md-toc-chevron');
+		const expanded = chevron?.getAttribute('aria-expanded');
+		if ((event.key === 'ArrowRight' && expanded === 'false') || (event.key === 'ArrowLeft' && expanded === 'true')) {
+			event.preventDefault();
+			event.stopPropagation();
+			chevron.click();
+			current.focus();
+			return;
+		}
+
+		const isHidden = link => !!link.closest('li')?.hidden;
+		const entries = links.map(link => ({ level: Number(link.dataset.level), hidden: isHidden(link) }));
+		const target = focusTarget(entries, index, event.key);
+		if (target === undefined) {
+			return;
+		}
+		// Also at the ends of the list, so the keys don't scroll the page instead.
+		event.preventDefault();
+		event.stopPropagation();
+		if (target !== index) {
+			links[target].focus();
 		}
 	}
 

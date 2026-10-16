@@ -1,4 +1,4 @@
-const { ancestorIndices, buildEntries, hasChildren, hiddenIndices, storeCollapsed } = require('../media/toc');
+const { ancestorIndices, buildEntries, focusTarget, hasChildren, hiddenIndices, storeCollapsed } = require('../media/toc');
 const { test, describe } = require('node:test');
 const assert = require('node:assert/strict');
 
@@ -103,6 +103,53 @@ describe('hiddenIndices', () => {
 	test('hides a skipped-level child', () => {
 		const skipped = [{ id: 'x', level: 2 }, { id: 'y', level: 4 }, { id: 'z', level: 2 }];
 		assert.deepEqual(hiddenIndices(skipped, new Set(['x'])), new Set([1]));
+	});
+});
+
+describe('focusTarget', () => {
+	// 0 h1
+	// 1   h2
+	// 2     h3  (hidden)
+	// 3     h3  (hidden)
+	// 4   h2
+	// 5     h3
+	const outline = [1, 2, 3, 3, 2, 3].map((level, i) => ({ level, hidden: i === 2 || i === 3 }));
+	const move = (index, key) => focusTarget(outline, index, key);
+
+	test('moves down and up past hidden entries', () => {
+		assert.equal(move(1, 'ArrowDown'), 4);
+		assert.equal(move(4, 'ArrowUp'), 1);
+	});
+	test('stays put at the ends of the list', () => {
+		assert.equal(move(0, 'ArrowUp'), 0);
+		assert.equal(move(5, 'ArrowDown'), 5);
+	});
+	test('goes to the first and last visible entry', () => {
+		assert.equal(move(4, 'Home'), 0);
+		assert.equal(move(1, 'End'), 5);
+	});
+	test('goes to the parent', () => {
+		assert.equal(move(5, 'ArrowLeft'), 4);
+		assert.equal(move(4, 'ArrowLeft'), 0);
+	});
+	test('stays put on the left for the top entry', () => {
+		assert.equal(move(0, 'ArrowLeft'), 0);
+	});
+	test('goes to the first child', () => {
+		assert.equal(move(4, 'ArrowRight'), 5);
+	});
+	test('stays put on the right without visible children', () => {
+		assert.equal(move(5, 'ArrowRight'), 5);
+		assert.equal(move(1, 'ArrowRight'), 1);
+	});
+	test('treats a skipped level as parent and child', () => {
+		const skipped = [{ level: 2 }, { level: 4 }];
+		assert.equal(focusTarget(skipped, 1, 'ArrowLeft'), 0);
+		assert.equal(focusTarget(skipped, 0, 'ArrowRight'), 1);
+	});
+	test('ignores other keys', () => {
+		assert.equal(move(1, 'Enter'), undefined);
+		assert.equal(move(1, 'a'), undefined);
 	});
 });
 
