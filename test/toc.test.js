@@ -14,6 +14,11 @@ function levelsShown(maxDepth, ...ls) {
 	return buildEntries(levels(...ls), { maxDepth }).map(e => e.level);
 }
 
+// The title as 'title', every other entry as its depth.
+function shape(options, ...ls) {
+	return buildEntries(levels(...ls), options).map(e => (e.isTitle ? 'title' : e.depth));
+}
+
 describe('ancestorIndices', () => {
 	// 0 h1
 	// 1   h2
@@ -76,6 +81,36 @@ describe('buildEntries', () => {
 		});
 		test('does not change the depth of what is shown', () => {
 			assert.deepEqual(buildEntries(levels(2, 3, 4), { maxDepth: 3 }).map(e => e.depth), [0, 1]);
+		});
+	});
+
+	describe('topHeading', () => {
+		const asTitle = { topHeading: 'title' };
+
+		test('makes a lone top heading the title', () => {
+			assert.deepEqual(shape(asTitle, 1, 2, 3, 2), ['title', 0, 1, 0]);
+		});
+		test('makes no title when the top level has several headings', () => {
+			assert.deepEqual(shape(asTitle, 1, 2, 1), [0, 1, 0]);
+		});
+		test('makes no title when the top heading is not first', () => {
+			assert.deepEqual(shape(asTitle, 2, 1, 2), [1, 0, 1]);
+		});
+		test('lists the top heading by default', () => {
+			assert.deepEqual(shape({}, 1, 2), [0, 1]);
+		});
+		test('indents the rest from its own top level', () => {
+			assert.deepEqual(shape(asTitle, 1, 3, 3), ['title', 0, 0]);
+		});
+		test('works together with maxDepth', () => {
+			assert.deepEqual(shape({ ...asTitle, maxDepth: 2 }, 1, 2, 3), ['title', 0]);
+		});
+		test('keeps a title with nothing under it', () => {
+			assert.deepEqual(shape(asTitle, 1), ['title']);
+		});
+		test('keeps the title entry otherwise unchanged', () => {
+			const [title] = buildEntries([{ id: 'doc', text: 'Doc', level: 1 }, { id: 'a', text: 'A', level: 2 }], asTitle);
+			assert.deepEqual(title, { id: 'doc', text: 'Doc', level: 1, depth: 0, isTitle: true });
 		});
 	});
 });

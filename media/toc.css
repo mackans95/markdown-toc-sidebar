@@ -306,23 +306,40 @@ body.md-toc-resizing {
 	user-select: none;
 }
 
-#md-toc-sidebar .md-toc-title {
+#md-toc-sidebar .md-toc-header {
 	/* Stays pinned while the list scrolls, so the toggle button always sits in a header. */
 	position: sticky;
 	top: 0;
 	z-index: 1;
+	background: var(--vscode-sideBar-background, var(--vscode-editor-background));
+}
+
+#md-toc-sidebar .md-toc-title {
 	/* Lines the text up with the header buttons (top: 16px, 24px tall); right padding leaves room for them. */
 	padding: 16px 84px 8px 0;
 	line-height: 24px;
-	background: var(--vscode-sideBar-background, var(--vscode-editor-background));
 	font-weight: 600;
 	text-transform: uppercase;
 	font-size: 0.85em;
 	letter-spacing: 0.04em;
-	/* Dimmed via color rather than opacity so the sticky background stays opaque. */
 	color: color-mix(in srgb, var(--vscode-foreground) 80%, transparent);
 	white-space: nowrap;
 	user-select: none;
+}
+
+/* The document's lone top heading (markdownTocSidebar.topHeading: title), below "Contents". Otherwise
+   styled like the entries in the list. */
+#md-toc-sidebar .md-toc-doc-title {
+	margin-bottom: 8px;
+	font-size: 1.2em;
+	font-weight: 600;
+}
+
+/* A line between the title and the list, at the bottom of the pinned header. Same strength as the
+   preview's own line under h1 and h2 headings. */
+#md-toc-sidebar.md-toc-has-doc-title .md-toc-header {
+	margin-bottom: 8px;
+	border-bottom: 1px solid color-mix(in srgb, var(--vscode-foreground) 18%, transparent);
 }
 
 /* Too narrow for the title next to the header buttons: hide the text but keep the header. */
@@ -356,6 +373,11 @@ body.md-toc-resizing {
 	overflow: hidden;
 	text-overflow: ellipsis;
 	opacity: 0.85;
+}
+
+/* The document title makes the sticky header taller. */
+#md-toc-sidebar.md-toc-has-doc-title a {
+	scroll-margin-top: 88px;
 }
 
 /* The preview's own stylesheet outlines every focused link, which made clicked entries look boxed in.

@@ -89,6 +89,20 @@
           "default": 6,
           "markdownDescription": "The deepest heading level listed in the table of contents. The document's top level is always listed, even when it's deeper than this.",
           "order": 3
+        },
+        "markdownTocSidebar.topHeading": {
+          "type": "string",
+          "enum": [
+            "list",
+            "title"
+          ],
+          "enumDescriptions": [
+            "List it as the first entry, with the other headings nested under it.",
+            "Show it as a title under the sidebar's header, with the other headings listed from the top level."
+          ],
+          "default": "list",
+          "markdownDescription": "How to show a document's single top heading, such as a `#` title above `##` sections. Only applies when the first heading is the only one at the document's top level.",
+          "order": 4
         }
       }
     },

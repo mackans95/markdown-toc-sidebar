@@ -12,20 +12,31 @@
 	// Pure functions, no DOM, tested in test/toc.test.js.
 	/**
 	 * @param {{ id: string, text: string, level: number}[]} headings
-	 * @param {{ maxDepth?: number }} options maxDepth: deepest heading level to list (1-6).
+	 * @param {{ maxDepth?: number, topHeading?: 'list' | 'title' }} options maxDepth: deepest heading
+	 *   level to list (1-6). topHeading: 'title' marks a lone top heading with isTitle.
 	 */
 	function buildEntries(headings, options = {}) {
 		const maxDepth = options.maxDepth ?? 6;
+		const topHeading = options.topHeading ?? 'list';
 		const baseLevel = Math.min(...headings.map(h => h.level));
 		// Never hide the document's top level: an empty list would hide the sidebar, and with it the
 		// settings menu needed to change maxDepth back.
 		const limit = Math.max(maxDepth, baseLevel);
 
-		return headings.map(h => {
-			return {
-				...h,
-				depth: h.level - baseLevel,
-			};
+		// A title only when the first heading is the only one at the top level, like a `#` above `##` sections.
+		const hasTitle = topHeading === 'title'
+			&& headings.length > 0
+			&& headings[0].level === baseLevel
+			&& headings.filter(h => h.level === baseLevel).length === 1;
+		// The rest is indented from its own top level, so `#` followed by `###` sections doesn't leave a gap.
+		const rest = hasTitle ? headings.slice(1) : headings;
+		const listBase = Math.min(...rest.map(h => h.level));
+
+		return headings.map((h, i) => {
+			if (hasTitle && i === 0) {
+				return { ...h, depth: 0, isTitle: true };
+			}
+			return { ...h, depth: h.level - listBase };
 		}).filter(h => h.level <= limit);
 	}
 
@@ -176,6 +187,7 @@
 		{ key: 'scrollBehavior', label: 'Scroll on click', options: [['smooth', 'Smooth'], ['instant', 'Instant']] },
 		{ key: 'position', label: 'Sidebar position', options: [['left', 'Left'], ['right', 'Right']] },
 		{ key: 'maxDepth', label: 'Show headings down to', options: [['1', 'H1'], ['2', 'H2'], ['3', 'H3'], ['4', 'H4'], ['5', 'H5'], ['6', 'H6']] },
+		{ key: 'topHeading', label: 'Single top heading', options: [['list', 'In list'], ['title', 'As title']] },
 	];
 
 	function initSettings() {
@@ -512,30 +524,45 @@
 		}
 
 		const maxDepth = Number(readConfig('maxDepth', '6'));
-		const entries = buildEntries(headings.map(h => ({ id: h.id, text: h.textContent.trim(), level: Number(h.tagName[1]) })), { maxDepth });
+		const topHeading = readConfig('topHeading', 'list');
+		const entries = buildEntries(headings.map(h => ({ id: h.id, text: h.textContent.trim(), level: Number(h.tagName[1]) })), { maxDepth, topHeading });
 		tocIds = new Set(entries.map(entry => entry.id));
-		const list = document.createElement('ul');
 
-		for (const entry of entries) {
-			const item = document.createElement('li');
-			item.style.setProperty('--md-toc-depth', String(entry.depth));
-
+		const createLink = entry => {
 			const link = document.createElement('a');
 			link.href = '#' + entry.id;
 			link.textContent = entry.text;
 			link.dataset.target = entry.id;
 			link.dataset.level = String(entry.level);
 			link.title = link.textContent;
+			return link;
+		};
 
-			item.appendChild(link);
+		const list = document.createElement('ul');
+		for (const entry of entries.filter(entry => !entry.isTitle)) {
+			const item = document.createElement('li');
+			item.style.setProperty('--md-toc-depth', String(entry.depth));
+			item.appendChild(createLink(entry));
 			list.appendChild(item);
 		}
 
+		// Pinned while the list scrolls: the "Contents" row next to the header buttons, and the
+		// document's title below it when topHeading is 'title'.
+		const header = document.createElement('div');
+		header.className = 'md-toc-header';
 		const title = document.createElement('div');
 		title.className = 'md-toc-title';
 		title.textContent = 'Contents';
+		header.appendChild(title);
+		const titleEntry = entries.find(entry => entry.isTitle);
+		if (titleEntry) {
+			const docTitle = createLink(titleEntry);
+			docTitle.className = 'md-toc-doc-title';
+			header.appendChild(docTitle);
+		}
+		nav.classList.toggle('md-toc-has-doc-title', !!titleEntry);
 
-		nav.replaceChildren(title, list);
+		nav.replaceChildren(header, list);
 		document.body.classList.add('md-toc-visible');
 		updateResizerValue();
 		updateActive();
@@ -631,7 +658,8 @@
 			} else {
 				link.removeAttribute('aria-current');
 			}
-			link.classList.toggle('active-ancestor', ancestors.has(i));
+			// The document title contains everything, so as a parent it would always be tinted.
+			link.classList.toggle('active-ancestor', ancestors.has(i) && !link.classList.contains('md-toc-doc-title'));
 		});
 		if (activeIndex >= 0) {
 			links[activeIndex].scrollIntoView({ block: 'nearest' });
