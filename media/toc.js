@@ -6,11 +6,165 @@
 	const RESIZER_ID = 'md-toc-resizer';
 	const SETTINGS_BUTTON_ID = 'md-toc-settings-button';
 	const SETTINGS_MENU_ID = 'md-toc-settings-menu';
+	const REFRESH_BUTTON_ID = 'md-toc-refresh-button';
 	const HEADING_SELECTOR = '.markdown-body :is(h1, h2, h3, h4, h5, h6)[id]';
 
-	// Contributed scripts may be re-evaluated on content changes; only wire up once.
+	// Pure functions, no DOM, tested in test/toc.test.js.
+	/**
+	 * @param {{ id: string, text: string, level: number}[]} headings
+	 * @param {{ maxDepth?: number, topHeading?: 'list' | 'title', numbering?: boolean }} options
+	 *   maxDepth: deepest heading level to list (1-6). topHeading: 'title' marks a lone top heading
+	 *   with isTitle. numbering: gives every entry but the title a number like '2.1'.
+	 */
+	function buildEntries(headings, options = {}) {
+		const maxDepth = options.maxDepth ?? 6;
+		const topHeading = options.topHeading ?? 'list';
+		const baseLevel = Math.min(...headings.map(h => h.level));
+		// Never hide the document's top level: an empty list would hide the sidebar, and with it the
+		// settings menu needed to change maxDepth back.
+		const limit = Math.max(maxDepth, baseLevel);
+
+		// A title only when the first heading is the only one at the top level, like a `#` above `##` sections.
+		const hasTitle = topHeading === 'title'
+			&& headings.length > 0
+			&& headings[0].level === baseLevel
+			&& headings.filter(h => h.level === baseLevel).length === 1;
+		// The rest is indented from its own top level, so `#` followed by `###` sections doesn't leave a gap.
+		const rest = hasTitle ? headings.slice(1) : headings;
+		const listBase = Math.min(...rest.map(h => h.level));
+
+		const entries = headings.map((h, i) => {
+			if (hasTitle && i === 0) {
+				return { ...h, depth: 0, isTitle: true };
+			}
+			return { ...h, depth: h.level - listBase };
+		}).filter(h => h.level <= limit);
+
+		if (options.numbering) {
+			addNumbers(entries.filter(entry => !entry.isTitle));
+		}
+		return entries;
+	}
+
+	// Numbers entries by their place in the outline: an entry's parent is the closest earlier one
+	// with a lower level, the same rule ancestorIndices uses. A skipped level (## then ####) doesn't
+	// add a 0, and a heading that comes back up past a deeper one (#### then ###) continues its count.
+	function addNumbers(entries) {
+		// The open sections from the outermost in, with how many entries each level has had so far.
+		const stack = [];
+		for (const entry of entries) {
+			let closed;
+			while (stack.length > 0 && stack[stack.length - 1].level > entry.level) {
+				closed = stack.pop();
+			}
+			const top = stack[stack.length - 1];
+			if (top && top.level === entry.level) {
+				top.count++;
+			} else {
+				// A new level here; if a deeper one was just closed, this entry is its next sibling.
+				stack.push({ level: entry.level, count: closed ? closed.count + 1 : 1 });
+			}
+			entry.number = stack.map(section => section.count).join('.');
+		}
+	}
+
+	// The sections containing the active one: walking back up the list, each entry with a
+	// lower level than the last one found is the next enclosing section.
+	function ancestorIndices(entries, index) {
+		const ancestors = new Set();
+		if (index >= 0) {
+			let level = entries[index].level;
+
+			for (let i = index - 1; i >= 0 && level > 1; i--) {
+				const entryLevel = entries[i].level;
+				if (entryLevel < level) {
+					ancestors.add(i);
+					level = entryLevel;
+				}
+			}
+		}
+
+		return ancestors;
+	}
+
+	// Whether an entry has sections under it: the next entry is deeper. Same rule as ancestorIndices,
+	// so a skipped level (## then ####) still counts as a child.
+	function hasChildren(entries, index) {
+		return index + 1 < entries.length && entries[index + 1].level > entries[index].level;
+	}
+
+	// The entries hidden by collapsed sections: everything after a collapsed entry that is deeper than
+	// it, up to the next entry at its level or above. A collapsed section inside a hidden one changes
+	// nothing, and a collapsed entry without children hides nothing.
+	function hiddenIndices(entries, collapsedIds) {
+		const hidden = new Set();
+		let collapsedLevel = null;
+		entries.forEach((entry, i) => {
+			if (collapsedLevel !== null && entry.level > collapsedLevel) {
+				hidden.add(i);
+				return;
+			}
+			collapsedLevel = collapsedIds.has(entry.id) ? entry.level : null;
+		});
+		return hidden;
+	}
+
+	// Where a key moves focus in the list: the index of the entry to focus, the same index when there's
+	// nowhere to go, or undefined for keys the list doesn't use. Entries hidden in collapsed sections
+	// are skipped. ArrowRight goes to the first child and ArrowLeft to the parent; expanding and
+	// collapsing with those keys is handled before this.
+	function focusTarget(entries, index, key) {
+		const visible = entries.flatMap((entry, i) => (entry.hidden ? [] : [i]));
+		const position = visible.indexOf(index);
+		switch (key) {
+			case 'ArrowDown':
+				return visible[Math.min(position + 1, visible.length - 1)];
+			case 'ArrowUp':
+				return visible[Math.max(position - 1, 0)];
+			case 'Home':
+				return visible[0];
+			case 'End':
+				return visible[visible.length - 1];
+			case 'ArrowRight':
+				return hasChildren(entries, index) && !entries[index + 1].hidden ? index + 1 : index;
+			case 'ArrowLeft': {
+				// ancestorIndices lists the closest parent first.
+				const [parent] = ancestorIndices(entries, index);
+				return parent ?? index;
+			}
+			default:
+				return undefined;
+		}
+	}
+
+	// Stores one file's collapsed sections in a map of { [file]: { ids, time } }. A file with nothing
+	// collapsed is dropped, and only the `max` most recently changed files are kept.
+	function storeCollapsed(store, source, ids, time, max) {
+		const next = { ...store };
+		if (ids.length > 0) {
+			next[source] = { ids, time };
+		} else {
+			delete next[source];
+		}
+		const newest = Object.entries(next).sort((a, b) => b[1].time - a[1].time).slice(0, max);
+		return Object.fromEntries(newest);
+	}
+
+	// What the context menu's copy commands put on the clipboard: the heading's anchor, and a Markdown
+	// link to it. Brackets and backslashes in the text are escaped so they don't end the link text.
+	function headingLinks(id, text) {
+		const link = '#' + id;
+		return { link, markdownLink: `[${text.replace(/[\\[\]]/g, '\\$&')}](${link})` };
+	}
+
+	// Means we are in Node, export and stop here.
+	if (typeof module === 'object' && module.exports) {
+		module.exports = { buildEntries, ancestorIndices, hasChildren, hiddenIndices, focusTarget, storeCollapsed, headingLinks };
+		return;
+	}
+
+	// Protects the script from running twice on the same page, no double initialization.
 	if (window.__mdTocSidebarInitialized) {
-		buildToc();
 		return;
 	}
 	window.__mdTocSidebarInitialized = true;
@@ -52,6 +206,14 @@
 			nav.id = NAV_ID;
 			nav.setAttribute('aria-label', 'Table of contents');
 			keepDoubleClickInside(nav);
+			nav.addEventListener('keydown', onNavKeydown);
+			// Whichever entry gets focus, by keyboard or mouse, becomes the list's tab stop.
+			nav.addEventListener('focusin', event => {
+				const link = event.target instanceof Element && event.target.closest('a');
+				if (link) {
+					setTabStop(nav, link);
+				}
+			});
 			// Lives directly under <body>, outside .markdown-body, so preview re-renders leave it alone.
 			document.body.appendChild(nav);
 		}
@@ -96,6 +258,7 @@
 	}
 
 	function setCollapsed(collapsed) {
+		latestActiveId = null;
 		document.body.classList.toggle('md-toc-collapsed', collapsed);
 		updateToggle();
 		closeSettingsMenu();
@@ -129,6 +292,10 @@
 	const SETTING_GROUPS = [
 		{ key: 'scrollBehavior', label: 'Scroll on click', options: [['smooth', 'Smooth'], ['instant', 'Instant']] },
 		{ key: 'position', label: 'Sidebar position', options: [['left', 'Left'], ['right', 'Right']] },
+		{ key: 'maxDepth', label: 'Show headings down to', options: [['1', 'H1'], ['2', 'H2'], ['3', 'H3'], ['4', 'H4'], ['5', 'H5'], ['6', 'H6']] },
+		{ key: 'topHeading', label: 'Single top heading', options: [['list', 'In list'], ['title', 'As title']] },
+		{ key: 'numbering', label: 'Numbering', options: [['false', 'Off'], ['true', 'On']] },
+		{ key: 'collapsible', label: 'Collapsible sections', options: [['false', 'Off'], ['true', 'On']] },
 	];
 
 	function initSettings() {
@@ -230,6 +397,21 @@
 		});
 	}
 
+	// Refresh button next to the cog. Like the settings menu it's a vscode:// link: src/extension.js
+	// runs the built-in "Markdown: Refresh Preview", which re-renders all previews from the source.
+	const ICON_REFRESH = '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M13 8a5 5 0 1 1-1.46-3.54" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M12.5 1.5v3.5H9" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
+
+	function initRefresh() {
+		const button = document.createElement('a');
+		button.id = REFRESH_BUTTON_ID;
+		button.setAttribute('role', 'button');
+		button.innerHTML = ICON_REFRESH;
+		button.title = 'Refresh preview';
+		button.setAttribute('aria-label', 'Refresh preview');
+		keepDoubleClickInside(button);
+		document.body.appendChild(button);
+	}
+
 	function openSettingsMenu(fromKeyboard) {
 		const menu = document.getElementById(SETTINGS_MENU_ID);
 		menu.hidden = false;
@@ -255,7 +437,7 @@
 		const config = document.getElementById(CONFIG_ID);
 		if (config) {
 			config.dataset[key] = value;
-			applyConfig();
+			scheduleBuild();
 		}
 	}
 
@@ -295,6 +477,7 @@
 			return;
 		}
 		const uriBase = config.dataset.uriBase || '';
+		document.getElementById(REFRESH_BUTTON_ID)?.setAttribute('href', uriBase + '/refresh');
 		for (const option of menu.querySelectorAll('.md-toc-menu-option')) {
 			const { key, value } = option.dataset;
 			const href = uriBase + '/set?' + new URLSearchParams({ [key]: value });
@@ -437,42 +620,183 @@
 	}
 
 	function buildToc() {
+		latestActiveId = null;
 		const headings = Array.from(document.querySelectorAll(HEADING_SELECTOR));
 		const nav = getNav();
 
 		if (headings.length === 0) {
+			tocIds = new Set();
 			nav.replaceChildren();
 			document.body.classList.remove('md-toc-visible');
 			return;
 		}
 
-		const baseLevel = Math.min(...headings.map(h => Number(h.tagName[1])));
-		const list = document.createElement('ul');
+		const maxDepth = Number(readConfig('maxDepth', '6'));
+		const topHeading = readConfig('topHeading', 'list');
+		const numbering = readConfig('numbering', 'false') === 'true';
+		const entries = buildEntries(headings.map(h => ({ id: h.id, text: h.textContent.trim(), level: Number(h.tagName[1]) })), { maxDepth, topHeading, numbering });
+		tocIds = new Set(entries.map(entry => entry.id));
 
-		for (const heading of headings) {
-			const level = Number(heading.tagName[1]);
-			const item = document.createElement('li');
-			item.style.setProperty('--md-toc-depth', String(level - baseLevel));
-
+		const createLink = entry => {
 			const link = document.createElement('a');
-			link.href = '#' + heading.id;
-			link.textContent = heading.textContent.trim();
-			link.dataset.target = heading.id;
-			link.dataset.level = String(level);
-			link.title = link.textContent;
+			link.href = '#' + entry.id;
+			link.textContent = entry.text;
+			link.dataset.target = entry.id;
+			link.dataset.level = String(entry.level);
+			link.title = entry.text;
+			// setActiveLink makes one entry the tab stop; the arrow keys move between them.
+			link.tabIndex = -1;
+			setHeadingMenuContext(link, entry.id, entry.text, true);
+			if (entry.number) {
+				const number = document.createElement('span');
+				number.className = 'md-toc-number';
+				number.textContent = entry.number;
+				link.prepend(number);
+			}
+			return link;
+		};
 
-			item.appendChild(link);
+		const collapsible = readConfig('collapsible', 'false') === 'true';
+		const listEntries = entries.filter(entry => !entry.isTitle);
+		const list = document.createElement('ul');
+		listEntries.forEach((entry, i) => {
+			const item = document.createElement('li');
+			item.style.setProperty('--md-toc-depth', String(entry.depth));
+			if (collapsible) {
+				item.appendChild(hasChildren(listEntries, i) ? createChevron(entry) : createChevronSpacer());
+			}
+			item.appendChild(createLink(entry));
 			list.appendChild(item);
-		}
+		});
+		nav.classList.toggle('md-toc-collapsible', collapsible);
 
+		// Pinned while the list scrolls: the "Contents" row next to the header buttons, and the
+		// document's title below it when topHeading is 'title'.
+		const header = document.createElement('div');
+		header.className = 'md-toc-header';
 		const title = document.createElement('div');
 		title.className = 'md-toc-title';
 		title.textContent = 'Contents';
+		header.appendChild(title);
+		const titleEntry = entries.find(entry => entry.isTitle);
+		if (titleEntry) {
+			const docTitle = createLink(titleEntry);
+			docTitle.className = 'md-toc-doc-title';
+			header.appendChild(docTitle);
+		}
+		nav.classList.toggle('md-toc-has-doc-title', !!titleEntry);
 
-		nav.replaceChildren(title, list);
+		nav.replaceChildren(header, list);
 		document.body.classList.add('md-toc-visible');
+		loadCollapsedIds();
+		applyCollapsed();
 		updateResizerValue();
 		updateActive();
+	}
+
+	// Collapsed sections (markdownTocSidebar.collapsible) of the file in the preview, by heading id.
+	// Saved per file, so they're still collapsed after switching files, editing or reopening the preview.
+	let collapsedIds = new Set();
+	// The file collapsedIds belongs to.
+	let collapsedSource;
+	const COLLAPSED_SECTIONS_KEY = 'md-toc-sidebar.collapsed-sections';
+	const MAX_REMEMBERED_FILES = 50;
+
+	// The file shown in the preview, from the data the built-in preview renders into the page.
+	function previewSource() {
+		try {
+			return JSON.parse(document.getElementById('vscode-markdown-preview-data').dataset.settings).source;
+		} catch {
+			return undefined;
+		}
+	}
+
+	function readCollapsedSections() {
+		try {
+			return JSON.parse(localStorage.getItem(COLLAPSED_SECTIONS_KEY)) || {};
+		} catch {
+			return {};
+		}
+	}
+
+	// Picks up the saved sections when the preview shows a different file than before.
+	function loadCollapsedIds() {
+		const source = previewSource();
+		if (source === collapsedSource) {
+			return;
+		}
+		collapsedSource = source;
+		collapsedIds = new Set((source && readCollapsedSections()[source]?.ids) || []);
+	}
+
+	function saveCollapsedIds() {
+		if (!collapsedSource) {
+			return;
+		}
+		// Only headings still in the document, so renamed or removed ones drop out.
+		const ids = [...collapsedIds].filter(id => document.getElementById(id));
+		try {
+			const store = storeCollapsed(readCollapsedSections(), collapsedSource, ids, Date.now(), MAX_REMEMBERED_FILES);
+			localStorage.setItem(COLLAPSED_SECTIONS_KEY, JSON.stringify(store));
+		} catch {
+			// Storage unavailable; the sections stay collapsed until the preview reloads.
+		}
+	}
+
+	const ICON_CHEVRON = '<svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
+
+	// The button before an entry that has sections under it. A sibling of the link rather than inside
+	// it, so clicking it never scrolls.
+	function createChevron(entry) {
+		const chevron = document.createElement('button');
+		chevron.type = 'button';
+		chevron.className = 'md-toc-chevron';
+		// Not a tab stop: from the keyboard, ArrowLeft and ArrowRight on the entry collapse and expand.
+		chevron.tabIndex = -1;
+		chevron.innerHTML = ICON_CHEVRON;
+		chevron.dataset.target = entry.id;
+		chevron.dataset.text = entry.text;
+		chevron.addEventListener('click', () => {
+			if (collapsedIds.has(entry.id)) {
+				collapsedIds.delete(entry.id);
+			} else {
+				collapsedIds.add(entry.id);
+			}
+			saveCollapsedIds();
+			applyCollapsed();
+			// The active entry may have been hidden or shown: pick it again.
+			latestActiveId = null;
+			updateActive();
+		});
+		return chevron;
+	}
+
+	// Takes a chevron's place on entries without sections, so all the text lines up.
+	function createChevronSpacer() {
+		const spacer = document.createElement('span');
+		spacer.className = 'md-toc-chevron-spacer';
+		return spacer;
+	}
+
+	// Hides the entries inside collapsed sections and updates the chevrons to match.
+	function applyCollapsed() {
+		const nav = document.getElementById(NAV_ID);
+		const items = Array.from(nav.querySelectorAll('ul > li'));
+		const entries = items.map(item => {
+			const link = item.querySelector('a');
+			return { id: link.dataset.target, level: Number(link.dataset.level) };
+		});
+		const hidden = nav.classList.contains('md-toc-collapsible') ? hiddenIndices(entries, collapsedIds) : new Set();
+		items.forEach((item, i) => {
+			item.hidden = hidden.has(i);
+			const chevron = item.querySelector('.md-toc-chevron');
+			if (chevron) {
+				const collapsed = collapsedIds.has(entries[i].id);
+				chevron.setAttribute('aria-expanded', String(!collapsed));
+				chevron.setAttribute('aria-label', (collapsed ? 'Expand ' : 'Collapse ') + chevron.dataset.text);
+				chevron.title = collapsed ? 'Expand section' : 'Collapse section';
+			}
+		});
 	}
 
 	// While a TOC click's scroll is in flight, keep the clicked entry highlighted instead of
@@ -535,34 +859,101 @@
 		return active;
 	}
 
+	// Ids of the headings listed in the sidebar; headings deeper than maxDepth aren't in it.
+	let tocIds = new Set();
+
+	// Contains the entry that was last highlighted, so we don't update the DOM unnecessarily.
+	let latestActiveId = null;
+
 	function setActiveLink(id) {
+		if (latestActiveId === id) {
+			return;
+		}
+
 		const nav = document.getElementById(NAV_ID);
 		if (!nav) {
 			return;
 		}
+
+		latestActiveId = id;
+
 		const links = Array.from(nav.querySelectorAll('a'));
 		const activeIndex = links.findIndex(link => link.dataset.target === id);
 
-		// The sections containing the active one: walking back up the list, each entry with a
-		// lower level than the last one found is the next enclosing section.
-		const ancestors = new Set();
-		if (activeIndex >= 0) {
-			let level = Number(links[activeIndex].dataset.level);
-			for (let i = activeIndex - 1; i >= 0 && level > 1; i--) {
-				const linkLevel = Number(links[i].dataset.level);
-				if (linkLevel < level) {
-					ancestors.add(links[i]);
-					level = linkLevel;
-				}
-			}
-		}
+		const ancestors = ancestorIndices(links.map(l => ({ level: Number(l.dataset.level) })), activeIndex);
+		// Inside a collapsed section the active entry is hidden; show its closest visible parent as active
+		// instead. The ancestors come closest first.
+		const isHidden = link => !!link.closest('li')?.hidden;
+		const shownIndex = activeIndex >= 0 && isHidden(links[activeIndex])
+			? [...ancestors].find(i => !isHidden(links[i])) ?? -1
+			: activeIndex;
 
 		links.forEach((link, i) => {
-			link.classList.toggle('active', i === activeIndex);
-			link.classList.toggle('active-ancestor', ancestors.has(link));
+			link.classList.toggle('active', i === shownIndex);
+			if (i === shownIndex) {
+				link.setAttribute('aria-current', 'location');
+			} else {
+				link.removeAttribute('aria-current');
+			}
+			// Parents above the entry shown as active (any below it are inside the collapsed section). The
+			// document title contains everything, so as a parent it would always be tinted.
+			link.classList.toggle('active-ancestor', ancestors.has(i) && i < shownIndex && !link.classList.contains('md-toc-doc-title'));
 		});
-		if (activeIndex >= 0) {
-			links[activeIndex].scrollIntoView({ block: 'nearest' });
+		if (shownIndex >= 0) {
+			links[shownIndex].scrollIntoView({ block: 'nearest' });
+		}
+
+		// Tabbing into the list lands on the entry shown as active. While focus is in the list, the
+		// focused entry stays the tab stop, unless a collapsed section has just hidden it.
+		const stop = links.find(link => link.tabIndex === 0);
+		if (!nav.contains(document.activeElement) || !stop || isHidden(stop)) {
+			setTabStop(nav, links[shownIndex] ?? links.find(link => !isHidden(link)));
+		}
+	}
+
+	// The whole list is a single tab stop (the arrow keys move within it), so Tab gets past it in one go.
+	function setTabStop(nav, stop) {
+		for (const link of nav.querySelectorAll('a')) {
+			link.tabIndex = link === stop ? 0 : -1;
+		}
+	}
+
+	// Arrow keys, Home and End move between the visible entries. On an entry with sections under it,
+	// ArrowRight expands and ArrowLeft collapses (markdownTocSidebar.collapsible) before moving.
+	function onNavKeydown(event) {
+		if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || !(event.target instanceof Element)) {
+			return;
+		}
+		const nav = event.currentTarget;
+		// A chevron focused by a click stands in for its entry.
+		const current = event.target.closest('a') ?? event.target.closest('li')?.querySelector('a');
+		const links = Array.from(nav.querySelectorAll('a'));
+		const index = links.indexOf(current);
+		if (index < 0) {
+			return;
+		}
+
+		const chevron = current.closest('li')?.querySelector('.md-toc-chevron');
+		const expanded = chevron?.getAttribute('aria-expanded');
+		if ((event.key === 'ArrowRight' && expanded === 'false') || (event.key === 'ArrowLeft' && expanded === 'true')) {
+			event.preventDefault();
+			event.stopPropagation();
+			chevron.click();
+			current.focus();
+			return;
+		}
+
+		const isHidden = link => !!link.closest('li')?.hidden;
+		const entries = links.map(link => ({ level: Number(link.dataset.level), hidden: isHidden(link) }));
+		const target = focusTarget(entries, index, event.key);
+		if (target === undefined) {
+			return;
+		}
+		// Also at the ends of the list, so the keys don't scroll the page instead.
+		event.preventDefault();
+		event.stopPropagation();
+		if (target !== index) {
+			links[target].focus();
 		}
 	}
 
@@ -580,7 +971,9 @@
 			setActiveLink(pinnedId);
 			return;
 		}
-		const active = findActiveHeading(Array.from(document.querySelectorAll(HEADING_SELECTOR)));
+		// Only listed headings: inside a section deeper than maxDepth, its listed parent is the active one.
+		const listed = Array.from(document.querySelectorAll(HEADING_SELECTOR)).filter(h => tocIds.has(h.id));
+		const active = findActiveHeading(listed);
 		setActiveLink(active?.id);
 	}
 
@@ -676,7 +1069,52 @@
 	// smooth-scroll-sync.js hides its gliding scroll events from regular listeners and fires this instead.
 	window.addEventListener('md-toc-sidebar:synced-scroll', onScroll);
 
-	// Rebuild at most once per frame, and only when the headings actually changed.
+	// Prefix for ids we give headings written as HTML. They only exist in the preview, so a link to
+	// one wouldn't work anywhere else.
+	const RAW_ID_PREFIX = 'md-toc-raw-';
+
+	// Headings written as HTML (<h2>…</h2>) get no id from the preview, so nothing could link to them.
+	// Runs before every build: if the preview replaces such a heading while updating, the id is gone,
+	// and the update's own rebuild puts it back. Setting an attribute doesn't trigger the observer below.
+	function assignRawHeadingIds() {
+		let n = 0;
+		for (const heading of document.querySelectorAll('.markdown-body :is(h1, h2, h3, h4, h5, h6):not([id])')) {
+			let id;
+			do {
+				id = RAW_ID_PREFIX + ++n;
+			} while (document.getElementById(id));
+			heading.id = id;
+		}
+	}
+
+	// Right-clicking a heading, in the sidebar or the document, offers to copy a link to it: VS Code
+	// shows the "webview/context" menu items from package.json for the element's data-vscode-context,
+	// and passes that data to the commands in src/extension.js. Headings written as HTML get none, as
+	// their ids only exist in the preview. In the sidebar, VS Code's own Cut/Copy/Paste are left out.
+	function setHeadingMenuContext(element, id, text, inSidebar) {
+		if (id.startsWith(RAW_ID_PREFIX)) {
+			delete element.dataset.vscodeContext;
+			return;
+		}
+		const context = JSON.stringify({
+			webviewSection: 'mdTocHeading',
+			headingText: text,
+			...headingLinks(id, text),
+			...(inSidebar ? { preventDefaultContextMenuItems: true } : {}),
+		});
+		if (element.dataset.vscodeContext !== context) {
+			element.dataset.vscodeContext = context;
+		}
+	}
+
+	// Like the ids above, runs before every build in case the preview replaced a heading.
+	function setDocumentHeadingMenuContexts() {
+		for (const heading of document.querySelectorAll(HEADING_SELECTOR)) {
+			setHeadingMenuContext(heading, heading.id, heading.textContent.trim(), false);
+		}
+	}
+
+	// Rebuild at most once per frame, and only when the headings or the settings changed.
 	let lastSignature = '';
 	let buildFrame = 0;
 	function scheduleBuild() {
@@ -686,7 +1124,11 @@
 		buildFrame = requestAnimationFrame(() => {
 			buildFrame = 0;
 			applyConfig();
-			const signature = Array.from(document.querySelectorAll(HEADING_SELECTOR))
+			assignRawHeadingIds();
+			setDocumentHeadingMenuContexts();
+			const config = document.getElementById(CONFIG_ID);
+			const settings = config ? JSON.stringify(config.dataset) : '';
+			const signature = settings + '\n' + Array.from(document.querySelectorAll(HEADING_SELECTOR))
 				.map(h => h.tagName + '#' + h.id + ':' + h.textContent)
 				.join('\n');
 			if (signature !== lastSignature || !document.getElementById(NAV_ID)) {
@@ -699,7 +1141,7 @@
 	// Our script loads async, so the preview content may arrive before or after we run.
 	// Watching the DOM catches the initial render and every later update regardless of timing.
 	// Changes inside our own UI (sidebar, buttons, menu) are ignored, or updating it would loop.
-	const OWN_UI_SELECTOR = [NAV_ID, TOGGLE_ID, RESIZER_ID, SETTINGS_BUTTON_ID, SETTINGS_MENU_ID].map(id => '#' + id).join(', ');
+	const OWN_UI_SELECTOR = [NAV_ID, TOGGLE_ID, RESIZER_ID, SETTINGS_BUTTON_ID, SETTINGS_MENU_ID, REFRESH_BUTTON_ID].map(id => '#' + id).join(', ');
 	new MutationObserver(records => {
 		const isOwnUi = node => (node instanceof Element ? node : node.parentElement)?.closest(OWN_UI_SELECTOR);
 		if (records.some(r => !isOwnUi(r.target))) {
@@ -712,6 +1154,7 @@
 
 	initResizer();
 	initSettings();
+	initRefresh();
 	setCollapsed(readCollapsed());
 	scheduleBuild();
 })();

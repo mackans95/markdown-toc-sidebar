@@ -6,18 +6,26 @@ Adds a table of contents sidebar to VS Code's built-in Markdown preview, built f
 
 ## Features
 
-- **Table of contents for every preview.** Headings `h1`–`h6` are listed and nested by level. It works as soon as it's installed, with no command to run.
+- **Table of contents for every preview.** Headings `h1`–`h6` are listed and nested by level, including headings written as HTML, like `<h2>`. It works as soon as it's installed, with no command to run.
 - **Live updates.** Add, rename or remove a heading and the sidebar updates as you type.
 - **Click to jump.** Clicking an entry smoothly scrolls the preview to that heading, leaving a little space above it, and the heading flashes briefly so you can see where you landed. Prefer an instant jump? See [Settings](#settings).
 - **Current section highlight.** The entry for the section you're reading is highlighted as you scroll, and the list keeps it in view. The sections it belongs to are highlighted more lightly, so you can see where you are in the structure.
+- **As deep as you like.** List only the levels you want, for example just the `##` sections of a long document.
+- **Title at the top.** A document with a single `#` title above its sections can show that title above the list, with the sections listed from the top.
+- **Numbering.** Number the entries by their place in the outline, like `1`, `1.1` and `1.2`. Only the sidebar is numbered, not your document.
+- **Collapsible sections.** Fold away the sections under an entry with the arrow next to it. What you collapse is remembered for each file.
+- **Copy a link to a heading.** Right-click an entry, or a heading in the document, and pick *Copy Link to Heading* (`#getting-started`) or *Copy Markdown Link to Heading* (`[Getting Started](#getting-started)`). The anchors are the ones GitHub uses too, so the links also work there.
+- **Keyboard friendly.** The whole list is a single Tab stop that lands on the section you're reading. Move with the arrow keys, `Home` and `End`; `Left` and `Right` go to the parent or the first sub-section, and collapse or expand sections that have arrows.
 - **Hide and show.** The arrow button in the sidebar's header hides it when you want the full width, and brings it back.
 - **Left or right.** Put the sidebar on whichever side of the preview you prefer.
-- **Settings at hand.** The cog button in the sidebar's header opens a small menu for the extension's settings, so you don't have to go to VS Code's Settings. VS Code asks for permission the first time; see [Changing settings from the sidebar](#changing-settings-from-the-sidebar).
+- **Settings at hand.** The cog button in the sidebar's header opens a small menu next to the sidebar for the extension's settings, so you don't have to go to VS Code's Settings. VS Code asks for permission the first time; see [Changing settings from the sidebar](#changing-settings-from-the-sidebar).
+- **Refresh button.** The circular arrow in the sidebar's header re-renders the preview from the file, the same as VS Code's *Markdown: Refresh Preview*. Useful when something the preview doesn't watch has changed, like a stylesheet. Like the settings menu, VS Code asks for permission the first time.
 - **Resizable.** Drag the sidebar's inner edge to change its width, or double-click the edge to reset it. With the edge focused, the arrow keys work too.
 - **Remembered.** The width and the hidden/shown choice carry over to other previews, including after restarting VS Code. VS Code keeps side-by-side previews and the Markdown Preview editor separate, so each of those remembers its own.
 - **Smoother scroll sync.** When you scroll the editor, the preview glides to its new position instead of jumping.
 - **Keeps your place.** Switch to another tab and back, and the preview is still where you left it. Without this, VS Code's preview often jumps back to where it was when it was opened, typically the top.
 - **Matches your theme.** The sidebar uses your color theme's colors.
+- **On the web too.** Works in [vscode.dev](https://vscode.dev) and [github.dev](https://github.dev) as well as in the desktop app.
 
 ## Usage
 
@@ -39,14 +47,18 @@ If the preview is very narrow (under 360px), the sidebar hides itself so the doc
 |---|---|---|
 | `markdownTocSidebar.scrollBehavior` | `smooth` | How the preview scrolls when you click an entry: `smooth` animates the scroll, `instant` jumps straight there. When your system is set to reduce motion, it always jumps instantly. |
 | `markdownTocSidebar.position` | `right` | Which side of the preview the sidebar is shown on: `left` or `right`. |
+| `markdownTocSidebar.maxDepth` | `6` | The deepest heading level listed, from `1` (only `#` headings) to `6` (all headings). The document's top level is always listed, even when it's deeper than this. |
+| `markdownTocSidebar.topHeading` | `list` | How to show a document's single top heading, such as a `#` title above `##` sections: `list` lists it as the first entry, `title` shows it as a title above the list. Only applies when the first heading is the only one at the document's top level. |
+| `markdownTocSidebar.numbering` | `false` | Number the entries by their place in the outline, like `1`, `1.1` and `1.2`. |
+| `markdownTocSidebar.collapsible` | `false` | Show arrows that collapse and expand the sections under an entry. Collapsed sections are remembered for each file. |
 
 You can change these from the cog menu in the sidebar, or in VS Code's Settings (search for "Markdown TOC Sidebar"). Either way, open previews update right away.
 
 ### Changing settings from the sidebar
 
-Click the **cog** in the sidebar's header to open the settings menu. A choice takes effect immediately, and the menu stays open until you close it with its **×** button, click outside it, or press `Escape`.
+Click the **cog** in the sidebar's header to open the settings menu. It opens next to the sidebar, so you can see each change in the list as you make it. A choice takes effect immediately, and the menu stays open until you close it with its **×** button, click outside it, or press `Escape`.
 
-![The settings menu, opened from the cog in the sidebar's header](images/settings-menu.png)
+![The settings menu, opened next to the sidebar from the cog in its header](images/settings-menu.png)
 
 > **Heads-up: the first time you change a setting from this menu, VS Code asks for permission.** This happens only once:
 >
@@ -61,7 +73,7 @@ Click the **cog** in the sidebar's header to open the settings menu. A choice ta
 
 Other open previews of the same kind (side-by-side, or the Markdown Preview editor) follow along immediately. An open preview of the other kind picks the change up the next time it updates, for example when you edit the file.
 
-**Why VS Code asks:** the preview can't change VS Code settings by itself. Each option in the menu is a `vscode://` link to this extension, and VS Code checks with you before an extension handles such a link. The extension only uses these links to update its own two settings and to open the Settings editor (*Open all settings…*).
+**Why VS Code asks:** the preview can't change VS Code settings by itself. Each option in the menu is a `vscode://` link to this extension, and VS Code checks with you before an extension handles such a link. The extension only uses these links to update its own settings, to open the Settings editor (*Open all settings…*) and to refresh the preview (the refresh button). Allowing them once covers all of these.
 
 If you click **Cancel**, the setting isn't saved. The preview keeps showing your choice for now, but goes back to the saved setting the next time it reloads. If you'd rather not allow the links at all, change the settings in VS Code's Settings instead.
 
@@ -76,13 +88,13 @@ These are VS Code settings, not settings of this extension:
 
 ## Requirements
 
-VS Code 1.80 or later. The extension only adds to the built-in Markdown preview, so it doesn't work with other preview extensions such as Markdown Preview Enhanced.
+VS Code 1.82 or later. The extension only adds to the built-in Markdown preview, so it doesn't work with other preview extensions such as Markdown Preview Enhanced.
 
 ## Known limitations
 
 - When a preview's tab comes back from the background, VS Code shows it as it was last fully rendered. Edits you made while the preview was visible may be missing until you edit again; run **Markdown: Refresh Preview** from the Command Palette to update it right away.
-- Only Markdown headings (`#`, `##`, …) are listed. Headings written as raw HTML, like `<h2>`, are not.
-- The sidebar width and the hidden/shown state are saved per kind of preview (side-by-side, or the Markdown Preview editor), not per file.
+- The sidebar width and the hidden/shown state are saved per kind of preview (side-by-side, or the Markdown Preview editor), not per file. Collapsed sections are saved per file, but also separately for each kind of preview.
+- Headings written as HTML, like `<h2>`, are listed, but have no *Copy Link to Heading*: the anchor the sidebar gives them only exists in the preview, so a link to it wouldn't work anywhere else.
 
 ## Privacy
 
@@ -92,11 +104,11 @@ The extension has no telemetry and makes no network requests.
 
 The extension uses VS Code's Markdown preview extension points (`markdown.previewScripts`, `markdown.previewStyles` and `markdown.markdownItPlugins`).
 
-- `media/toc.js` builds the sidebar from the rendered headings, which already have `id`s, and rebuilds it whenever the preview content changes.
+- `media/toc.js` builds the sidebar from the rendered headings and rebuilds it whenever the preview content or a setting changes. Markdown headings already have `id`s; headings written as HTML get one from the sidebar. It also marks headings for the right-click menu (`data-vscode-context`), with the links ready to copy.
 - `media/smooth-scroll-sync.js` takes over the preview's scroll-sync jumps and animates them instead.
 - `media/scroll-restore.js` remembers where you are in the preview. VS Code rebuilds a preview from its last full render when its tab comes back from the background, and the preview then scrolls to the position saved in that render; this puts it back where you were.
 - `media/toc.css` styles the sidebar using your theme's colors.
-- `src/extension.js` connects the preview to VS Code settings, which the preview can't access itself. It adds a hidden element carrying the settings to each rendered preview, and refreshes open previews when a setting changes. The cog menu's options are `vscode://` links, which VS Code hands to this file's URI handler to update the setting.
+- `src/extension.js` connects the preview to VS Code settings, which the preview can't access itself. It reads the settings and their allowed values from `package.json`, adds a hidden element carrying the settings to each rendered preview, and refreshes open previews when a setting changes. The cog menu's options are `vscode://` links, which VS Code hands to this file's URI handler to update the setting. The refresh button is such a link too, and runs VS Code's *Markdown: Refresh Preview*. The commands behind the right-click menu's copy items are in this file too.
 
 ## Development
 
@@ -106,7 +118,9 @@ The extension uses VS Code's Markdown preview extension points (`markdown.previe
 
 There are two launch configurations. **Run Extension (no other extensions)** disables your installed extensions in the test window, so the Debug Console only shows output from this extension and VS Code's built-ins.
 
-The extension has no build step. After editing a file in `media/`, run **Developer: Reload Window** in the test window to load the change.
+The extension has no build step. After editing a file in `media/`, run **Developer: Reload Window** in the test window to load the change. If a stylesheet change doesn't show up, stop and restart debugging: the preview can keep serving the old CSS.
+
+Run the tests with `npm test`. They cover the parts of `media/toc.js` that don't need a browser, such as building, numbering and collapsing the list, and run on every pull request.
 
 ## License
 

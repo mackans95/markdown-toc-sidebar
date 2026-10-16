@@ -43,6 +43,8 @@
 	background: var(--vscode-sideBar-background, var(--vscode-editor-background));
 	border-left: 1px solid var(--vscode-panel-border, rgba(128, 128, 128, 0.35));
 	z-index: 10;
+	/* Lets the title react to the sidebar's own width. */
+	container: md-toc-sidebar / inline-size;
 }
 
 #md-toc-sidebar:empty {
@@ -53,10 +55,11 @@ body.md-toc-visible {
 	padding-right: calc(var(--md-toc-width) + 20px) !important;
 }
 
-/* Header buttons: the hide/show toggle and the settings cog. Fixed rather than inside the nav so
-   the toggle stays visible while the sidebar is hidden. */
+/* Header buttons: the hide/show toggle, the settings cog and refresh. Fixed rather than inside the
+   nav so the toggle stays visible while the sidebar is hidden. */
 #md-toc-toggle,
-#md-toc-settings-button {
+#md-toc-settings-button,
+#md-toc-refresh-button {
 	position: fixed;
 	top: 16px;
 	z-index: 11;
@@ -82,20 +85,30 @@ body.md-toc-visible {
 	right: 40px;
 }
 
+#md-toc-refresh-button {
+	right: 68px;
+	box-sizing: border-box;
+	text-decoration: none;
+}
+
 body.md-toc-visible #md-toc-toggle,
-body.md-toc-visible.md-toc-configurable:not(.md-toc-collapsed) #md-toc-settings-button {
+body.md-toc-visible.md-toc-configurable:not(.md-toc-collapsed) #md-toc-settings-button,
+body.md-toc-visible.md-toc-configurable:not(.md-toc-collapsed) #md-toc-refresh-button {
 	display: flex;
 }
 
 #md-toc-toggle:hover,
 #md-toc-settings-button:hover,
-#md-toc-settings-button[aria-expanded="true"] {
+#md-toc-settings-button[aria-expanded="true"],
+#md-toc-refresh-button:hover {
 	background: var(--vscode-toolbar-hoverBackground, var(--vscode-list-hoverBackground));
+	color: var(--vscode-foreground);
 	opacity: 1;
 }
 
 #md-toc-toggle:focus-visible,
-#md-toc-settings-button:focus-visible {
+#md-toc-settings-button:focus-visible,
+#md-toc-refresh-button:focus-visible {
 	outline: 1px solid var(--vscode-focusBorder);
 	outline-offset: -1px;
 }
@@ -118,14 +131,17 @@ body.md-toc-visible.md-toc-collapsed {
 	padding-right: 26px !important;
 }
 
-/* Settings menu, dropping down from the header inside the sidebar. */
+/* Settings menu. Opens beside the sidebar, level with its header, so the sidebar stays in view while
+   you change settings; it covers the edge of the document instead. */
 #md-toc-settings-menu {
 	position: fixed;
-	top: 46px;
-	right: 12px;
+	top: 12px;
+	right: calc(var(--md-toc-width) + 8px);
 	z-index: 13;
 	box-sizing: border-box;
-	width: max(180px, calc(var(--md-toc-width) - 24px));
+	width: 252px;
+	/* The resizer always leaves the document at least 240px; keep 12px free at the far edge too. */
+	max-width: calc(100% - var(--md-toc-width) - 20px);
 	padding: 10px;
 	border: 1px solid var(--vscode-menu-border, var(--vscode-widget-border, var(--vscode-panel-border, rgba(128, 128, 128, 0.35))));
 	border-radius: 6px;
@@ -205,7 +221,11 @@ body.md-toc-visible.md-toc-collapsed {
 /* Segmented choice; the current value is drawn like a primary button with a strong border. */
 #md-toc-settings-menu .md-toc-menu-option {
 	flex: 1;
-	padding: 2px 6px;
+	/* Lets the options share a narrow menu (see max-width above) instead of running past its edge,
+	   down to H1-H6 in a 220px menu. */
+	min-width: 0;
+	padding: 2px 4px;
+	white-space: nowrap;
 	/* Same border width on every option, so selecting one doesn't shift the layout. The faint
 	   outline keeps unselected options looking like buttons, even in themes where the secondary
 	   button background is transparent. */
@@ -293,22 +313,47 @@ body.md-toc-resizing {
 	user-select: none;
 }
 
-#md-toc-sidebar .md-toc-title {
+#md-toc-sidebar .md-toc-header {
 	/* Stays pinned while the list scrolls, so the toggle button always sits in a header. */
 	position: sticky;
 	top: 0;
 	z-index: 1;
-	/* Lines the text up with the header buttons (top: 16px, 24px tall); right padding leaves room for them. */
-	padding: 16px 56px 8px 0;
-	line-height: 24px;
 	background: var(--vscode-sideBar-background, var(--vscode-editor-background));
+}
+
+#md-toc-sidebar .md-toc-title {
+	/* Lines the text up with the header buttons (top: 16px, 24px tall); right padding leaves room for them. */
+	padding: 16px 84px 8px 0;
+	line-height: 24px;
 	font-weight: 600;
 	text-transform: uppercase;
 	font-size: 0.85em;
 	letter-spacing: 0.04em;
-	/* Dimmed via color rather than opacity so the sticky background stays opaque. */
 	color: color-mix(in srgb, var(--vscode-foreground) 80%, transparent);
+	white-space: nowrap;
 	user-select: none;
+}
+
+/* The document's lone top heading (markdownTocSidebar.topHeading: title), below "Contents". Otherwise
+   styled like the entries in the list. */
+#md-toc-sidebar .md-toc-doc-title {
+	margin-bottom: 8px;
+	font-size: 1.2em;
+	font-weight: 600;
+}
+
+/* A line between the title and the list, at the bottom of the pinned header. Same strength as the
+   preview's own line under h1 and h2 headings. */
+#md-toc-sidebar.md-toc-has-doc-title .md-toc-header {
+	margin-bottom: 8px;
+	border-bottom: 1px solid color-mix(in srgb, var(--vscode-foreground) 18%, transparent);
+}
+
+/* Too narrow for the title next to the header buttons: hide the text but keep the header. */
+@container md-toc-sidebar (max-width: 144px) {
+	#md-toc-sidebar .md-toc-title {
+		color: transparent;
+	}
 }
 
 #md-toc-sidebar ul {
@@ -320,6 +365,62 @@ body.md-toc-resizing {
 #md-toc-sidebar li {
 	margin: 0;
 	padding-left: calc(var(--md-toc-depth, 0) * 12px);
+}
+
+/* Collapsible sections (markdownTocSidebar.collapsible): an arrow, or a same-width gap, before each
+   entry's link. */
+#md-toc-sidebar.md-toc-collapsible li {
+	display: flex;
+	align-items: center;
+}
+
+/* The flex layout above would otherwise show entries hidden by a collapsed section. */
+#md-toc-sidebar li[hidden] {
+	display: none;
+}
+
+#md-toc-sidebar.md-toc-collapsible li > a {
+	flex: 1;
+	min-width: 0;
+}
+
+#md-toc-sidebar .md-toc-chevron,
+#md-toc-sidebar .md-toc-chevron-spacer {
+	flex: none;
+	width: 16px;
+	height: 16px;
+}
+
+#md-toc-sidebar .md-toc-chevron {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0;
+	border: none;
+	border-radius: 3px;
+	background: transparent;
+	color: var(--vscode-foreground);
+	opacity: 0.7;
+	cursor: pointer;
+}
+
+#md-toc-sidebar .md-toc-chevron:hover {
+	background: var(--vscode-toolbar-hoverBackground, var(--vscode-list-hoverBackground));
+	opacity: 1;
+}
+
+#md-toc-sidebar .md-toc-chevron:focus {
+	outline: none;
+}
+
+#md-toc-sidebar .md-toc-chevron:focus-visible {
+	outline: 1px solid var(--vscode-focusBorder);
+	outline-offset: -1px;
+}
+
+/* Collapsed: the arrow points at the entry instead of down at its sections. */
+#md-toc-sidebar .md-toc-chevron[aria-expanded="false"] svg {
+	transform: rotate(-90deg);
 }
 
 #md-toc-sidebar a {
@@ -335,6 +436,18 @@ body.md-toc-resizing {
 	overflow: hidden;
 	text-overflow: ellipsis;
 	opacity: 0.85;
+}
+
+/* Outline number before the text (markdownTocSidebar.numbering), quieter than the text itself. */
+#md-toc-sidebar .md-toc-number {
+	margin-right: 0.4em;
+	opacity: 0.7;
+	font-variant-numeric: tabular-nums;
+}
+
+/* The document title makes the sticky header taller. */
+#md-toc-sidebar.md-toc-has-doc-title a {
+	scroll-margin-top: 88px;
 }
 
 /* The preview's own stylesheet outlines every focused link, which made clicked entries look boxed in.
@@ -400,9 +513,14 @@ body.md-toc-left #md-toc-settings-button {
 	left: calc(var(--md-toc-width) - 64px);
 }
 
+body.md-toc-left #md-toc-refresh-button {
+	right: auto;
+	left: calc(var(--md-toc-width) - 92px);
+}
+
 body.md-toc-left #md-toc-settings-menu {
 	right: auto;
-	left: 12px;
+	left: calc(var(--md-toc-width) + 8px);
 }
 
 body.md-toc-left #md-toc-resizer {
@@ -415,6 +533,7 @@ body.md-toc-left #md-toc-resizer {
 	#md-toc-sidebar,
 	body.md-toc-visible #md-toc-toggle,
 	body.md-toc-visible.md-toc-configurable:not(.md-toc-collapsed) #md-toc-settings-button,
+	body.md-toc-visible.md-toc-configurable:not(.md-toc-collapsed) #md-toc-refresh-button,
 	#md-toc-settings-menu,
 	body.md-toc-visible:not(.md-toc-collapsed) #md-toc-resizer {
 		display: none;

@@ -42,6 +42,10 @@ Second one — should get its own unique anchor.
 
 Inline formatting should show as plain text in the TOC.
 
+<h2>Heading Written in HTML</h2>
+
+Headings written as HTML are listed too.
+
 ## Final Section
 
 The end.
