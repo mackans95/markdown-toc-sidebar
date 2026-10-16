@@ -95,6 +95,20 @@ function activate(context) {
 		},
 	}));
 
+	// The heading context menu in the preview. VS Code passes the right-clicked element's
+	// data-vscode-context, where media/toc.js has put the ready-made links.
+	const copyHeadingLink = field => async item => {
+		if (typeof item?.[field] !== 'string') {
+			return;
+		}
+		await vscode.env.clipboard.writeText(item[field]);
+		vscode.window.setStatusBarMessage(`Copied link to "${item.headingText}"`, 3000);
+	};
+	context.subscriptions.push(
+		vscode.commands.registerCommand(`${SECTION}.copyHeadingLink`, copyHeadingLink('link')),
+		vscode.commands.registerCommand(`${SECTION}.copyHeadingMarkdownLink`, copyHeadingLink('markdownLink')),
+	);
+
 	return {
 		extendMarkdownIt(md) {
 			md.core.ruler.push(CONFIG_TOKEN_TYPE, state => {

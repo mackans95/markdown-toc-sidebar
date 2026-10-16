@@ -118,6 +118,42 @@
         }
       }
     },
+    "commands": [
+      {
+        "command": "markdownTocSidebar.copyHeadingLink",
+        "title": "Copy Link to Heading",
+        "category": "Markdown TOC Sidebar"
+      },
+      {
+        "command": "markdownTocSidebar.copyHeadingMarkdownLink",
+        "title": "Copy Markdown Link to Heading",
+        "category": "Markdown TOC Sidebar"
+      }
+    ],
+    "menus": {
+      "webview/context": [
+        {
+          "command": "markdownTocSidebar.copyHeadingLink",
+          "when": "(webviewId == 'markdown.preview' || webviewId == 'vscode.markdown.preview.editor') && webviewSection == 'mdTocHeading'",
+          "group": "mdTocHeading@1"
+        },
+        {
+          "command": "markdownTocSidebar.copyHeadingMarkdownLink",
+          "when": "(webviewId == 'markdown.preview' || webviewId == 'vscode.markdown.preview.editor') && webviewSection == 'mdTocHeading'",
+          "group": "mdTocHeading@2"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "markdownTocSidebar.copyHeadingLink",
+          "when": "false"
+        },
+        {
+          "command": "markdownTocSidebar.copyHeadingMarkdownLink",
+          "when": "false"
+        }
+      ]
+    },
     "markdown.markdownItPlugins": true,
     "markdown.previewScripts": [
       "./media/smooth-scroll-sync.js",

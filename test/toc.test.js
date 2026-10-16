@@ -1,4 +1,4 @@
-const { ancestorIndices, buildEntries, focusTarget, hasChildren, hiddenIndices, storeCollapsed } = require('../media/toc');
+const { ancestorIndices, buildEntries, focusTarget, hasChildren, headingLinks, hiddenIndices, storeCollapsed } = require('../media/toc');
 const { test, describe } = require('node:test');
 const assert = require('node:assert/strict');
 
@@ -150,6 +150,18 @@ describe('focusTarget', () => {
 	test('ignores other keys', () => {
 		assert.equal(move(1, 'Enter'), undefined);
 		assert.equal(move(1, 'a'), undefined);
+	});
+});
+
+describe('headingLinks', () => {
+	test('makes an anchor and a Markdown link', () => {
+		assert.deepEqual(headingLinks('getting-started', 'Getting Started'), {
+			link: '#getting-started',
+			markdownLink: '[Getting Started](#getting-started)',
+		});
+	});
+	test('escapes brackets and backslashes in the text', () => {
+		assert.equal(headingLinks('a-b', 'A [b] \\ c').markdownLink, '[A \\[b\\] \\\\ c](#a-b)');
 	});
 });
 

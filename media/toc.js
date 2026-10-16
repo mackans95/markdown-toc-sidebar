@@ -150,9 +150,16 @@
 		return Object.fromEntries(newest);
 	}
 
+	// What the context menu's copy commands put on the clipboard: the heading's anchor, and a Markdown
+	// link to it. Brackets and backslashes in the text are escaped so they don't end the link text.
+	function headingLinks(id, text) {
+		const link = '#' + id;
+		return { link, markdownLink: `[${text.replace(/[\\[\]]/g, '\\$&')}](${link})` };
+	}
+
 	// Means we are in Node, export and stop here.
 	if (typeof module === 'object' && module.exports) {
-		module.exports = { buildEntries, ancestorIndices, hasChildren, hiddenIndices, focusTarget, storeCollapsed };
+		module.exports = { buildEntries, ancestorIndices, hasChildren, hiddenIndices, focusTarget, storeCollapsed, headingLinks };
 		return;
 	}
 
@@ -639,6 +646,7 @@
 			link.title = entry.text;
 			// setActiveLink makes one entry the tab stop; the arrow keys move between them.
 			link.tabIndex = -1;
+			setHeadingMenuContext(link, entry.id, entry.text, true);
 			if (entry.number) {
 				const number = document.createElement('span');
 				number.className = 'md-toc-number';
@@ -1079,6 +1087,33 @@
 		}
 	}
 
+	// Right-clicking a heading, in the sidebar or the document, offers to copy a link to it: VS Code
+	// shows the "webview/context" menu items from package.json for the element's data-vscode-context,
+	// and passes that data to the commands in src/extension.js. Headings written as HTML get none, as
+	// their ids only exist in the preview. In the sidebar, VS Code's own Cut/Copy/Paste are left out.
+	function setHeadingMenuContext(element, id, text, inSidebar) {
+		if (id.startsWith(RAW_ID_PREFIX)) {
+			delete element.dataset.vscodeContext;
+			return;
+		}
+		const context = JSON.stringify({
+			webviewSection: 'mdTocHeading',
+			headingText: text,
+			...headingLinks(id, text),
+			...(inSidebar ? { preventDefaultContextMenuItems: true } : {}),
+		});
+		if (element.dataset.vscodeContext !== context) {
+			element.dataset.vscodeContext = context;
+		}
+	}
+
+	// Like the ids above, runs before every build in case the preview replaced a heading.
+	function setDocumentHeadingMenuContexts() {
+		for (const heading of document.querySelectorAll(HEADING_SELECTOR)) {
+			setHeadingMenuContext(heading, heading.id, heading.textContent.trim(), false);
+		}
+	}
+
 	// Rebuild at most once per frame, and only when the headings or the settings changed.
 	let lastSignature = '';
 	let buildFrame = 0;
@@ -1090,6 +1125,7 @@
 			buildFrame = 0;
 			applyConfig();
 			assignRawHeadingIds();
+			setDocumentHeadingMenuContexts();
 			const config = document.getElementById(CONFIG_ID);
 			const settings = config ? JSON.stringify(config.dataset) : '';
 			const signature = settings + '\n' + Array.from(document.querySelectorAll(HEADING_SELECTOR))
