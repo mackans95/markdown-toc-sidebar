@@ -69,7 +69,8 @@
     "markdown.markdownItPlugins": true,
     "markdown.previewScripts": [
       "./media/smooth-scroll-sync.js",
-      "./media/toc.js"
+      "./media/toc.js",
+      "./media/scroll-restore.js"
     ],
     "markdown.previewStyles": [
       "./media/toc.css"
