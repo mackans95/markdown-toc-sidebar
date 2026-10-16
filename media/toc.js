@@ -814,6 +814,24 @@
 	// smooth-scroll-sync.js hides its gliding scroll events from regular listeners and fires this instead.
 	window.addEventListener('md-toc-sidebar:synced-scroll', onScroll);
 
+	// Prefix for ids we give headings written as HTML. They only exist in the preview, so a link to
+	// one wouldn't work anywhere else.
+	const RAW_ID_PREFIX = 'md-toc-raw-';
+
+	// Headings written as HTML (<h2>…</h2>) get no id from the preview, so nothing could link to them.
+	// Runs before every build: if the preview replaces such a heading while updating, the id is gone,
+	// and the update's own rebuild puts it back. Setting an attribute doesn't trigger the observer below.
+	function assignRawHeadingIds() {
+		let n = 0;
+		for (const heading of document.querySelectorAll('.markdown-body :is(h1, h2, h3, h4, h5, h6):not([id])')) {
+			let id;
+			do {
+				id = RAW_ID_PREFIX + ++n;
+			} while (document.getElementById(id));
+			heading.id = id;
+		}
+	}
+
 	// Rebuild at most once per frame, and only when the headings or the settings changed.
 	let lastSignature = '';
 	let buildFrame = 0;
@@ -824,6 +842,7 @@
 		buildFrame = requestAnimationFrame(() => {
 			buildFrame = 0;
 			applyConfig();
+			assignRawHeadingIds();
 			const config = document.getElementById(CONFIG_ID);
 			const settings = config ? JSON.stringify(config.dataset) : '';
 			const signature = settings + '\n' + Array.from(document.querySelectorAll(HEADING_SELECTOR))
