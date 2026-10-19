@@ -1,6 +1,12 @@
 // Runs inside VS Code's built-in Markdown preview webview.
 // Builds a table of contents from the rendered headings and keeps it in sync.
-(function () {
+import { CONFIG_ELEMENT_ID, SYNCED_SCROLL_EVENT } from '../../shared/constants.ts';
+import { storeCollapsed } from './collapse.ts';
+import { headingLinks } from './headings.ts';
+import { focusTarget } from './keyboard.ts';
+import { ancestorIndices, buildEntries, hasChildren, hiddenIndices } from './outline.ts';
+
+function start() {
 	const NAV_ID = 'md-toc-sidebar';
 	const TOGGLE_ID = 'md-toc-toggle';
 	const RESIZER_ID = 'md-toc-resizer';
@@ -9,186 +15,12 @@
 	const REFRESH_BUTTON_ID = 'md-toc-refresh-button';
 	const HEADING_SELECTOR = '.markdown-body :is(h1, h2, h3, h4, h5, h6)[id]';
 
-	// Pure functions, no DOM, tested in test/toc.test.js.
-	/**
-	 * @param {{ id: string, text: string, level: number}[]} headings
-	 * @param {{ maxDepth?: number, topHeading?: 'list' | 'title', numbering?: boolean }} options
-	 *   maxDepth: deepest heading level to list (1-6). topHeading: 'title' marks a lone top heading
-	 *   with isTitle. numbering: gives every entry but the title a number like '2.1'.
-	 */
-	function buildEntries(headings, options = {}) {
-		const maxDepth = options.maxDepth ?? 6;
-		const topHeading = options.topHeading ?? 'list';
-		const baseLevel = Math.min(...headings.map(h => h.level));
-		// Never hide the document's top level: an empty list would hide the sidebar, and with it the
-		// settings menu needed to change maxDepth back.
-		const limit = Math.max(maxDepth, baseLevel);
-
-		// A title only when the first heading is the only one at the top level, like a `#` above `##` sections.
-		const hasTitle =
-			topHeading === 'title' &&
-			headings.length > 0 &&
-			headings[0].level === baseLevel &&
-			headings.filter(h => h.level === baseLevel).length === 1;
-		// The rest is indented from its own top level, so `#` followed by `###` sections doesn't leave a gap.
-		const rest = hasTitle ? headings.slice(1) : headings;
-		const listBase = Math.min(...rest.map(h => h.level));
-
-		const entries = headings
-			.map((h, i) => {
-				if (hasTitle && i === 0) {
-					return { ...h, depth: 0, isTitle: true };
-				}
-				return { ...h, depth: h.level - listBase };
-			})
-			.filter(h => h.level <= limit);
-
-		if (options.numbering) {
-			addNumbers(entries.filter(entry => !entry.isTitle));
-		}
-		return entries;
-	}
-
-	// Numbers entries by their place in the outline: an entry's parent is the closest earlier one
-	// with a lower level, the same rule ancestorIndices uses. A skipped level (## then ####) doesn't
-	// add a 0, and a heading that comes back up past a deeper one (#### then ###) continues its count.
-	function addNumbers(entries) {
-		// The open sections from the outermost in, with how many entries each level has had so far.
-		const stack = [];
-		for (const entry of entries) {
-			let closed;
-			while (stack.length > 0 && stack[stack.length - 1].level > entry.level) {
-				closed = stack.pop();
-			}
-			const top = stack[stack.length - 1];
-			if (top && top.level === entry.level) {
-				top.count++;
-			} else {
-				// A new level here; if a deeper one was just closed, this entry is its next sibling.
-				stack.push({ level: entry.level, count: closed ? closed.count + 1 : 1 });
-			}
-			entry.number = stack.map(section => section.count).join('.');
-		}
-	}
-
-	// The sections containing the active one: walking back up the list, each entry with a
-	// lower level than the last one found is the next enclosing section.
-	function ancestorIndices(entries, index) {
-		const ancestors = new Set();
-		if (index >= 0) {
-			let level = entries[index].level;
-
-			for (let i = index - 1; i >= 0 && level > 1; i--) {
-				const entryLevel = entries[i].level;
-				if (entryLevel < level) {
-					ancestors.add(i);
-					level = entryLevel;
-				}
-			}
-		}
-
-		return ancestors;
-	}
-
-	// Whether an entry has sections under it: the next entry is deeper. Same rule as ancestorIndices,
-	// so a skipped level (## then ####) still counts as a child.
-	function hasChildren(entries, index) {
-		return index + 1 < entries.length && entries[index + 1].level > entries[index].level;
-	}
-
-	// The entries hidden by collapsed sections: everything after a collapsed entry that is deeper than
-	// it, up to the next entry at its level or above. A collapsed section inside a hidden one changes
-	// nothing, and a collapsed entry without children hides nothing.
-	function hiddenIndices(entries, collapsedIds) {
-		const hidden = new Set();
-		let collapsedLevel = null;
-		entries.forEach((entry, i) => {
-			if (collapsedLevel !== null && entry.level > collapsedLevel) {
-				hidden.add(i);
-				return;
-			}
-			collapsedLevel = collapsedIds.has(entry.id) ? entry.level : null;
-		});
-		return hidden;
-	}
-
-	// Where a key moves focus in the list: the index of the entry to focus, the same index when there's
-	// nowhere to go, or undefined for keys the list doesn't use. Entries hidden in collapsed sections
-	// are skipped. ArrowRight goes to the first child and ArrowLeft to the parent; expanding and
-	// collapsing with those keys is handled before this.
-	function focusTarget(entries, index, key) {
-		const visible = entries.flatMap((entry, i) => (entry.hidden ? [] : [i]));
-		const position = visible.indexOf(index);
-		switch (key) {
-			case 'ArrowDown':
-				return visible[Math.min(position + 1, visible.length - 1)];
-			case 'ArrowUp':
-				return visible[Math.max(position - 1, 0)];
-			case 'Home':
-				return visible[0];
-			case 'End':
-				return visible[visible.length - 1];
-			case 'ArrowRight':
-				return hasChildren(entries, index) && !entries[index + 1].hidden ? index + 1 : index;
-			case 'ArrowLeft': {
-				// ancestorIndices lists the closest parent first.
-				const [parent] = ancestorIndices(entries, index);
-				return parent ?? index;
-			}
-			default:
-				return undefined;
-		}
-	}
-
-	// Stores one file's collapsed sections in a map of { [file]: { ids, time } }. A file with nothing
-	// collapsed is dropped, and only the `max` most recently changed files are kept.
-	function storeCollapsed(store, source, ids, time, max) {
-		const next = { ...store };
-		if (ids.length > 0) {
-			next[source] = { ids, time };
-		} else {
-			delete next[source];
-		}
-		const newest = Object.entries(next)
-			.sort((a, b) => b[1].time - a[1].time)
-			.slice(0, max);
-		return Object.fromEntries(newest);
-	}
-
-	// What the context menu's copy commands put on the clipboard: the heading's anchor, and a Markdown
-	// link to it. Brackets and backslashes in the text are escaped so they don't end the link text.
-	function headingLinks(id, text) {
-		const link = '#' + id;
-		return { link, markdownLink: `[${text.replace(/[\\[\]]/g, '\\$&')}](${link})` };
-	}
-
-	// Means we are in Node, export and stop here.
-	if (typeof module === 'object' && module.exports) {
-		module.exports = {
-			buildEntries,
-			ancestorIndices,
-			hasChildren,
-			hiddenIndices,
-			focusTarget,
-			storeCollapsed,
-			headingLinks,
-		};
-		return;
-	}
-
-	// Protects the script from running twice on the same page, no double initialization.
-	if (window.__mdTocSidebarInitialized) {
-		return;
-	}
-	window.__mdTocSidebarInitialized = true;
-
-	// Written into every rendered preview by src/extension.js, which can read VS Code settings.
-	const CONFIG_ID = 'md-toc-sidebar-config';
 	const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
-	// Current value of a setting, or the fallback when the config element isn't there (yet).
+	// Current value of a setting, or the fallback when the config element isn't there (yet). The
+	// element is written into every rendered preview by src/extension.ts, which can read VS Code settings.
 	function readConfig(key, fallback) {
-		const config = document.getElementById(CONFIG_ID);
+		const config = document.getElementById(CONFIG_ELEMENT_ID);
 		return (config && config.dataset[key]) || fallback;
 	}
 
@@ -301,7 +133,7 @@
 	}
 
 	// Settings menu behind the cog button. Its options are vscode:// links: the preview can't change
-	// VS Code settings itself, so VS Code hands those links to src/extension.js, which updates the
+	// VS Code settings itself, so VS Code hands those links to src/extension.ts, which updates the
 	// setting and refreshes the preview (which then shows the new value here).
 	const ICON_CLOSE =
 		'<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
@@ -434,7 +266,7 @@
 			}
 		});
 		// Picking an option applies it right away, here and in other open previews; the link itself
-		// then goes to VS Code (via src/extension.js) to save the setting. The menu stays open.
+		// then goes to VS Code (via src/extension.ts) to save the setting. The menu stays open.
 		menu.addEventListener('click', event => {
 			const option = event.target instanceof Element && event.target.closest('.md-toc-menu-option');
 			if (!option) {
@@ -470,7 +302,7 @@
 		});
 	}
 
-	// Refresh button next to the cog. Like the settings menu it's a vscode:// link: src/extension.js
+	// Refresh button next to the cog. Like the settings menu it's a vscode:// link: src/extension.ts
 	// runs the built-in "Markdown: Refresh Preview", which re-renders all previews from the source.
 	const ICON_REFRESH =
 		'<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M13 8a5 5 0 1 1-1.46-3.54" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M12.5 1.5v3.5H9" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
@@ -508,7 +340,7 @@
 	const LIVE_SETTING_KEY = 'md-toc-sidebar.live-setting';
 
 	function applySettingLocally(key, value) {
-		const config = document.getElementById(CONFIG_ID);
+		const config = document.getElementById(CONFIG_ELEMENT_ID);
 		if (config) {
 			config.dataset[key] = value;
 			scheduleBuild();
@@ -540,8 +372,8 @@
 
 	// Applies the settings from the config element: sidebar side, toggle icon and the menu's links.
 	function applyConfig() {
-		const config = document.getElementById(CONFIG_ID);
-		// Without the config element (src/extension.js not active), settings can't be changed from here.
+		const config = document.getElementById(CONFIG_ELEMENT_ID);
+		// Without the config element (src/extension.ts not active), settings can't be changed from here.
 		document.body.classList.toggle('md-toc-configurable', !!(config && config.dataset.uriBase));
 		document.body.classList.toggle('md-toc-left', sidebarPosition() === 'left');
 		updateToggle();
@@ -1164,8 +996,8 @@
 		}
 	}
 	window.addEventListener('scroll', onScroll, { passive: true });
-	// smooth-scroll-sync.js hides its gliding scroll events from regular listeners and fires this instead.
-	window.addEventListener('md-toc-sidebar:synced-scroll', onScroll);
+	// smooth-scroll-sync hides its gliding scroll events from regular listeners and fires this instead.
+	window.addEventListener(SYNCED_SCROLL_EVENT, onScroll);
 
 	// Prefix for ids we give headings written as HTML. They only exist in the preview, so a link to
 	// one wouldn't work anywhere else.
@@ -1187,7 +1019,7 @@
 
 	// Right-clicking a heading, in the sidebar or the document, offers to copy a link to it: VS Code
 	// shows the "webview/context" menu items from package.json for the element's data-vscode-context,
-	// and passes that data to the commands in src/extension.js. Headings written as HTML get none, as
+	// and passes that data to the commands in src/extension.ts. Headings written as HTML get none, as
 	// their ids only exist in the preview. In the sidebar, VS Code's own Cut/Copy/Paste are left out.
 	function setHeadingMenuContext(element, id, text, inSidebar) {
 		if (id.startsWith(RAW_ID_PREFIX)) {
@@ -1224,7 +1056,7 @@
 			applyConfig();
 			assignRawHeadingIds();
 			setDocumentHeadingMenuContexts();
-			const config = document.getElementById(CONFIG_ID);
+			const config = document.getElementById(CONFIG_ELEMENT_ID);
 			const settings = config ? JSON.stringify(config.dataset) : '';
 			const signature =
 				settings +
@@ -1260,4 +1092,10 @@
 	initRefresh();
 	setCollapsed(readCollapsed());
 	scheduleBuild();
-})();
+}
+
+// Protects the script from running twice on the same page, no double initialization.
+if (!window.__mdTocSidebarInitialized) {
+	window.__mdTocSidebarInitialized = true;
+	start();
+}

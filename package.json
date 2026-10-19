@@ -9,9 +9,9 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "watch": "node scripts/build.mjs --watch",
-    "typecheck": "tsc -p . && tsc -p src/preview",
+    "typecheck": "tsc -p . && tsc -p src/preview && tsc -p test",
     "vscode:prepublish": "npm run build",
-    "test": "node --test test/*.test.js",
+    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test test/*.test.ts",
     "lint": "oxlint --deny-warnings",
     "format": "oxfmt",
     "format:check": "oxfmt --check"
@@ -164,7 +164,7 @@
     "markdown.markdownItPlugins": true,
     "markdown.previewScripts": [
       "./dist/preview/smooth-scroll-sync.js",
-      "./media/toc.js",
+      "./dist/preview/toc.js",
       "./dist/preview/scroll-restore.js"
     ],
     "markdown.previewStyles": [
@@ -172,6 +172,7 @@
     ]
   },
   "devDependencies": {
+    "@types/node": "24.19.2",
     "@types/vscode": "1.82.0",
     "esbuild": "0.28.2",
     "oxfmt": "0.73.0",

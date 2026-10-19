@@ -1,7 +1,7 @@
 // Runs in the extension host and connects the preview scripts to VS Code settings, which they
 // can't access themselves:
 // - Settings -> preview: a markdown-it plugin adds a hidden element with the current settings as
-//   data attributes to every rendered preview; media/toc.js reads it from there.
+//   data attributes to every rendered preview; src/preview/toc/index.js reads it from there.
 // - Preview -> settings: the sidebar's settings menu is made of vscode:// links, which VS Code
 //   routes to the URI handler registered below. The preview has already applied the choice
 //   itself, so saving it doesn't need to refresh the previews. The sidebar's refresh button is
@@ -44,7 +44,7 @@ interface Token {
 	block: boolean;
 }
 
-// The data-vscode-context of a right-clicked heading, as media/toc.js wrote it.
+// The data-vscode-context of a right-clicked heading, as src/preview/toc/index.js wrote it.
 interface HeadingContext {
 	headingText: string;
 	link: string;
@@ -143,7 +143,7 @@ export function activate(context: vscode.ExtensionContext) {
 	);
 
 	// The heading context menu in the preview. VS Code passes the right-clicked element's
-	// data-vscode-context, where media/toc.js has put the ready-made links.
+	// data-vscode-context, where src/preview/toc/index.js has put the ready-made links.
 	const copyHeadingLink = (field: 'link' | 'markdownLink') => async (item?: Partial<HeadingContext>) => {
 		const text = item?.[field];
 		if (typeof text !== 'string') {

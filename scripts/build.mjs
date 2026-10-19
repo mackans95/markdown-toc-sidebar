@@ -25,7 +25,11 @@ const extension = {
 // <script>, which can't import anything, so each one becomes a single self-contained file.
 /** @type {esbuild.BuildOptions} */
 const preview = {
-	entryPoints: ['src/preview/smooth-scroll-sync.ts', 'src/preview/scroll-restore.ts'],
+	entryPoints: {
+		'smooth-scroll-sync': 'src/preview/smooth-scroll-sync.ts',
+		toc: 'src/preview/toc/index.js',
+		'scroll-restore': 'src/preview/scroll-restore.ts',
+	},
 	outdir: 'dist/preview',
 	bundle: true,
 	format: 'iife',

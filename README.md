@@ -104,7 +104,7 @@ The extension has no telemetry and makes no network requests.
 
 The extension uses VS Code's Markdown preview extension points (`markdown.previewScripts`, `markdown.previewStyles` and `markdown.markdownItPlugins`).
 
-- `media/toc.js` builds the sidebar from the rendered headings and rebuilds it whenever the preview content or a setting changes. Markdown headings already have `id`s; headings written as HTML get one from the sidebar. It also marks headings for the right-click menu (`data-vscode-context`), with the links ready to copy.
+- `src/preview/toc/` builds the sidebar from the rendered headings and rebuilds it whenever the preview content or a setting changes. Markdown headings already have `id`s; headings written as HTML get one from the sidebar. It also marks headings for the right-click menu (`data-vscode-context`), with the links ready to copy.
 - `src/preview/smooth-scroll-sync.ts` takes over the preview's scroll-sync jumps and animates them instead.
 - `src/preview/scroll-restore.ts` remembers where you are in the preview. VS Code rebuilds a preview from its last full render when its tab comes back from the background, and the preview then scrolls to the position saved in that render; this puts it back where you were.
 - `media/toc.css` styles the sidebar using your theme's colors.
@@ -129,7 +129,7 @@ The TypeScript in `src/` is built into `dist/` with esbuild. `F5` starts `npm ru
 | `npm run format` | Formats with Oxfmt; `npm run format:check` only checks. |
 | `npm test` | Runs the tests. |
 
-The tests cover the parts of `media/toc.js` that don't need a browser, such as building, numbering and collapsing the list. Pull requests run all the checks.
+The tests run in Node straight from TypeScript and cover the parts of `src/preview/toc/` that don't need a browser, such as building, numbering and collapsing the list. Pull requests run all the checks.
 
 ## License
 

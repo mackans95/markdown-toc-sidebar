@@ -1,34 +1,35 @@
-const {
+import assert from 'node:assert/strict';
+import { describe, test } from 'node:test';
+import { storeCollapsed } from '../src/preview/toc/collapse.ts';
+import { headingLinks } from '../src/preview/toc/headings.ts';
+import { focusTarget } from '../src/preview/toc/keyboard.ts';
+import {
 	ancestorIndices,
 	buildEntries,
-	focusTarget,
 	hasChildren,
-	headingLinks,
 	hiddenIndices,
-	storeCollapsed,
-} = require('../media/toc');
-const { test, describe } = require('node:test');
-const assert = require('node:assert/strict');
+	type BuildOptions,
+} from '../src/preview/toc/outline.ts';
 
-function levels(...ls) {
+function levels(...ls: number[]) {
 	return ls.map(level => ({ level }));
 }
 
-function depths(...ls) {
+function depths(...ls: number[]) {
 	return buildEntries(levels(...ls)).map(e => e.depth);
 }
 
-function levelsShown(maxDepth, ...ls) {
+function levelsShown(maxDepth: number, ...ls: number[]) {
 	return buildEntries(levels(...ls), { maxDepth }).map(e => e.level);
 }
 
 // The title as 'title', every other entry as its depth.
-function shape(options, ...ls) {
+function shape(options: BuildOptions, ...ls: number[]) {
 	return buildEntries(levels(...ls), options).map(e => (e.isTitle ? 'title' : e.depth));
 }
 
 // The title as 'title', every other entry as its number.
-function numbers(options, ...ls) {
+function numbers(options: BuildOptions, ...ls: number[]) {
 	return buildEntries(levels(...ls), { numbering: true, ...options }).map(e => (e.isTitle ? 'title' : e.number));
 }
 
@@ -88,7 +89,7 @@ describe('hiddenIndices', () => {
 	// e   h2
 	// f     h3
 	const outline = [1, 2, 3, 3, 2, 3].map((level, i) => ({ id: 'abcdef'[i], level }));
-	const hidden = (...ids) => hiddenIndices(outline, new Set(ids));
+	const hidden = (...ids: string[]) => hiddenIndices(outline, new Set(ids));
 
 	test('hides nothing when nothing is collapsed', () => {
 		assert.deepEqual(hidden(), new Set());
@@ -126,7 +127,7 @@ describe('focusTarget', () => {
 	// 4   h2
 	// 5     h3
 	const outline = [1, 2, 3, 3, 2, 3].map((level, i) => ({ level, hidden: i === 2 || i === 3 }));
-	const move = (index, key) => focusTarget(outline, index, key);
+	const move = (index: number, key: string) => focusTarget(outline, index, key);
 
 	test('moves down and up past hidden entries', () => {
 		assert.equal(move(1, 'ArrowDown'), 4);
@@ -244,7 +245,7 @@ describe('buildEntries', () => {
 	});
 
 	describe('topHeading', () => {
-		const asTitle = { topHeading: 'title' };
+		const asTitle: BuildOptions = { topHeading: 'title' };
 
 		test('makes a lone top heading the title', () => {
 			assert.deepEqual(shape(asTitle, 1, 2, 3, 2), ['title', 0, 1, 0]);
