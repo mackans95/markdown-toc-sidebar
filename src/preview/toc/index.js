@@ -1,49 +1,34 @@
 // Runs inside VS Code's built-in Markdown preview webview.
 // Builds a table of contents from the rendered headings and keeps it in sync.
 import { CONFIG_ELEMENT_ID, SYNCED_SCROLL_EVENT } from '../../shared/constants.ts';
+import { readStored, readStoredJson, writeStored } from '../storage.ts';
 import { storeCollapsed } from './collapse.ts';
-import { headingLinks } from './headings.ts';
-import { focusTarget } from './keyboard.ts';
+import { readConfig, scrollBehavior, sidebarPosition } from './config.ts';
+import {
+	HEADING_SELECTOR,
+	keepDoubleClickInside,
+	NAV_ID,
+	OWN_UI_SELECTOR,
+	REFRESH_BUTTON_ID,
+	SETTINGS_BUTTON_ID,
+	SETTINGS_MENU_ID,
+	TOGGLE_ID,
+} from './dom.ts';
+import { assignRawHeadingIds, setDocumentHeadingMenuContexts, setHeadingMenuContext } from './headings.ts';
+import {
+	ICON_CHEVRON,
+	ICON_CLOSE,
+	ICON_HIDE_LEFT,
+	ICON_HIDE_RIGHT,
+	ICON_REFRESH,
+	ICON_SETTINGS,
+	ICON_SHOW,
+} from './icons.ts';
+import { isHidden, onNavKeydown, setTabStop } from './keyboard.ts';
 import { ancestorIndices, buildEntries, hasChildren, hiddenIndices } from './outline.ts';
+import { initResizer, updateResizerValue } from './resizer.ts';
 
 function start() {
-	const NAV_ID = 'md-toc-sidebar';
-	const TOGGLE_ID = 'md-toc-toggle';
-	const RESIZER_ID = 'md-toc-resizer';
-	const SETTINGS_BUTTON_ID = 'md-toc-settings-button';
-	const SETTINGS_MENU_ID = 'md-toc-settings-menu';
-	const REFRESH_BUTTON_ID = 'md-toc-refresh-button';
-	const HEADING_SELECTOR = '.markdown-body :is(h1, h2, h3, h4, h5, h6)[id]';
-
-	const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-
-	// Current value of a setting, or the fallback when the config element isn't there (yet). The
-	// element is written into every rendered preview by src/extension.ts, which can read VS Code settings.
-	function readConfig(key, fallback) {
-		const config = document.getElementById(CONFIG_ELEMENT_ID);
-		return (config && config.dataset[key]) || fallback;
-	}
-
-	// 'smooth' or 'instant', from the markdownTocSidebar.scrollBehavior setting.
-	function scrollBehavior() {
-		if (reducedMotion.matches) {
-			return 'instant';
-		}
-		return readConfig('scrollBehavior', 'smooth') === 'instant' ? 'instant' : 'smooth';
-	}
-
-	// 'left' or 'right', from the markdownTocSidebar.position setting.
-	function sidebarPosition() {
-		return readConfig('position', 'right') === 'left' ? 'left' : 'right';
-	}
-
-	// A double-click in the preview can jump to the editor; our UI shouldn't trigger that.
-	// Stopping it on the element itself (not at the document) still lets the element's own
-	// dblclick handlers run first.
-	function keepDoubleClickInside(element) {
-		element.addEventListener('dblclick', event => event.stopPropagation());
-	}
-
 	function getNav() {
 		let nav = document.getElementById(NAV_ID);
 		if (!nav) {
@@ -66,28 +51,13 @@ function start() {
 	}
 
 	const COLLAPSED_KEY = 'md-toc-sidebar.collapsed';
-	// The hide arrow points towards the edge the sidebar collapses into.
-	const ICON_HIDE_RIGHT =
-		'<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
-	const ICON_HIDE_LEFT =
-		'<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M10 3l-5 5 5 5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
-	const ICON_SHOW =
-		'<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
 
 	function readCollapsed() {
-		try {
-			return localStorage.getItem(COLLAPSED_KEY) === 'true';
-		} catch {
-			return false;
-		}
+		return readStored(COLLAPSED_KEY) === 'true';
 	}
 
 	function writeCollapsed(collapsed) {
-		try {
-			localStorage.setItem(COLLAPSED_KEY, String(collapsed));
-		} catch {
-			// Storage unavailable; the state just won't persist.
-		}
+		writeStored(COLLAPSED_KEY, String(collapsed));
 	}
 
 	function getToggle() {
@@ -135,10 +105,6 @@ function start() {
 	// Settings menu behind the cog button. Its options are vscode:// links: the preview can't change
 	// VS Code settings itself, so VS Code hands those links to src/extension.ts, which updates the
 	// setting and refreshes the preview (which then shows the new value here).
-	const ICON_CLOSE =
-		'<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
-	const ICON_SETTINGS =
-		'<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="5.6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-dasharray="2.2 2.2"/><circle cx="8" cy="8" r="3.6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
 	const SETTING_GROUPS = [
 		{
 			key: 'scrollBehavior',
@@ -304,9 +270,6 @@ function start() {
 
 	// Refresh button next to the cog. Like the settings menu it's a vscode:// link: src/extension.ts
 	// runs the built-in "Markdown: Refresh Preview", which re-renders all previews from the source.
-	const ICON_REFRESH =
-		'<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M13 8a5 5 0 1 1-1.46-3.54" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M12.5 1.5v3.5H9" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
-
 	function initRefresh() {
 		const button = document.createElement('a');
 		button.id = REFRESH_BUTTON_ID;
@@ -348,12 +311,8 @@ function start() {
 	}
 
 	function broadcastSetting(key, value) {
-		try {
-			// The timestamp makes every write a change, so repeated choices still fire the event.
-			localStorage.setItem(LIVE_SETTING_KEY, JSON.stringify({ key, value, time: Date.now() }));
-		} catch {
-			// Storage unavailable; other previews update when they next re-render.
-		}
+		// The timestamp makes every write a change, so repeated choices still fire the event.
+		writeStored(LIVE_SETTING_KEY, JSON.stringify({ key, value, time: Date.now() }));
 	}
 
 	window.addEventListener('storage', event => {
@@ -394,135 +353,6 @@ function start() {
 		}
 		const allSettings = menu.querySelector('.md-toc-menu-link');
 		allSettings.setAttribute('href', uriBase + allSettings.dataset.path);
-	}
-
-	const WIDTH_KEY = 'md-toc-sidebar.width';
-	const MIN_WIDTH = 140;
-	// Always leave at least this much room for the document itself.
-	const MIN_CONTENT_WIDTH = 240;
-	const KEYBOARD_STEP = 16;
-
-	function readWidth() {
-		try {
-			const width = Number(localStorage.getItem(WIDTH_KEY));
-			return width > 0 ? width : undefined;
-		} catch {
-			return undefined;
-		}
-	}
-
-	function writeWidth(width) {
-		try {
-			if (width === undefined) {
-				localStorage.removeItem(WIDTH_KEY);
-			} else {
-				localStorage.setItem(WIDTH_KEY, String(Math.round(width)));
-			}
-		} catch {
-			// Storage unavailable; the width just won't persist.
-		}
-	}
-
-	// Width of the area fixed elements are laid out in: excludes the preview's own scrollbar.
-	function viewportWidth() {
-		return document.documentElement.clientWidth;
-	}
-
-	function clampWidth(width) {
-		const max = Math.max(MIN_WIDTH, viewportWidth() - MIN_CONTENT_WIDTH);
-		return Math.min(Math.max(width, MIN_WIDTH), max);
-	}
-
-	// A user-chosen width overrides the responsive default from toc.css; undefined restores it.
-	// The stored value is kept unclamped so a narrow window doesn't permanently shrink it.
-	function applyWidth(width) {
-		const root = document.documentElement;
-		if (width === undefined) {
-			root.style.removeProperty('--md-toc-width');
-		} else {
-			root.style.setProperty('--md-toc-width', clampWidth(width) + 'px');
-		}
-		updateResizerValue();
-	}
-
-	function updateResizerValue() {
-		const resizer = document.getElementById(RESIZER_ID);
-		const nav = document.getElementById(NAV_ID);
-		if (resizer && nav) {
-			resizer.setAttribute('aria-valuenow', String(Math.round(nav.getBoundingClientRect().width)));
-		}
-	}
-
-	function initResizer() {
-		const resizer = document.createElement('div');
-		resizer.id = RESIZER_ID;
-		resizer.tabIndex = 0;
-		resizer.setAttribute('role', 'separator');
-		resizer.setAttribute('aria-orientation', 'vertical');
-		resizer.setAttribute('aria-controls', NAV_ID);
-		resizer.setAttribute('aria-label', 'Resize table of contents');
-		resizer.setAttribute('aria-valuemin', String(MIN_WIDTH));
-		resizer.title = 'Drag to resize, double-click to reset';
-		keepDoubleClickInside(resizer);
-		document.body.appendChild(resizer);
-
-		const currentWidth = () => document.getElementById(NAV_ID).getBoundingClientRect().width;
-		let dragWidth;
-
-		resizer.addEventListener('pointerdown', event => {
-			if (event.button !== 0) {
-				return;
-			}
-			// No preventDefault here: it would also suppress the dblclick used to reset the width.
-			// Text selection during the drag is prevented by the md-toc-resizing class instead.
-			resizer.setPointerCapture(event.pointerId);
-			document.body.classList.add('md-toc-resizing');
-			dragWidth = currentWidth();
-		});
-
-		resizer.addEventListener('pointermove', event => {
-			if (!resizer.hasPointerCapture(event.pointerId)) {
-				return;
-			}
-			// The sidebar is pinned to one edge, so its width is the pointer's distance from that edge.
-			const distance = sidebarPosition() === 'left' ? event.clientX : viewportWidth() - event.clientX;
-			dragWidth = clampWidth(distance);
-			applyWidth(dragWidth);
-		});
-
-		const endDrag = event => {
-			if (!resizer.hasPointerCapture(event.pointerId)) {
-				return;
-			}
-			resizer.releasePointerCapture(event.pointerId);
-			document.body.classList.remove('md-toc-resizing');
-			writeWidth(dragWidth);
-		};
-		resizer.addEventListener('pointerup', endDrag);
-		resizer.addEventListener('pointercancel', endDrag);
-
-		resizer.addEventListener('dblclick', () => {
-			writeWidth(undefined);
-			applyWidth(undefined);
-		});
-
-		resizer.addEventListener('keydown', event => {
-			// Moving the handle away from the sidebar's edge widens it.
-			const outward = sidebarPosition() === 'left' ? 'ArrowRight' : 'ArrowLeft';
-			const inward = sidebarPosition() === 'left' ? 'ArrowLeft' : 'ArrowRight';
-			const delta = event.key === outward ? KEYBOARD_STEP : event.key === inward ? -KEYBOARD_STEP : 0;
-			if (!delta) {
-				return;
-			}
-			event.preventDefault();
-			const width = clampWidth(currentWidth() + delta);
-			applyWidth(width);
-			writeWidth(width);
-		});
-
-		// Re-clamp the stored width when the preview pane itself is resized.
-		window.addEventListener('resize', () => applyWidth(readWidth()));
-		applyWidth(readWidth());
 	}
 
 	function buildToc() {
@@ -621,11 +451,7 @@ function start() {
 	}
 
 	function readCollapsedSections() {
-		try {
-			return JSON.parse(localStorage.getItem(COLLAPSED_SECTIONS_KEY)) || {};
-		} catch {
-			return {};
-		}
+		return readStoredJson(COLLAPSED_SECTIONS_KEY, {});
 	}
 
 	// Picks up the saved sections when the preview shows a different file than before.
@@ -644,22 +470,9 @@ function start() {
 		}
 		// Only headings still in the document, so renamed or removed ones drop out.
 		const ids = [...collapsedIds].filter(id => document.getElementById(id));
-		try {
-			const store = storeCollapsed(
-				readCollapsedSections(),
-				collapsedSource,
-				ids,
-				Date.now(),
-				MAX_REMEMBERED_FILES,
-			);
-			localStorage.setItem(COLLAPSED_SECTIONS_KEY, JSON.stringify(store));
-		} catch {
-			// Storage unavailable; the sections stay collapsed until the preview reloads.
-		}
+		const store = storeCollapsed(readCollapsedSections(), collapsedSource, ids, Date.now(), MAX_REMEMBERED_FILES);
+		writeStored(COLLAPSED_SECTIONS_KEY, JSON.stringify(store));
 	}
-
-	const ICON_CHEVRON =
-		'<svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
 
 	// The button before an entry that has sections under it. A sibling of the link rather than inside
 	// it, so clicking it never scrolls.
@@ -802,7 +615,6 @@ function start() {
 		);
 		// Inside a collapsed section the active entry is hidden; show its closest visible parent as active
 		// instead. The ancestors come closest first.
-		const isHidden = link => !!link.closest('li')?.hidden;
 		const shownIndex =
 			activeIndex >= 0 && isHidden(links[activeIndex])
 				? ([...ancestors].find(i => !isHidden(links[i])) ?? -1)
@@ -831,55 +643,6 @@ function start() {
 		const stop = links.find(link => link.tabIndex === 0);
 		if (!nav.contains(document.activeElement) || !stop || isHidden(stop)) {
 			setTabStop(nav, links[shownIndex] ?? links.find(link => !isHidden(link)));
-		}
-	}
-
-	// The whole list is a single tab stop (the arrow keys move within it), so Tab gets past it in one go.
-	function setTabStop(nav, stop) {
-		for (const link of nav.querySelectorAll('a')) {
-			link.tabIndex = link === stop ? 0 : -1;
-		}
-	}
-
-	// Arrow keys, Home and End move between the visible entries. On an entry with sections under it,
-	// ArrowRight expands and ArrowLeft collapses (markdownTocSidebar.collapsible) before moving.
-	function onNavKeydown(event) {
-		if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || !(event.target instanceof Element)) {
-			return;
-		}
-		const nav = event.currentTarget;
-		// A chevron focused by a click stands in for its entry.
-		const current = event.target.closest('a') ?? event.target.closest('li')?.querySelector('a');
-		const links = Array.from(nav.querySelectorAll('a'));
-		const index = links.indexOf(current);
-		if (index < 0) {
-			return;
-		}
-
-		const chevron = current.closest('li')?.querySelector('.md-toc-chevron');
-		const expanded = chevron?.getAttribute('aria-expanded');
-		if (
-			(event.key === 'ArrowRight' && expanded === 'false') ||
-			(event.key === 'ArrowLeft' && expanded === 'true')
-		) {
-			event.preventDefault();
-			event.stopPropagation();
-			chevron.click();
-			current.focus();
-			return;
-		}
-
-		const isHidden = link => !!link.closest('li')?.hidden;
-		const entries = links.map(link => ({ level: Number(link.dataset.level), hidden: isHidden(link) }));
-		const target = focusTarget(entries, index, event.key);
-		if (target === undefined) {
-			return;
-		}
-		// Also at the ends of the list, so the keys don't scroll the page instead.
-		event.preventDefault();
-		event.stopPropagation();
-		if (target !== index) {
-			links[target].focus();
 		}
 	}
 
@@ -999,51 +762,6 @@ function start() {
 	// smooth-scroll-sync hides its gliding scroll events from regular listeners and fires this instead.
 	window.addEventListener(SYNCED_SCROLL_EVENT, onScroll);
 
-	// Prefix for ids we give headings written as HTML. They only exist in the preview, so a link to
-	// one wouldn't work anywhere else.
-	const RAW_ID_PREFIX = 'md-toc-raw-';
-
-	// Headings written as HTML (<h2>…</h2>) get no id from the preview, so nothing could link to them.
-	// Runs before every build: if the preview replaces such a heading while updating, the id is gone,
-	// and the update's own rebuild puts it back. Setting an attribute doesn't trigger the observer below.
-	function assignRawHeadingIds() {
-		let n = 0;
-		for (const heading of document.querySelectorAll('.markdown-body :is(h1, h2, h3, h4, h5, h6):not([id])')) {
-			let id;
-			do {
-				id = RAW_ID_PREFIX + ++n;
-			} while (document.getElementById(id));
-			heading.id = id;
-		}
-	}
-
-	// Right-clicking a heading, in the sidebar or the document, offers to copy a link to it: VS Code
-	// shows the "webview/context" menu items from package.json for the element's data-vscode-context,
-	// and passes that data to the commands in src/extension.ts. Headings written as HTML get none, as
-	// their ids only exist in the preview. In the sidebar, VS Code's own Cut/Copy/Paste are left out.
-	function setHeadingMenuContext(element, id, text, inSidebar) {
-		if (id.startsWith(RAW_ID_PREFIX)) {
-			delete element.dataset.vscodeContext;
-			return;
-		}
-		const context = JSON.stringify({
-			webviewSection: 'mdTocHeading',
-			headingText: text,
-			...headingLinks(id, text),
-			...(inSidebar ? { preventDefaultContextMenuItems: true } : {}),
-		});
-		if (element.dataset.vscodeContext !== context) {
-			element.dataset.vscodeContext = context;
-		}
-	}
-
-	// Like the ids above, runs before every build in case the preview replaced a heading.
-	function setDocumentHeadingMenuContexts() {
-		for (const heading of document.querySelectorAll(HEADING_SELECTOR)) {
-			setHeadingMenuContext(heading, heading.id, heading.textContent.trim(), false);
-		}
-	}
-
 	// Rebuild at most once per frame, and only when the headings or the settings changed.
 	let lastSignature = '';
 	let buildFrame = 0;
@@ -1074,9 +792,6 @@ function start() {
 	// Our script loads async, so the preview content may arrive before or after we run.
 	// Watching the DOM catches the initial render and every later update regardless of timing.
 	// Changes inside our own UI (sidebar, buttons, menu) are ignored, or updating it would loop.
-	const OWN_UI_SELECTOR = [NAV_ID, TOGGLE_ID, RESIZER_ID, SETTINGS_BUTTON_ID, SETTINGS_MENU_ID, REFRESH_BUTTON_ID]
-		.map(id => '#' + id)
-		.join(', ');
 	new MutationObserver(records => {
 		const isOwnUi = node => (node instanceof Element ? node : node.parentElement)?.closest(OWN_UI_SELECTOR);
 		if (records.some(r => !isOwnUi(r.target))) {

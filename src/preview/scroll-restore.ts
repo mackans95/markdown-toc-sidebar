@@ -5,6 +5,7 @@
 // restores that instead of where you had scrolled to since, so it jumps back, often to the top.
 // This remembers where you were and goes back there when the same render is rebuilt.
 import { SYNCED_SCROLL_EVENT } from '../shared/constants.ts';
+import { readStoredJson, writeStored } from './storage.ts';
 
 declare global {
 	interface Window {
@@ -38,11 +39,7 @@ function start() {
 	}
 
 	function readPositions(): Record<string, SavedPosition> {
-		try {
-			return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}') || {};
-		} catch {
-			return {};
-		}
+		return readStoredJson(STORAGE_KEY, {});
 	}
 
 	function savePosition() {
@@ -51,11 +48,7 @@ function start() {
 		const newest = Object.entries(positions)
 			.sort((a, b) => b[1].time - a[1].time)
 			.slice(0, MAX_ENTRIES);
-		try {
-			localStorage.setItem(STORAGE_KEY, JSON.stringify(Object.fromEntries(newest)));
-		} catch {
-			// Storage unavailable; the position just won't be restored.
-		}
+		writeStored(STORAGE_KEY, JSON.stringify(Object.fromEntries(newest)));
 	}
 
 	// The block at the top of the view and how far into it we are. Unlike a pixel offset, that stays
