@@ -64,7 +64,8 @@ function activate(context) {
 
 	context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(event => {
 		const changed = Object.keys(SETTINGS).filter(key => event.affectsConfiguration(`${SECTION}.${key}`));
-		if (changed.length === 0 || changed.every(key => savingFromMenu.has(key))) {
+		// Also true when none of our settings changed: every() is true for an empty list.
+		if (changed.every(key => savingFromMenu.has(key))) {
 			return;
 		}
 		// Changed elsewhere, e.g. in the Settings editor: re-render open previews so they pick it up.
