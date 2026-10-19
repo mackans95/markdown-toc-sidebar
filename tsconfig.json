@@ -1,0 +1,16 @@
+{
+  // Type checking only (npm run typecheck); scripts/build.mjs builds the code with esbuild.
+  "compilerOptions": {
+    "target": "ES2022",
+    // The extension also runs in VS Code for the Web, so no Node types: using a Node-only API is an error.
+    "lib": ["ES2022", "WebWorker"],
+    "types": [],
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "verbatimModuleSyntax": true,
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true
+  },
+  "include": ["src"]
+}

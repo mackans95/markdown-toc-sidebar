@@ -2,8 +2,13 @@
 .claude/**
 .vscode-test-web/**
 .gitignore
+.git-blame-ignore-revs
 sample.md
 test/**
+src/**
+scripts/**
+tsconfig.json
+dist/**/*.map
 .github/**
 .oxfmtrc.json
 .oxlintrc.json

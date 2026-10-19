@@ -7,6 +7,10 @@
   "license": "MIT",
   "icon": "images/icon.png",
   "scripts": {
+    "build": "node scripts/build.mjs",
+    "watch": "node scripts/build.mjs --watch",
+    "typecheck": "tsc -p .",
+    "vscode:prepublish": "npm run build",
     "test": "node --test test/*.test.js",
     "lint": "oxlint --deny-warnings",
     "format": "oxfmt",
@@ -37,8 +41,8 @@
     "navigation"
   ],
   "activationEvents": [],
-  "main": "./src/extension.js",
-  "browser": "./src/extension.js",
+  "main": "./dist/extension.js",
+  "browser": "./dist/extension.js",
   "contributes": {
     "configuration": {
       "title": "Markdown TOC Sidebar",
@@ -168,7 +172,10 @@
     ]
   },
   "devDependencies": {
+    "@types/vscode": "1.82.0",
+    "esbuild": "0.28.2",
     "oxfmt": "0.73.0",
-    "oxlint": "1.88.0"
+    "oxlint": "1.88.0",
+    "typescript": "7.0.2"
   }
 }
