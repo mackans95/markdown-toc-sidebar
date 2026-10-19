@@ -27,7 +27,7 @@ const extension = {
 const preview = {
 	entryPoints: {
 		'smooth-scroll-sync': 'src/preview/smooth-scroll-sync.ts',
-		toc: 'src/preview/toc/index.js',
+		toc: 'src/preview/toc/index.ts',
 		'scroll-restore': 'src/preview/scroll-restore.ts',
 	},
 	outdir: 'dist/preview',
