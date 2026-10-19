@@ -1,0 +1,15 @@
+{
+  // Shared by tsconfig.json (the extension) and src/preview/tsconfig.json. Type checking only
+  // (npm run typecheck); scripts/build.mjs builds the code with esbuild.
+  "compilerOptions": {
+    "target": "ES2022",
+    "types": [],
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true
+  }
+}

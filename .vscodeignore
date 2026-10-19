@@ -7,7 +7,7 @@ sample.md
 test/**
 src/**
 scripts/**
-tsconfig.json
+tsconfig*.json
 dist/**/*.map
 .github/**
 .oxfmtrc.json

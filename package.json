@@ -9,7 +9,7 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "watch": "node scripts/build.mjs --watch",
-    "typecheck": "tsc -p .",
+    "typecheck": "tsc -p . && tsc -p src/preview",
     "vscode:prepublish": "npm run build",
     "test": "node --test test/*.test.js",
     "lint": "oxlint --deny-warnings",
@@ -163,9 +163,9 @@
     },
     "markdown.markdownItPlugins": true,
     "markdown.previewScripts": [
-      "./media/smooth-scroll-sync.js",
+      "./dist/preview/smooth-scroll-sync.js",
       "./media/toc.js",
-      "./media/scroll-restore.js"
+      "./dist/preview/scroll-restore.js"
     ],
     "markdown.previewStyles": [
       "./media/toc.css"

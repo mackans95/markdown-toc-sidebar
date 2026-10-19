@@ -7,9 +7,9 @@
 //   itself, so saving it doesn't need to refresh the previews. The sidebar's refresh button is
 //   such a link too.
 import * as vscode from 'vscode';
+import { CONFIG_ELEMENT_ID } from './shared/constants.ts';
 
 const SECTION = 'markdownTocSidebar';
-const CONFIG_ELEMENT_ID = 'md-toc-sidebar-config';
 const CONFIG_TOKEN_TYPE = 'md_toc_sidebar_config';
 
 type SettingValue = string | number | boolean;

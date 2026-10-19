@@ -21,24 +21,50 @@ const extension = {
 	logLevel: watch ? 'silent' : 'warning',
 };
 
-// tasks.json waits for these lines before starting a debug session.
+// The scripts package.json adds to the Markdown preview. The preview loads each as a plain
+// <script>, which can't import anything, so each one becomes a single self-contained file.
+/** @type {esbuild.BuildOptions} */
+const preview = {
+	entryPoints: ['src/preview/smooth-scroll-sync.ts', 'src/preview/scroll-restore.ts'],
+	outdir: 'dist/preview',
+	bundle: true,
+	format: 'iife',
+	platform: 'browser',
+	// VS Code 1.82's webviews run Chromium 114 (Electron 25).
+	target: 'chrome114',
+	sourcemap: watch,
+	logLevel: watch ? 'silent' : 'warning',
+};
+
+// tasks.json waits for these lines before starting a debug session. With several builds running
+// at once, only the first start and the last finish are logged.
+let running = 0;
 /** @type {esbuild.Plugin} */
 const watchLog = {
 	name: 'watch-log',
 	setup(build) {
-		build.onStart(() => console.log('[watch] build started'));
+		build.onStart(() => {
+			if (running++ === 0) {
+				console.log('[watch] build started');
+			}
+		});
 		build.onEnd(result => {
 			for (const { text, location } of [...result.errors, ...result.warnings]) {
 				console.error(`✘ ${location?.file}:${location?.line}:${location?.column}: ${text}`);
 			}
-			console.log('[watch] build finished');
+			if (--running === 0) {
+				console.log('[watch] build finished');
+			}
 		});
 	},
 };
 
+const builds = [extension, preview];
 if (watch) {
-	const context = await esbuild.context({ ...extension, plugins: [watchLog] });
-	await context.watch();
+	for (const options of builds) {
+		const context = await esbuild.context({ ...options, plugins: [watchLog] });
+		await context.watch();
+	}
 } else {
-	await esbuild.build(extension);
+	await Promise.all(builds.map(options => esbuild.build(options)));
 }

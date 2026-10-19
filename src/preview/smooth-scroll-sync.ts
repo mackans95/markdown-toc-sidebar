@@ -1,24 +1,25 @@
 // Runs inside VS Code's built-in Markdown preview webview.
 // The preview follows the editor by jumping straight to a new position (at most ~20 times a second),
 // which looks jumpy. This intercepts those sync jumps and glides to the target instead.
-(function () {
-	if (window.__mdTocSmoothSyncInitialized) {
-		return;
-	}
-	window.__mdTocSmoothSyncInitialized = true;
+import { SYNCED_SCROLL_EVENT } from '../shared/constants.ts';
 
+declare global {
+	interface Window {
+		__mdTocSmoothSyncInitialized?: boolean;
+	}
+}
+
+function start() {
 	// window.scroll calls this soon after an 'updateView' message are the preview following the editor.
 	const SYNC_WINDOW_MS = 200;
 	// Fraction of the remaining distance covered per 60fps frame.
 	const EASING = 0.3;
-	// Lets other preview scripts (the TOC) react to positions we hide from the preview's own handler.
-	const SCROLL_EVENT = 'md-toc-sidebar:synced-scroll';
 
 	const nativeScrollTo = window.scrollTo.bind(window);
 	const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
 	let syncUntil = 0;
-	let target = null;
+	let target: number | null = null;
 	let position = 0;
 	let frame = 0;
 	let lastTime = 0;
@@ -35,12 +36,15 @@
 		true,
 	);
 
-	function intercept(native) {
-		return function (x, y) {
+	// window.scroll and window.scrollTo take either an options object or x and y.
+	function intercept(native: typeof window.scrollTo): typeof window.scrollTo {
+		return (...args: [options?: ScrollToOptions] | [x: number, y: number]) => {
+			const [x, y] = args;
 			const isSyncJump = performance.now() <= syncUntil && typeof x === 'number' && typeof y === 'number';
 			if (!isSyncJump || reducedMotion.matches) {
 				stop();
-				return native.apply(window, arguments);
+				Reflect.apply(native, window, args);
+				return;
 			}
 			glideTo(y);
 		};
@@ -52,7 +56,7 @@
 		return Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
 	}
 
-	function glideTo(y) {
+	function glideTo(y: number) {
 		if (target === null) {
 			position = window.scrollY;
 			lastTime = performance.now();
@@ -64,7 +68,7 @@
 		}
 	}
 
-	function step(now) {
+	function step(now: number) {
 		frame = 0;
 		if (target === null) {
 			return;
@@ -79,7 +83,7 @@
 			position += remaining * (1 - Math.pow(1 - EASING, elapsedFrames));
 		}
 		nativeScrollTo({ left: window.scrollX, top: position, behavior: 'instant' });
-		window.dispatchEvent(new Event(SCROLL_EVENT));
+		window.dispatchEvent(new Event(SYNCED_SCROLL_EVENT));
 
 		if (target !== null) {
 			frame = requestAnimationFrame(step);
@@ -116,4 +120,9 @@
 	for (const type of ['wheel', 'touchstart', 'keydown', 'mousedown']) {
 		window.addEventListener(type, stop, { capture: true, passive: true });
 	}
-})();
+}
+
+if (!window.__mdTocSmoothSyncInitialized) {
+	window.__mdTocSmoothSyncInitialized = true;
+	start();
+}
