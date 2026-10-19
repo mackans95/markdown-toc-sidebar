@@ -5,10 +5,9 @@
       "name": "Run Extension",
       "type": "extensionHost",
       "request": "launch",
-      "args": [
-        "--extensionDevelopmentPath=${workspaceFolder}",
-        "${workspaceFolder}/sample.md"
-      ]
+      "preLaunchTask": "watch",
+      "outFiles": ["${workspaceFolder}/dist/**/*.js"],
+      "args": ["--extensionDevelopmentPath=${workspaceFolder}", "${workspaceFolder}/sample.md"]
     },
     {
       // Same, but with your installed extensions disabled so the Debug Console only shows
@@ -16,11 +15,9 @@
       "name": "Run Extension (no other extensions)",
       "type": "extensionHost",
       "request": "launch",
-      "args": [
-        "--disable-extensions",
-        "--extensionDevelopmentPath=${workspaceFolder}",
-        "${workspaceFolder}/sample.md"
-      ]
+      "preLaunchTask": "watch",
+      "outFiles": ["${workspaceFolder}/dist/**/*.js"],
+      "args": ["--disable-extensions", "--extensionDevelopmentPath=${workspaceFolder}", "${workspaceFolder}/sample.md"]
     }
   ]
 }

@@ -1,0 +1,8 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    // The extension also runs in VS Code for the Web, so no Node types: using a Node-only API is an error.
+    "lib": ["ES2022", "WebWorker"]
+  },
+  "include": ["src/extension.ts", "src/shared"]
+}

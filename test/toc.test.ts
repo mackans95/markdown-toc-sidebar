@@ -1,26 +1,35 @@
-const { ancestorIndices, buildEntries, focusTarget, hasChildren, headingLinks, hiddenIndices, storeCollapsed } = require('../media/toc');
-const { test, describe } = require('node:test');
-const assert = require('node:assert/strict');
+import assert from 'node:assert/strict';
+import { describe, test } from 'node:test';
+import { storeCollapsed } from '../src/preview/toc/collapse.ts';
+import { headingLinks } from '../src/preview/toc/headings.ts';
+import { focusTarget } from '../src/preview/toc/keyboard.ts';
+import {
+	ancestorIndices,
+	buildEntries,
+	hasChildren,
+	hiddenIndices,
+	type BuildOptions,
+} from '../src/preview/toc/outline.ts';
 
-function levels(...ls) {
+function levels(...ls: number[]) {
 	return ls.map(level => ({ level }));
 }
 
-function depths(...ls) {
+function depths(...ls: number[]) {
 	return buildEntries(levels(...ls)).map(e => e.depth);
 }
 
-function levelsShown(maxDepth, ...ls) {
+function levelsShown(maxDepth: number, ...ls: number[]) {
 	return buildEntries(levels(...ls), { maxDepth }).map(e => e.level);
 }
 
 // The title as 'title', every other entry as its depth.
-function shape(options, ...ls) {
+function shape(options: BuildOptions, ...ls: number[]) {
 	return buildEntries(levels(...ls), options).map(e => (e.isTitle ? 'title' : e.depth));
 }
 
 // The title as 'title', every other entry as its number.
-function numbers(options, ...ls) {
+function numbers(options: BuildOptions, ...ls: number[]) {
 	return buildEntries(levels(...ls), { numbering: true, ...options }).map(e => (e.isTitle ? 'title' : e.number));
 }
 
@@ -80,7 +89,7 @@ describe('hiddenIndices', () => {
 	// e   h2
 	// f     h3
 	const outline = [1, 2, 3, 3, 2, 3].map((level, i) => ({ id: 'abcdef'[i], level }));
-	const hidden = (...ids) => hiddenIndices(outline, new Set(ids));
+	const hidden = (...ids: string[]) => hiddenIndices(outline, new Set(ids));
 
 	test('hides nothing when nothing is collapsed', () => {
 		assert.deepEqual(hidden(), new Set());
@@ -101,7 +110,11 @@ describe('hiddenIndices', () => {
 		assert.deepEqual(hidden('c'), new Set());
 	});
 	test('hides a skipped-level child', () => {
-		const skipped = [{ id: 'x', level: 2 }, { id: 'y', level: 4 }, { id: 'z', level: 2 }];
+		const skipped = [
+			{ id: 'x', level: 2 },
+			{ id: 'y', level: 4 },
+			{ id: 'z', level: 2 },
+		];
 		assert.deepEqual(hiddenIndices(skipped, new Set(['x'])), new Set([1]));
 	});
 });
@@ -114,7 +127,7 @@ describe('focusTarget', () => {
 	// 4   h2
 	// 5     h3
 	const outline = [1, 2, 3, 3, 2, 3].map((level, i) => ({ level, hidden: i === 2 || i === 3 }));
-	const move = (index, key) => focusTarget(outline, index, key);
+	const move = (index: number, key: string) => focusTarget(outline, index, key);
 
 	test('moves down and up past hidden entries', () => {
 		assert.equal(move(1, 'ArrowDown'), 4);
@@ -171,7 +184,10 @@ describe('storeCollapsed', () => {
 	});
 	test('replaces a file and keeps the others', () => {
 		const store = { 'a.md': { ids: ['x'], time: 1 }, 'b.md': { ids: ['y'], time: 2 } };
-		assert.deepEqual(storeCollapsed(store, 'a.md', ['z'], 3, 50), { 'a.md': { ids: ['z'], time: 3 }, 'b.md': { ids: ['y'], time: 2 } });
+		assert.deepEqual(storeCollapsed(store, 'a.md', ['z'], 3, 50), {
+			'a.md': { ids: ['z'], time: 3 },
+			'b.md': { ids: ['y'], time: 2 },
+		});
 	});
 	test('drops a file with nothing collapsed', () => {
 		const store = { 'a.md': { ids: ['x'], time: 1 }, 'b.md': { ids: ['y'], time: 2 } };
@@ -212,18 +228,24 @@ describe('buildEntries', () => {
 			assert.deepEqual(levelsShown(6, 1, 2, 3, 4, 5, 6), [1, 2, 3, 4, 5, 6]);
 		});
 		test('shows everything when not given', () => {
-			assert.deepEqual(buildEntries(levels(1, 2, 3)).map(e => e.level), [1, 2, 3]);
+			assert.deepEqual(
+				buildEntries(levels(1, 2, 3)).map(e => e.level),
+				[1, 2, 3],
+			);
 		});
 		test('never hides the top level', () => {
 			assert.deepEqual(levelsShown(1, 2, 3, 2), [2, 2]);
 		});
 		test('does not change the depth of what is shown', () => {
-			assert.deepEqual(buildEntries(levels(2, 3, 4), { maxDepth: 3 }).map(e => e.depth), [0, 1]);
+			assert.deepEqual(
+				buildEntries(levels(2, 3, 4), { maxDepth: 3 }).map(e => e.depth),
+				[0, 1],
+			);
 		});
 	});
 
 	describe('topHeading', () => {
-		const asTitle = { topHeading: 'title' };
+		const asTitle: BuildOptions = { topHeading: 'title' };
 
 		test('makes a lone top heading the title', () => {
 			assert.deepEqual(shape(asTitle, 1, 2, 3, 2), ['title', 0, 1, 0]);
@@ -247,7 +269,13 @@ describe('buildEntries', () => {
 			assert.deepEqual(shape(asTitle, 1), ['title']);
 		});
 		test('keeps the title entry otherwise unchanged', () => {
-			const [title] = buildEntries([{ id: 'doc', text: 'Doc', level: 1 }, { id: 'a', text: 'A', level: 2 }], asTitle);
+			const [title] = buildEntries(
+				[
+					{ id: 'doc', text: 'Doc', level: 1 },
+					{ id: 'a', text: 'A', level: 2 },
+				],
+				asTitle,
+			);
 			assert.deepEqual(title, { id: 'doc', text: 'Doc', level: 1, depth: 0, isTitle: true });
 		});
 	});
@@ -278,7 +306,10 @@ describe('buildEntries', () => {
 			assert.deepEqual(numbers({ topHeading: 'title' }, 1, 2, 3, 2), ['title', '1', '1.1', '2']);
 		});
 		test('is off by default', () => {
-			assert.deepEqual(buildEntries(levels(1, 2)).map(e => 'number' in e), [false, false]);
+			assert.deepEqual(
+				buildEntries(levels(1, 2)).map(e => 'number' in e),
+				[false, false],
+			);
 		});
 	});
 });

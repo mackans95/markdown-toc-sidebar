@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- No changes to how the extension works. Under the hood, its code is now TypeScript in separate modules, built with esbuild and checked with Oxlint and Oxfmt.
+
 ## 0.2.0
 
 - `markdownTocSidebar.maxDepth` setting to list headings only down to a chosen level.

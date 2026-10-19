@@ -104,23 +104,32 @@ The extension has no telemetry and makes no network requests.
 
 The extension uses VS Code's Markdown preview extension points (`markdown.previewScripts`, `markdown.previewStyles` and `markdown.markdownItPlugins`).
 
-- `media/toc.js` builds the sidebar from the rendered headings and rebuilds it whenever the preview content or a setting changes. Markdown headings already have `id`s; headings written as HTML get one from the sidebar. It also marks headings for the right-click menu (`data-vscode-context`), with the links ready to copy.
-- `media/smooth-scroll-sync.js` takes over the preview's scroll-sync jumps and animates them instead.
-- `media/scroll-restore.js` remembers where you are in the preview. VS Code rebuilds a preview from its last full render when its tab comes back from the background, and the preview then scrolls to the position saved in that render; this puts it back where you were.
+- `src/preview/toc/` builds the sidebar from the rendered headings and rebuilds it whenever the preview content or a setting changes. Markdown headings already have `id`s; headings written as HTML get one from the sidebar. It also marks headings for the right-click menu (`data-vscode-context`), with the links ready to copy. `index.ts` starts it; `sidebar.ts` builds the list from the entries `outline.ts` works out, `active.ts` and `scroll.ts` keep the current section highlighted, and the other files each hold one part of the sidebar, like `collapse.ts`, `keyboard.ts`, `resizer.ts`, `toggle.ts` and `settings-menu.ts`.
+- `src/preview/smooth-scroll-sync.ts` takes over the preview's scroll-sync jumps and animates them instead.
+- `src/preview/scroll-restore.ts` remembers where you are in the preview. VS Code rebuilds a preview from its last full render when its tab comes back from the background, and the preview then scrolls to the position saved in that render; this puts it back where you were.
 - `media/toc.css` styles the sidebar using your theme's colors.
-- `src/extension.js` connects the preview to VS Code settings, which the preview can't access itself. It reads the settings and their allowed values from `package.json`, adds a hidden element carrying the settings to each rendered preview, and refreshes open previews when a setting changes. The cog menu's options are `vscode://` links, which VS Code hands to this file's URI handler to update the setting. The refresh button is such a link too, and runs VS Code's *Markdown: Refresh Preview*. The commands behind the right-click menu's copy items are in this file too.
+- `src/extension.ts` connects the preview to VS Code settings, which the preview can't access itself. It reads the settings and their allowed values from `package.json`, adds a hidden element carrying the settings to each rendered preview, and refreshes open previews when a setting changes. The cog menu's options are `vscode://` links, which VS Code hands to this file's URI handler to update the setting. The refresh button is such a link too, and runs VS Code's *Markdown: Refresh Preview*. The commands behind the right-click menu's copy items are in this file too.
 
 ## Development
 
-1. Clone the repository and open it in VS Code.
+1. Clone the repository, run `npm install` and open it in VS Code.
 2. Press `F5` to open a test window with the extension loaded and `sample.md` open.
 3. Open the preview with `Cmd+K V` / `Ctrl+K V`.
 
 There are two launch configurations. **Run Extension (no other extensions)** disables your installed extensions in the test window, so the Debug Console only shows output from this extension and VS Code's built-ins.
 
-The extension has no build step. After editing a file in `media/`, run **Developer: Reload Window** in the test window to load the change. If a stylesheet change doesn't show up, stop and restart debugging: the preview can keep serving the old CSS.
+The TypeScript in `src/` is built into `dist/` with esbuild. `F5` starts `npm run watch` first, which rebuilds on every change; build errors show up in the Problems panel. After a change, run **Developer: Reload Window** in the test window to load it. If a stylesheet change doesn't show up, stop and restart debugging: the preview can keep serving the old CSS.
 
-Run the tests with `npm test`. They cover the parts of `media/toc.js` that don't need a browser, such as building, numbering and collapsing the list, and run on every pull request.
+| Command | What it does |
+|---|---|
+| `npm run build` | Builds `dist/` once. Packaging the extension runs it too. |
+| `npm run watch` | Rebuilds `dist/` on every change. |
+| `npm run typecheck` | Checks the types; esbuild only strips them. |
+| `npm run lint` | Lints with Oxlint. |
+| `npm run format` | Formats with Oxfmt; `npm run format:check` only checks. |
+| `npm test` | Runs the tests. |
+
+The tests run in Node straight from TypeScript and cover the parts of `src/preview/toc/` that don't need a browser, such as building, numbering and collapsing the list. Pull requests run all the checks.
 
 ## License
 

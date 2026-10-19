@@ -7,7 +7,14 @@
   "license": "MIT",
   "icon": "images/icon.png",
   "scripts": {
-    "test": "node --test test/*.test.js"
+    "build": "node scripts/build.mjs",
+    "watch": "node scripts/build.mjs --watch",
+    "typecheck": "tsc -p . && tsc -p src/preview && tsc -p test",
+    "vscode:prepublish": "npm run build",
+    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test test/*.test.ts",
+    "lint": "oxlint --deny-warnings",
+    "format": "oxfmt",
+    "format:check": "oxfmt --check"
   },
   "repository": {
     "type": "git",
@@ -34,8 +41,8 @@
     "navigation"
   ],
   "activationEvents": [],
-  "main": "./src/extension.js",
-  "browser": "./src/extension.js",
+  "main": "./dist/extension.js",
+  "browser": "./dist/extension.js",
   "contributes": {
     "configuration": {
       "title": "Markdown TOC Sidebar",
@@ -156,12 +163,20 @@
     },
     "markdown.markdownItPlugins": true,
     "markdown.previewScripts": [
-      "./media/smooth-scroll-sync.js",
-      "./media/toc.js",
-      "./media/scroll-restore.js"
+      "./dist/preview/smooth-scroll-sync.js",
+      "./dist/preview/toc.js",
+      "./dist/preview/scroll-restore.js"
     ],
     "markdown.previewStyles": [
       "./media/toc.css"
     ]
+  },
+  "devDependencies": {
+    "@types/node": "24.19.2",
+    "@types/vscode": "1.82.0",
+    "esbuild": "0.28.2",
+    "oxfmt": "0.73.0",
+    "oxlint": "1.88.0",
+    "typescript": "7.0.2"
   }
 }

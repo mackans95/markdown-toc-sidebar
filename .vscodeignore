@@ -1,9 +1,17 @@
 .vscode/**
+.claude/**
 .vscode-test-web/**
 .gitignore
+.git-blame-ignore-revs
 sample.md
 test/**
+src/**
+scripts/**
+tsconfig*.json
+dist/**/*.map
 .github/**
+.oxfmtrc.json
+.oxlintrc.json
 # README images are loaded from the repository, so they don't need to be in the package.
 images/**
 # ...except the icon, which the package itself needs.
