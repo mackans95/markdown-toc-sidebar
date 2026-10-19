@@ -25,20 +25,23 @@
 		const limit = Math.max(maxDepth, baseLevel);
 
 		// A title only when the first heading is the only one at the top level, like a `#` above `##` sections.
-		const hasTitle = topHeading === 'title'
-			&& headings.length > 0
-			&& headings[0].level === baseLevel
-			&& headings.filter(h => h.level === baseLevel).length === 1;
+		const hasTitle =
+			topHeading === 'title' &&
+			headings.length > 0 &&
+			headings[0].level === baseLevel &&
+			headings.filter(h => h.level === baseLevel).length === 1;
 		// The rest is indented from its own top level, so `#` followed by `###` sections doesn't leave a gap.
 		const rest = hasTitle ? headings.slice(1) : headings;
 		const listBase = Math.min(...rest.map(h => h.level));
 
-		const entries = headings.map((h, i) => {
-			if (hasTitle && i === 0) {
-				return { ...h, depth: 0, isTitle: true };
-			}
-			return { ...h, depth: h.level - listBase };
-		}).filter(h => h.level <= limit);
+		const entries = headings
+			.map((h, i) => {
+				if (hasTitle && i === 0) {
+					return { ...h, depth: 0, isTitle: true };
+				}
+				return { ...h, depth: h.level - listBase };
+			})
+			.filter(h => h.level <= limit);
 
 		if (options.numbering) {
 			addNumbers(entries.filter(entry => !entry.isTitle));
@@ -146,7 +149,9 @@
 		} else {
 			delete next[source];
 		}
-		const newest = Object.entries(next).sort((a, b) => b[1].time - a[1].time).slice(0, max);
+		const newest = Object.entries(next)
+			.sort((a, b) => b[1].time - a[1].time)
+			.slice(0, max);
 		return Object.fromEntries(newest);
 	}
 
@@ -159,7 +164,15 @@
 
 	// Means we are in Node, export and stop here.
 	if (typeof module === 'object' && module.exports) {
-		module.exports = { buildEntries, ancestorIndices, hasChildren, hiddenIndices, focusTarget, storeCollapsed, headingLinks };
+		module.exports = {
+			buildEntries,
+			ancestorIndices,
+			hasChildren,
+			hiddenIndices,
+			focusTarget,
+			storeCollapsed,
+			headingLinks,
+		};
 		return;
 	}
 
@@ -222,9 +235,12 @@
 
 	const COLLAPSED_KEY = 'md-toc-sidebar.collapsed';
 	// The hide arrow points towards the edge the sidebar collapses into.
-	const ICON_HIDE_RIGHT = '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
-	const ICON_HIDE_LEFT = '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M10 3l-5 5 5 5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
-	const ICON_SHOW = '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
+	const ICON_HIDE_RIGHT =
+		'<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
+	const ICON_HIDE_LEFT =
+		'<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M10 3l-5 5 5 5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
+	const ICON_SHOW =
+		'<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
 
 	function readCollapsed() {
 		try {
@@ -287,15 +303,63 @@
 	// Settings menu behind the cog button. Its options are vscode:// links: the preview can't change
 	// VS Code settings itself, so VS Code hands those links to src/extension.js, which updates the
 	// setting and refreshes the preview (which then shows the new value here).
-	const ICON_CLOSE = '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
-	const ICON_SETTINGS = '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="5.6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-dasharray="2.2 2.2"/><circle cx="8" cy="8" r="3.6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
+	const ICON_CLOSE =
+		'<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
+	const ICON_SETTINGS =
+		'<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="5.6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-dasharray="2.2 2.2"/><circle cx="8" cy="8" r="3.6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
 	const SETTING_GROUPS = [
-		{ key: 'scrollBehavior', label: 'Scroll on click', options: [['smooth', 'Smooth'], ['instant', 'Instant']] },
-		{ key: 'position', label: 'Sidebar position', options: [['left', 'Left'], ['right', 'Right']] },
-		{ key: 'maxDepth', label: 'Show headings down to', options: [['1', 'H1'], ['2', 'H2'], ['3', 'H3'], ['4', 'H4'], ['5', 'H5'], ['6', 'H6']] },
-		{ key: 'topHeading', label: 'Single top heading', options: [['list', 'In list'], ['title', 'As title']] },
-		{ key: 'numbering', label: 'Numbering', options: [['false', 'Off'], ['true', 'On']] },
-		{ key: 'collapsible', label: 'Collapsible sections', options: [['false', 'Off'], ['true', 'On']] },
+		{
+			key: 'scrollBehavior',
+			label: 'Scroll on click',
+			options: [
+				['smooth', 'Smooth'],
+				['instant', 'Instant'],
+			],
+		},
+		{
+			key: 'position',
+			label: 'Sidebar position',
+			options: [
+				['left', 'Left'],
+				['right', 'Right'],
+			],
+		},
+		{
+			key: 'maxDepth',
+			label: 'Show headings down to',
+			options: [
+				['1', 'H1'],
+				['2', 'H2'],
+				['3', 'H3'],
+				['4', 'H4'],
+				['5', 'H5'],
+				['6', 'H6'],
+			],
+		},
+		{
+			key: 'topHeading',
+			label: 'Single top heading',
+			options: [
+				['list', 'In list'],
+				['title', 'As title'],
+			],
+		},
+		{
+			key: 'numbering',
+			label: 'Numbering',
+			options: [
+				['false', 'Off'],
+				['true', 'On'],
+			],
+		},
+		{
+			key: 'collapsible',
+			label: 'Collapsible sections',
+			options: [
+				['false', 'Off'],
+				['true', 'On'],
+			],
+		},
 	];
 
 	function initSettings() {
@@ -384,11 +448,20 @@
 			applySettingLocally(option.dataset.key, option.dataset.value);
 			broadcastSetting(option.dataset.key, option.dataset.value);
 		});
-		document.addEventListener('pointerdown', event => {
-			if (!menu.hidden && event.target instanceof Node && !menu.contains(event.target) && !button.contains(event.target)) {
-				closeSettingsMenu();
-			}
-		}, true);
+		document.addEventListener(
+			'pointerdown',
+			event => {
+				if (
+					!menu.hidden &&
+					event.target instanceof Node &&
+					!menu.contains(event.target) &&
+					!button.contains(event.target)
+				) {
+					closeSettingsMenu();
+				}
+			},
+			true,
+		);
 		document.addEventListener('keydown', event => {
 			if (event.key === 'Escape' && !menu.hidden) {
 				closeSettingsMenu();
@@ -399,7 +472,8 @@
 
 	// Refresh button next to the cog. Like the settings menu it's a vscode:// link: src/extension.js
 	// runs the built-in "Markdown: Refresh Preview", which re-renders all previews from the source.
-	const ICON_REFRESH = '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M13 8a5 5 0 1 1-1.46-3.54" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M12.5 1.5v3.5H9" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
+	const ICON_REFRESH =
+		'<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M13 8a5 5 0 1 1-1.46-3.54" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M12.5 1.5v3.5H9" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
 
 	function initRefresh() {
 		const button = document.createElement('a');
@@ -634,7 +708,10 @@
 		const maxDepth = Number(readConfig('maxDepth', '6'));
 		const topHeading = readConfig('topHeading', 'list');
 		const numbering = readConfig('numbering', 'false') === 'true';
-		const entries = buildEntries(headings.map(h => ({ id: h.id, text: h.textContent.trim(), level: Number(h.tagName[1]) })), { maxDepth, topHeading, numbering });
+		const entries = buildEntries(
+			headings.map(h => ({ id: h.id, text: h.textContent.trim(), level: Number(h.tagName[1]) })),
+			{ maxDepth, topHeading, numbering },
+		);
 		tocIds = new Set(entries.map(entry => entry.id));
 
 		const createLink = entry => {
@@ -736,14 +813,21 @@
 		// Only headings still in the document, so renamed or removed ones drop out.
 		const ids = [...collapsedIds].filter(id => document.getElementById(id));
 		try {
-			const store = storeCollapsed(readCollapsedSections(), collapsedSource, ids, Date.now(), MAX_REMEMBERED_FILES);
+			const store = storeCollapsed(
+				readCollapsedSections(),
+				collapsedSource,
+				ids,
+				Date.now(),
+				MAX_REMEMBERED_FILES,
+			);
 			localStorage.setItem(COLLAPSED_SECTIONS_KEY, JSON.stringify(store));
 		} catch {
 			// Storage unavailable; the sections stay collapsed until the preview reloads.
 		}
 	}
 
-	const ICON_CHEVRON = '<svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
+	const ICON_CHEVRON =
+		'<svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
 
 	// The button before an entry that has sections under it. A sibling of the link rather than inside
 	// it, so clicking it never scrolls.
@@ -880,13 +964,17 @@
 		const links = Array.from(nav.querySelectorAll('a'));
 		const activeIndex = links.findIndex(link => link.dataset.target === id);
 
-		const ancestors = ancestorIndices(links.map(l => ({ level: Number(l.dataset.level) })), activeIndex);
+		const ancestors = ancestorIndices(
+			links.map(l => ({ level: Number(l.dataset.level) })),
+			activeIndex,
+		);
 		// Inside a collapsed section the active entry is hidden; show its closest visible parent as active
 		// instead. The ancestors come closest first.
 		const isHidden = link => !!link.closest('li')?.hidden;
-		const shownIndex = activeIndex >= 0 && isHidden(links[activeIndex])
-			? [...ancestors].find(i => !isHidden(links[i])) ?? -1
-			: activeIndex;
+		const shownIndex =
+			activeIndex >= 0 && isHidden(links[activeIndex])
+				? ([...ancestors].find(i => !isHidden(links[i])) ?? -1)
+				: activeIndex;
 
 		links.forEach((link, i) => {
 			link.classList.toggle('active', i === shownIndex);
@@ -897,7 +985,10 @@
 			}
 			// Parents above the entry shown as active (any below it are inside the collapsed section). The
 			// document title contains everything, so as a parent it would always be tinted.
-			link.classList.toggle('active-ancestor', ancestors.has(i) && i < shownIndex && !link.classList.contains('md-toc-doc-title'));
+			link.classList.toggle(
+				'active-ancestor',
+				ancestors.has(i) && i < shownIndex && !link.classList.contains('md-toc-doc-title'),
+			);
 		});
 		if (shownIndex >= 0) {
 			links[shownIndex].scrollIntoView({ block: 'nearest' });
@@ -935,7 +1026,10 @@
 
 		const chevron = current.closest('li')?.querySelector('.md-toc-chevron');
 		const expanded = chevron?.getAttribute('aria-expanded');
-		if ((event.key === 'ArrowRight' && expanded === 'false') || (event.key === 'ArrowLeft' && expanded === 'true')) {
+		if (
+			(event.key === 'ArrowRight' && expanded === 'false') ||
+			(event.key === 'ArrowLeft' && expanded === 'true')
+		) {
 			event.preventDefault();
 			event.stopPropagation();
 			chevron.click();
@@ -978,25 +1072,29 @@
 	}
 
 	// Handle clicks ourselves so the preview's own link handler doesn't interfere.
-	document.addEventListener('click', event => {
-		const link = event.target instanceof Element && event.target.closest('#' + NAV_ID + ' a');
-		if (!link) {
-			return;
-		}
-		event.preventDefault();
-		event.stopPropagation();
-		const target = document.getElementById(link.dataset.target);
-		if (target) {
-			pinActive(target);
-			setActiveLink(target.id);
-			if (scrollBehavior() === 'smooth') {
-				animateScrollTo(headingScrollTop(target));
-			} else {
-				stopScrollAnimation();
-				target.scrollIntoView({ block: 'start' });
+	document.addEventListener(
+		'click',
+		event => {
+			const link = event.target instanceof Element && event.target.closest('#' + NAV_ID + ' a');
+			if (!link) {
+				return;
 			}
-		}
-	}, true);
+			event.preventDefault();
+			event.stopPropagation();
+			const target = document.getElementById(link.dataset.target);
+			if (target) {
+				pinActive(target);
+				setActiveLink(target.id);
+				if (scrollBehavior() === 'smooth') {
+					animateScrollTo(headingScrollTop(target));
+				} else {
+					stopScrollAnimation();
+					target.scrollIntoView({ block: 'start' });
+				}
+			}
+		},
+		true,
+	);
 
 	// Where the page has to scroll for a heading to sit at the top, honoring its scroll-margin-top.
 	function headingScrollTop(heading) {
@@ -1128,9 +1226,12 @@
 			setDocumentHeadingMenuContexts();
 			const config = document.getElementById(CONFIG_ID);
 			const settings = config ? JSON.stringify(config.dataset) : '';
-			const signature = settings + '\n' + Array.from(document.querySelectorAll(HEADING_SELECTOR))
-				.map(h => h.tagName + '#' + h.id + ':' + h.textContent)
-				.join('\n');
+			const signature =
+				settings +
+				'\n' +
+				Array.from(document.querySelectorAll(HEADING_SELECTOR))
+					.map(h => h.tagName + '#' + h.id + ':' + h.textContent)
+					.join('\n');
 			if (signature !== lastSignature || !document.getElementById(NAV_ID)) {
 				lastSignature = signature;
 				buildToc();
@@ -1141,7 +1242,9 @@
 	// Our script loads async, so the preview content may arrive before or after we run.
 	// Watching the DOM catches the initial render and every later update regardless of timing.
 	// Changes inside our own UI (sidebar, buttons, menu) are ignored, or updating it would loop.
-	const OWN_UI_SELECTOR = [NAV_ID, TOGGLE_ID, RESIZER_ID, SETTINGS_BUTTON_ID, SETTINGS_MENU_ID, REFRESH_BUTTON_ID].map(id => '#' + id).join(', ');
+	const OWN_UI_SELECTOR = [NAV_ID, TOGGLE_ID, RESIZER_ID, SETTINGS_BUTTON_ID, SETTINGS_MENU_ID, REFRESH_BUTTON_ID]
+		.map(id => '#' + id)
+		.join(', ');
 	new MutationObserver(records => {
 		const isOwnUi = node => (node instanceof Element ? node : node.parentElement)?.closest(OWN_UI_SELECTOR);
 		if (records.some(r => !isOwnUi(r.target))) {

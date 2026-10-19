@@ -25,11 +25,15 @@
 	let suppressScrollEvents = false;
 
 	// Capture phase so this runs before the preview's own message handler performs the jump.
-	window.addEventListener('message', event => {
-		if (event.data && event.data.type === 'updateView') {
-			syncUntil = performance.now() + SYNC_WINDOW_MS;
-		}
-	}, true);
+	window.addEventListener(
+		'message',
+		event => {
+			if (event.data && event.data.type === 'updateView') {
+				syncUntil = performance.now() + SYNC_WINDOW_MS;
+			}
+		},
+		true,
+	);
 
 	function intercept(native) {
 		return function (x, y) {
@@ -98,11 +102,15 @@
 
 	// While gliding, hide the intermediate scroll events from the preview's own scroll handler.
 	// Otherwise it would report each in-between position back to the editor and the two would fight.
-	window.addEventListener('scroll', event => {
-		if (suppressScrollEvents) {
-			event.stopImmediatePropagation();
-		}
-	}, true);
+	window.addEventListener(
+		'scroll',
+		event => {
+			if (suppressScrollEvents) {
+				event.stopImmediatePropagation();
+			}
+		},
+		true,
+	);
 
 	// The user taking over the preview cancels the glide immediately.
 	for (const type of ['wheel', 'touchstart', 'keydown', 'mousedown']) {

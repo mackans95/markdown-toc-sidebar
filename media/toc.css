@@ -99,7 +99,7 @@ body.md-toc-visible.md-toc-configurable:not(.md-toc-collapsed) #md-toc-refresh-b
 
 #md-toc-toggle:hover,
 #md-toc-settings-button:hover,
-#md-toc-settings-button[aria-expanded="true"],
+#md-toc-settings-button[aria-expanded='true'],
 #md-toc-refresh-button:hover {
 	background: var(--vscode-toolbar-hoverBackground, var(--vscode-list-hoverBackground));
 	color: var(--vscode-foreground);
@@ -143,7 +143,8 @@ body.md-toc-visible.md-toc-collapsed {
 	/* The resizer always leaves the document at least 240px; keep 12px free at the far edge too. */
 	max-width: calc(100% - var(--md-toc-width) - 20px);
 	padding: 10px;
-	border: 1px solid var(--vscode-menu-border, var(--vscode-widget-border, var(--vscode-panel-border, rgba(128, 128, 128, 0.35))));
+	border: 1px solid
+		var(--vscode-menu-border, var(--vscode-widget-border, var(--vscode-panel-border, rgba(128, 128, 128, 0.35))));
 	border-radius: 6px;
 	background: var(--vscode-menu-background, var(--vscode-editorWidget-background, var(--vscode-editor-background)));
 	color: var(--vscode-menu-foreground, var(--vscode-foreground));
@@ -241,7 +242,7 @@ body.md-toc-visible.md-toc-collapsed {
 	background: var(--vscode-button-secondaryHoverBackground, rgba(128, 128, 128, 0.3));
 }
 
-#md-toc-settings-menu .md-toc-menu-option[aria-checked="true"] {
+#md-toc-settings-menu .md-toc-menu-option[aria-checked='true'] {
 	background: var(--vscode-button-background);
 	color: var(--vscode-button-foreground);
 	/* The text color contrasts with the menu background in every theme (the focus color is too
@@ -419,7 +420,7 @@ body.md-toc-resizing {
 }
 
 /* Collapsed: the arrow points at the entry instead of down at its sections. */
-#md-toc-sidebar .md-toc-chevron[aria-expanded="false"] svg {
+#md-toc-sidebar .md-toc-chevron[aria-expanded='false'] svg {
 	transform: rotate(-90deg);
 }
 

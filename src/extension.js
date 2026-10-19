@@ -38,9 +38,12 @@ function readSettingsSchema(packageJson) {
 function writeSetting(key, value) {
 	const config = vscode.workspace.getConfiguration(SECTION);
 	const inspected = config.inspect(key);
-	const target = inspected?.workspaceFolderValue !== undefined ? vscode.ConfigurationTarget.WorkspaceFolder
-		: inspected?.workspaceValue !== undefined ? vscode.ConfigurationTarget.Workspace
-			: vscode.ConfigurationTarget.Global;
+	const target =
+		inspected?.workspaceFolderValue !== undefined
+			? vscode.ConfigurationTarget.WorkspaceFolder
+			: inspected?.workspaceValue !== undefined
+				? vscode.ConfigurationTarget.Workspace
+				: vscode.ConfigurationTarget.Global;
 	return config.update(key, value, target);
 }
 
@@ -62,39 +65,43 @@ function activate(context) {
 	// values, so the change doesn't need the (slow, full-reload) preview refresh.
 	const savingFromMenu = new Set();
 
-	context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(event => {
-		const changed = Object.keys(SETTINGS).filter(key => event.affectsConfiguration(`${SECTION}.${key}`));
-		// Also true when none of our settings changed: every() is true for an empty list.
-		if (changed.every(key => savingFromMenu.has(key))) {
-			return;
-		}
-		// Changed elsewhere, e.g. in the Settings editor: re-render open previews so they pick it up.
-		vscode.commands.executeCommand('markdown.preview.refresh');
-	}));
+	context.subscriptions.push(
+		vscode.workspace.onDidChangeConfiguration(event => {
+			const changed = Object.keys(SETTINGS).filter(key => event.affectsConfiguration(`${SECTION}.${key}`));
+			// Also true when none of our settings changed: every() is true for an empty list.
+			if (changed.every(key => savingFromMenu.has(key))) {
+				return;
+			}
+			// Changed elsewhere, e.g. in the Settings editor: re-render open previews so they pick it up.
+			vscode.commands.executeCommand('markdown.preview.refresh');
+		}),
+	);
 
-	context.subscriptions.push(vscode.window.registerUriHandler({
-		async handleUri(uri) {
-			if (uri.path === '/set') {
-				const params = new URLSearchParams(uri.query);
-				for (const [key, value] of params) {
-					const allowed = SETTINGS[key]?.values.find(v => String(v) === value);
-					if (allowed !== undefined) {
-						savingFromMenu.add(key);
-						try {
-							await writeSetting(key, allowed);
-						} finally {
-							// The change event may arrive just after the write resolves.
-							setTimeout(() => savingFromMenu.delete(key), 1000);
+	context.subscriptions.push(
+		vscode.window.registerUriHandler({
+			async handleUri(uri) {
+				if (uri.path === '/set') {
+					const params = new URLSearchParams(uri.query);
+					for (const [key, value] of params) {
+						const allowed = SETTINGS[key]?.values.find(v => String(v) === value);
+						if (allowed !== undefined) {
+							savingFromMenu.add(key);
+							try {
+								await writeSetting(key, allowed);
+							} finally {
+								// The change event may arrive just after the write resolves.
+								setTimeout(() => savingFromMenu.delete(key), 1000);
+							}
 						}
 					}
+				} else if (uri.path === '/open-settings') {
+					await vscode.commands.executeCommand('workbench.action.openSettings', `@ext:${extensionId}`);
+				} else if (uri.path === '/refresh') {
+					await vscode.commands.executeCommand('markdown.preview.refresh');
 				}
-			} else if (uri.path === '/open-settings') {
-				await vscode.commands.executeCommand('workbench.action.openSettings', `@ext:${extensionId}`);
-			} else if (uri.path === '/refresh') {
-				await vscode.commands.executeCommand('markdown.preview.refresh');
-			}
-		},
-	}));
+			},
+		}),
+	);
 
 	// The heading context menu in the preview. VS Code passes the right-clicked element's
 	// data-vscode-context, where media/toc.js has put the ready-made links.
@@ -123,7 +130,9 @@ function activate(context) {
 			// The values are filled in when rendering rather than when parsing: the markdown extension
 			// caches parsed tokens, so values baked in at parse time could be stale.
 			md.renderer.rules[CONFIG_TOKEN_TYPE] = () => {
-				const attributes = Object.keys(SETTINGS).map(key => `data-${toKebabCase(key)}="${escapeAttribute(readSetting(key))}"`);
+				const attributes = Object.keys(SETTINGS).map(
+					key => `data-${toKebabCase(key)}="${escapeAttribute(readSetting(key))}"`,
+				);
 				attributes.push(`data-uri-base="${escapeAttribute(uriBase)}"`);
 				return `<div id="${CONFIG_ELEMENT_ID}" ${attributes.join(' ')} hidden></div>\n`;
 			};
@@ -132,6 +141,6 @@ function activate(context) {
 	};
 }
 
-function deactivate() { }
+function deactivate() {}
 
 module.exports = { activate, deactivate };

@@ -36,7 +36,9 @@
 	function savePosition() {
 		const positions = readPositions();
 		positions[renderId] = { ...currentPosition(), time: Date.now() };
-		const newest = Object.entries(positions).sort((a, b) => b[1].time - a[1].time).slice(0, MAX_ENTRIES);
+		const newest = Object.entries(positions)
+			.sort((a, b) => b[1].time - a[1].time)
+			.slice(0, MAX_ENTRIES);
 		try {
 			localStorage.setItem(STORAGE_KEY, JSON.stringify(Object.fromEntries(newest)));
 		} catch {

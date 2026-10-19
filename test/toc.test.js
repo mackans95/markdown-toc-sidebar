@@ -1,4 +1,12 @@
-const { ancestorIndices, buildEntries, focusTarget, hasChildren, headingLinks, hiddenIndices, storeCollapsed } = require('../media/toc');
+const {
+	ancestorIndices,
+	buildEntries,
+	focusTarget,
+	hasChildren,
+	headingLinks,
+	hiddenIndices,
+	storeCollapsed,
+} = require('../media/toc');
 const { test, describe } = require('node:test');
 const assert = require('node:assert/strict');
 
@@ -101,7 +109,11 @@ describe('hiddenIndices', () => {
 		assert.deepEqual(hidden('c'), new Set());
 	});
 	test('hides a skipped-level child', () => {
-		const skipped = [{ id: 'x', level: 2 }, { id: 'y', level: 4 }, { id: 'z', level: 2 }];
+		const skipped = [
+			{ id: 'x', level: 2 },
+			{ id: 'y', level: 4 },
+			{ id: 'z', level: 2 },
+		];
 		assert.deepEqual(hiddenIndices(skipped, new Set(['x'])), new Set([1]));
 	});
 });
@@ -171,7 +183,10 @@ describe('storeCollapsed', () => {
 	});
 	test('replaces a file and keeps the others', () => {
 		const store = { 'a.md': { ids: ['x'], time: 1 }, 'b.md': { ids: ['y'], time: 2 } };
-		assert.deepEqual(storeCollapsed(store, 'a.md', ['z'], 3, 50), { 'a.md': { ids: ['z'], time: 3 }, 'b.md': { ids: ['y'], time: 2 } });
+		assert.deepEqual(storeCollapsed(store, 'a.md', ['z'], 3, 50), {
+			'a.md': { ids: ['z'], time: 3 },
+			'b.md': { ids: ['y'], time: 2 },
+		});
 	});
 	test('drops a file with nothing collapsed', () => {
 		const store = { 'a.md': { ids: ['x'], time: 1 }, 'b.md': { ids: ['y'], time: 2 } };
@@ -212,13 +227,19 @@ describe('buildEntries', () => {
 			assert.deepEqual(levelsShown(6, 1, 2, 3, 4, 5, 6), [1, 2, 3, 4, 5, 6]);
 		});
 		test('shows everything when not given', () => {
-			assert.deepEqual(buildEntries(levels(1, 2, 3)).map(e => e.level), [1, 2, 3]);
+			assert.deepEqual(
+				buildEntries(levels(1, 2, 3)).map(e => e.level),
+				[1, 2, 3],
+			);
 		});
 		test('never hides the top level', () => {
 			assert.deepEqual(levelsShown(1, 2, 3, 2), [2, 2]);
 		});
 		test('does not change the depth of what is shown', () => {
-			assert.deepEqual(buildEntries(levels(2, 3, 4), { maxDepth: 3 }).map(e => e.depth), [0, 1]);
+			assert.deepEqual(
+				buildEntries(levels(2, 3, 4), { maxDepth: 3 }).map(e => e.depth),
+				[0, 1],
+			);
 		});
 	});
 
@@ -247,7 +268,13 @@ describe('buildEntries', () => {
 			assert.deepEqual(shape(asTitle, 1), ['title']);
 		});
 		test('keeps the title entry otherwise unchanged', () => {
-			const [title] = buildEntries([{ id: 'doc', text: 'Doc', level: 1 }, { id: 'a', text: 'A', level: 2 }], asTitle);
+			const [title] = buildEntries(
+				[
+					{ id: 'doc', text: 'Doc', level: 1 },
+					{ id: 'a', text: 'A', level: 2 },
+				],
+				asTitle,
+			);
 			assert.deepEqual(title, { id: 'doc', text: 'Doc', level: 1, depth: 0, isTitle: true });
 		});
 	});
@@ -278,7 +305,10 @@ describe('buildEntries', () => {
 			assert.deepEqual(numbers({ topHeading: 'title' }, 1, 2, 3, 2), ['title', '1', '1.1', '2']);
 		});
 		test('is off by default', () => {
-			assert.deepEqual(buildEntries(levels(1, 2)).map(e => 'number' in e), [false, false]);
+			assert.deepEqual(
+				buildEntries(levels(1, 2)).map(e => 'number' in e),
+				[false, false],
+			);
 		});
 	});
 });
