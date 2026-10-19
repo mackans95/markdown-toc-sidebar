@@ -104,7 +104,7 @@ The extension has no telemetry and makes no network requests.
 
 The extension uses VS Code's Markdown preview extension points (`markdown.previewScripts`, `markdown.previewStyles` and `markdown.markdownItPlugins`).
 
-- `src/preview/toc/` builds the sidebar from the rendered headings and rebuilds it whenever the preview content or a setting changes. Markdown headings already have `id`s; headings written as HTML get one from the sidebar. It also marks headings for the right-click menu (`data-vscode-context`), with the links ready to copy.
+- `src/preview/toc/` builds the sidebar from the rendered headings and rebuilds it whenever the preview content or a setting changes. Markdown headings already have `id`s; headings written as HTML get one from the sidebar. It also marks headings for the right-click menu (`data-vscode-context`), with the links ready to copy. `index.ts` starts it; `sidebar.ts` builds the list from the entries `outline.ts` works out, `active.ts` and `scroll.ts` keep the current section highlighted, and the other files each hold one part of the sidebar, like `collapse.ts`, `keyboard.ts`, `resizer.ts`, `toggle.ts` and `settings-menu.ts`.
 - `src/preview/smooth-scroll-sync.ts` takes over the preview's scroll-sync jumps and animates them instead.
 - `src/preview/scroll-restore.ts` remembers where you are in the preview. VS Code rebuilds a preview from its last full render when its tab comes back from the background, and the preview then scrolls to the position saved in that render; this puts it back where you were.
 - `media/toc.css` styles the sidebar using your theme's colors.
