@@ -27,6 +27,12 @@ Adds a table of contents sidebar to VS Code's built-in Markdown preview, built f
 - **Matches your theme.** The sidebar uses your color theme's colors.
 - **On the web too.** Works in [vscode.dev](https://vscode.dev) and [github.dev](https://github.dev) as well as in the desktop app.
 
+## Install
+
+- **VS Code:** search for **Markdown TOC Sidebar** in the Extensions view, or install it from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=mackans95.markdown-toc-sidebar).
+- **VSCodium, Cursor, Windsurf and other editors that use Open VSX:** search for **Markdown TOC Sidebar** in the Extensions view, or install it from [Open VSX](https://open-vsx.org/extension/mackans95/markdown-toc-sidebar).
+- **From a file:** download the `.vsix` from a [GitHub release](https://github.com/mackans95/markdown-toc-sidebar/releases) and run `code --install-extension markdown-toc-sidebar-<version>.vsix`.
+
 ## Usage
 
 Install the extension and open any Markdown file as a preview. The sidebar appears automatically in:
@@ -130,6 +136,12 @@ The TypeScript in `src/` is built into `dist/` with esbuild. `F5` starts `npm ru
 | `npm test` | Runs the tests. |
 
 The tests run in Node straight from TypeScript and cover the parts of `src/preview/toc/` that don't need a browser, such as building, numbering and collapsing the list. Pull requests run all the checks.
+
+### Releasing
+
+1. Bump `version` in `package.json` and move the changelog's *Unreleased* notes under the new version.
+2. Push a tag for it, like `v0.3.0`. The release workflow packages the extension and attaches the `.vsix` to the GitHub release, creating a draft release if there isn't one yet.
+3. Publish the `.vsix` from the release to the [VS Code Marketplace](https://marketplace.visualstudio.com/manage/publishers/mackans95) and to Open VSX with `npx ovsx publish markdown-toc-sidebar-0.3.0.vsix -p <token>`.
 
 ## License
 

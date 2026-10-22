@@ -3,6 +3,7 @@
 ## Unreleased
 
 - No changes to how the extension works. Under the hood, its code is now TypeScript in separate modules, built with esbuild and checked with Oxlint and Oxfmt.
+- Also published on [Open VSX](https://open-vsx.org/extension/mackans95/markdown-toc-sidebar), for VSCodium, Cursor, Windsurf and other editors that use it.
 
 ## 0.2.0
 
