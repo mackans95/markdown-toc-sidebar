@@ -8,13 +8,6 @@ import { SYNCED_SCROLL_EVENT } from '../shared/constants.ts';
 import { readStoredJson, writeStored } from './storage.ts';
 import type { Position, SavedPosition } from '../types/preview.ts';
 
-declare global {
-	interface Window {
-		/** Set once this script has started, so loading it twice doesn't start it twice. */
-		__mdTocScrollRestoreInitialized?: boolean;
-	}
-}
-
 /** Remembers where you were in a render, and goes back there when VS Code rebuilds the page from it. */
 class ScrollRestore {
 	private static readonly STORAGE_KEY = 'md-toc-sidebar.scroll-positions';

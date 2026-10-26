@@ -3,13 +3,6 @@
 // which looks jumpy. This intercepts those sync jumps and glides to the target instead.
 import { SYNCED_SCROLL_EVENT } from '../shared/constants.ts';
 
-declare global {
-	interface Window {
-		/** Set once this script has started, so loading it twice doesn't start it twice. */
-		__mdTocSmoothSyncInitialized?: boolean;
-	}
-}
-
 /** Makes the preview's sync jumps glide: intercepts window.scroll and window.scrollTo while the preview follows the editor. */
 class SmoothScrollSync {
 	// window.scroll calls this soon after an 'updateView' message are the preview following the editor.

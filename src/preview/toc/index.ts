@@ -7,13 +7,6 @@ import { initRefresh, initSettings } from './settings-menu.ts';
 import { scheduleBuild } from './sidebar.ts';
 import { readHidden, setSidebarHidden } from './toggle.ts';
 
-declare global {
-	interface Window {
-		/** Set once this script has started, so loading it twice doesn't start it twice. */
-		__mdTocSidebarInitialized?: boolean;
-	}
-}
-
 /** The only code that runs when the script loads; the other files just define functions. */
 function start() {
 	initScrolling();
