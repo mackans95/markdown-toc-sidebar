@@ -7,14 +7,7 @@ import { readConfig } from './config.ts';
 import { keepDoubleClickInside, REFRESH_BUTTON_ID, SETTINGS_BUTTON_ID, SETTINGS_MENU_ID } from './dom.ts';
 import { ICON_CLOSE, ICON_REFRESH, ICON_SETTINGS } from './icons.ts';
 import { scheduleBuild } from './sidebar.ts';
-
-interface SettingGroup {
-	// The setting's name without the markdownTocSidebar. prefix, as in the config element's dataset.
-	key: string;
-	label: string;
-	// [value, text] for each option, with the value as the config element has it.
-	options: [string, string][];
-}
+import type { SettingGroup } from '../../types/preview.ts';
 
 const SETTING_GROUPS: SettingGroup[] = [
 	{
@@ -75,6 +68,32 @@ const SETTING_GROUPS: SettingGroup[] = [
 // 'storage' event. That lets a choice from the menu show up everywhere without a reload.
 const LIVE_SETTING_KEY = 'md-toc-sidebar.live-setting';
 
+/** Opens the menu; from the keyboard, focuses the current value. */
+function openSettingsMenu(fromKeyboard: boolean) {
+	const menu = document.getElementById(SETTINGS_MENU_ID)!;
+	menu.hidden = false;
+	document.getElementById(SETTINGS_BUTTON_ID)!.setAttribute('aria-expanded', 'true');
+	if (fromKeyboard) {
+		menu.querySelector<HTMLElement>('[aria-checked="true"]')?.focus();
+	}
+}
+
+/** Applies a setting to this preview right away through the config element, before VS Code has saved it. */
+function applySettingLocally(key: string, value: string) {
+	const config = document.getElementById(CONFIG_ELEMENT_ID);
+	if (config) {
+		config.dataset[key] = value;
+		scheduleBuild();
+	}
+}
+
+/** Tells the other open previews about a setting chosen here (see LIVE_SETTING_KEY). */
+function broadcastSetting(key: string, value: string) {
+	// The timestamp makes every write a change, so repeated choices still fire the event.
+	writeStored(LIVE_SETTING_KEY, JSON.stringify({ key, value, time: Date.now() }));
+}
+
+/** Adds the cog button and its settings menu, and handles choosing options and closing the menu. */
 export function initSettings(): void {
 	const button = document.createElement('button');
 	button.id = SETTINGS_BUTTON_ID;
@@ -201,8 +220,10 @@ export function initSettings(): void {
 	});
 }
 
-// Refresh button next to the cog. Like the settings menu it's a vscode:// link: src/extension.ts
-// runs the built-in "Markdown: Refresh Preview", which re-renders all previews from the source.
+/**
+ * Refresh button next to the cog. Like the settings menu it's a vscode:// link: src/extension.ts
+ * runs the built-in "Markdown: Refresh Preview", which re-renders all previews from the source.
+ */
 export function initRefresh(): void {
 	const button = document.createElement('a');
 	button.id = REFRESH_BUTTON_ID;
@@ -214,16 +235,7 @@ export function initRefresh(): void {
 	document.body.appendChild(button);
 }
 
-// The menu and its button are created by initSettings before anything can open or close it.
-function openSettingsMenu(fromKeyboard: boolean) {
-	const menu = document.getElementById(SETTINGS_MENU_ID)!;
-	menu.hidden = false;
-	document.getElementById(SETTINGS_BUTTON_ID)!.setAttribute('aria-expanded', 'true');
-	if (fromKeyboard) {
-		menu.querySelector<HTMLElement>('[aria-checked="true"]')?.focus();
-	}
-}
-
+/** Closes the settings menu if it's open. */
 export function closeSettingsMenu(): void {
 	const menu = document.getElementById(SETTINGS_MENU_ID);
 	if (menu && !menu.hidden) {
@@ -232,20 +244,7 @@ export function closeSettingsMenu(): void {
 	}
 }
 
-function applySettingLocally(key: string, value: string) {
-	const config = document.getElementById(CONFIG_ELEMENT_ID);
-	if (config) {
-		config.dataset[key] = value;
-		scheduleBuild();
-	}
-}
-
-function broadcastSetting(key: string, value: string) {
-	// The timestamp makes every write a change, so repeated choices still fire the event.
-	writeStored(LIVE_SETTING_KEY, JSON.stringify({ key, value, time: Date.now() }));
-}
-
-// Points the menu's links (and the refresh button's) at the extension, and marks the current values.
+/** Points the menu's links (and the refresh button's) at the extension, and marks the current values. */
 export function updateSettingsMenu(): void {
 	const config = document.getElementById(CONFIG_ELEMENT_ID);
 	const menu = document.getElementById(SETTINGS_MENU_ID);

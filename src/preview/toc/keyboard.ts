@@ -1,10 +1,12 @@
 // Moving between the sidebar's entries with the keyboard.
 import { ancestorIndices, hasChildren } from './outline.ts';
 
-// Where a key moves focus in the list: the index of the entry to focus, the same index when there's
-// nowhere to go, or undefined for keys the list doesn't use. Entries hidden in collapsed sections
-// are skipped. ArrowRight goes to the first child and ArrowLeft to the parent; expanding and
-// collapsing with those keys is handled before this.
+/**
+ * Where a key moves focus in the list: the index of the entry to focus, the same index when there's
+ * nowhere to go, or undefined for keys the list doesn't use. Entries hidden in collapsed sections
+ * are skipped. ArrowRight goes to the first child and ArrowLeft to the parent; expanding and
+ * collapsing with those keys is handled before this.
+ */
 export function focusTarget(
 	entries: { level: number; hidden?: boolean }[],
 	index: number,
@@ -33,15 +35,17 @@ export function focusTarget(
 	}
 }
 
-// The whole list is a single tab stop (the arrow keys move within it), so Tab gets past it in one go.
+/** The whole list is a single tab stop (the arrow keys move within it), so Tab gets past it in one go. */
 export function setTabStop(nav: HTMLElement, stop: HTMLAnchorElement | undefined): void {
 	for (const link of nav.querySelectorAll('a')) {
 		link.tabIndex = link === stop ? 0 : -1;
 	}
 }
 
-// Arrow keys, Home and End move between the visible entries. On an entry with sections under it,
-// ArrowRight expands and ArrowLeft collapses (markdownTocSidebar.collapsible) before moving.
+/**
+ * Arrow keys, Home and End move between the visible entries. On an entry with sections under it,
+ * ArrowRight expands and ArrowLeft collapses (markdownTocSidebar.collapsible) before moving.
+ */
 export function onNavKeydown(event: KeyboardEvent): void {
 	if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || !(event.target instanceof Element)) {
 		return;
@@ -81,7 +85,7 @@ export function onNavKeydown(event: KeyboardEvent): void {
 	}
 }
 
-// Whether an entry is inside a collapsed section.
+/** Whether an entry is inside a collapsed section. */
 export function isHidden(link: Element): boolean {
 	return !!link.closest('li')?.hidden;
 }

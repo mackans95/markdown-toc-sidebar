@@ -1,5 +1,4 @@
 // The sidebar's icons, drawn in the theme's text color (currentColor).
-
 // The hide arrow points towards the edge the sidebar collapses into.
 export const ICON_HIDE_RIGHT =
 	'<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';

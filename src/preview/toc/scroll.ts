@@ -4,27 +4,29 @@ import { setActiveLink, updateActive } from './active.ts';
 import { scrollBehavior } from './config.ts';
 import { NAV_ID } from './dom.ts';
 
+// How long the page has to be still before a click's scroll counts as finished. Covers clicks
+// that don't scroll at all, where no scrollend event fires.
+const SETTLE_MS = 150;
+
 // While a TOC click's scroll is in flight, keep the clicked entry highlighted instead of
 // recomputing from scroll position (short sections or the end of the page would pick another).
 let pinned: string | null = null;
 // Heading to flash once the scroll arrives, so a smooth scroll doesn't fade it before it's in view.
 let pinnedHeading: HTMLElement | null = null;
 let settleTimer = 0;
-// How long the page has to be still before a click's scroll counts as finished. Covers clicks
-// that don't scroll at all, where no scrollend event fires.
-const SETTLE_MS = 150;
+// Our own animation rather than scrollIntoView's smooth behavior: the browser's takes up to
+// ~1.5s for long jumps, which feels sluggish for navigation. This one stays within 250-600ms.
+let scrollAnimation = 0;
+let scrollFrame = 0;
 
-// The clicked entry's heading while its scroll is in flight, otherwise null.
-export function pinnedId(): string | null {
-	return pinned;
-}
-
+/** Keeps a clicked entry's heading highlighted until its scroll settles. */
 function pinActive(heading: HTMLElement) {
 	pinned = heading.id;
 	pinnedHeading = heading;
 	restartSettleTimer();
 }
 
+/** Starts the SETTLE_MS wait over, since the page is still moving. */
 function restartSettleTimer() {
 	clearTimeout(settleTimer);
 	// Through window, so the type checker sees the browser's setTimeout (which returns a number) even
@@ -32,6 +34,7 @@ function restartSettleTimer() {
 	settleTimer = window.setTimeout(settle, SETTLE_MS);
 }
 
+/** Ends a click's scroll: unpins the entry and flashes its heading. */
 function settle() {
 	clearTimeout(settleTimer);
 	if (!pinned) {
@@ -48,7 +51,7 @@ function settle() {
 	}
 }
 
-// Briefly highlights a heading after jumping to it, so it's easy to see where you landed.
+/** Briefly highlights a heading after jumping to it, so it's easy to see where you landed. */
 function flashHeading(heading: HTMLElement) {
 	heading.classList.remove('md-toc-flash');
 	// Force a reflow so the animation restarts when the same heading is clicked again.
@@ -57,7 +60,7 @@ function flashHeading(heading: HTMLElement) {
 	heading.addEventListener('animationend', () => heading.classList.remove('md-toc-flash'), { once: true });
 }
 
-// Where the page has to scroll for a heading to sit at the top, honoring its scroll-margin-top.
+/** Where the page has to scroll for a heading to sit at the top, honoring its scroll-margin-top. */
 function headingScrollTop(heading: HTMLElement) {
 	const margin = parseFloat(getComputedStyle(heading).scrollMarginTop) || 0;
 	const top = window.scrollY + heading.getBoundingClientRect().top - margin;
@@ -65,10 +68,7 @@ function headingScrollTop(heading: HTMLElement) {
 	return Math.min(Math.max(0, top), Math.max(0, max));
 }
 
-// Our own animation rather than scrollIntoView's smooth behavior: the browser's takes up to
-// ~1.5s for long jumps, which feels sluggish for navigation. This one stays within 250-600ms.
-let scrollAnimation = 0;
-
+/** Scrolls smoothly to top, in 250-600ms depending on the distance. */
 function animateScrollTo(top: number) {
 	stopScrollAnimation();
 	const start = window.scrollY;
@@ -93,12 +93,13 @@ function animateScrollTo(top: number) {
 	scrollAnimation = requestAnimationFrame(step);
 }
 
+/** Stops a smooth scroll where it is. */
 function stopScrollAnimation() {
 	cancelAnimationFrame(scrollAnimation);
 	scrollAnimation = 0;
 }
 
-let scrollFrame = 0;
+/** Updates the highlight once per frame while the page scrolls, and keeps a click's scroll from settling while it's still moving. */
 function onScroll() {
 	if (pinned) {
 		// Still moving towards the clicked heading.
@@ -112,6 +113,12 @@ function onScroll() {
 	}
 }
 
+/** The clicked entry's heading while its scroll is in flight, otherwise null. */
+export function pinnedId(): string | null {
+	return pinned;
+}
+
+/** Handles clicks on the sidebar's entries, and keeps the highlight in step with the scroll position. */
 export function initScrolling(): void {
 	// Handle clicks ourselves so the preview's own link handler doesn't interfere.
 	document.addEventListener(

@@ -1,5 +1,4 @@
 // The elements the sidebar adds to the preview, and what the code creating them shares.
-
 export const NAV_ID = 'md-toc-sidebar';
 export const TOGGLE_ID = 'md-toc-toggle';
 export const RESIZER_ID = 'md-toc-resizer';
@@ -15,9 +14,11 @@ export const OWN_UI_SELECTOR = [NAV_ID, TOGGLE_ID, RESIZER_ID, SETTINGS_BUTTON_I
 // The document's headings that can be linked to; assignRawHeadingIds gives the others an id first.
 export const HEADING_SELECTOR = '.markdown-body :is(h1, h2, h3, h4, h5, h6)[id]';
 
-// A double-click in the preview can jump to the editor; our UI shouldn't trigger that.
-// Stopping it on the element itself (not at the document) still lets the element's own
-// dblclick handlers run first.
+/**
+ * A double-click in the preview can jump to the editor; our UI shouldn't trigger that.
+ * Stopping it on the element itself (not at the document) still lets the element's own
+ * dblclick handlers run first.
+ */
 export function keepDoubleClickInside(element: HTMLElement): void {
 	element.addEventListener('dblclick', event => event.stopPropagation());
 }

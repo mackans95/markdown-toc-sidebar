@@ -9,27 +9,32 @@ const MIN_WIDTH = 140;
 const MIN_CONTENT_WIDTH = 240;
 const KEYBOARD_STEP = 16;
 
+/** The width the user chose, or undefined for the default. */
 function readWidth(): number | undefined {
 	const width = Number(readStored(WIDTH_KEY));
 	return width > 0 ? width : undefined;
 }
 
+/** Remembers the width the user chose; undefined goes back to the default. */
 function writeWidth(width: number | undefined) {
 	writeStored(WIDTH_KEY, width === undefined ? undefined : String(Math.round(width)));
 }
 
-// Width of the area fixed elements are laid out in: excludes the preview's own scrollbar.
+/** Width of the area fixed elements are laid out in: excludes the preview's own scrollbar. */
 function viewportWidth() {
 	return document.documentElement.clientWidth;
 }
 
+/** Keeps a width between MIN_WIDTH and what leaves MIN_CONTENT_WIDTH for the document. */
 function clampWidth(width: number) {
 	const max = Math.max(MIN_WIDTH, viewportWidth() - MIN_CONTENT_WIDTH);
 	return Math.min(Math.max(width, MIN_WIDTH), max);
 }
 
-// A user-chosen width overrides the responsive default from toc.css; undefined restores it.
-// The stored value is kept unclamped so a narrow window doesn't permanently shrink it.
+/**
+ * A user-chosen width overrides the responsive default from toc.css; undefined restores it.
+ * The stored value is kept unclamped so a narrow window doesn't permanently shrink it.
+ */
 function applyWidth(width: number | undefined) {
 	const root = document.documentElement;
 	if (width === undefined) {
@@ -40,6 +45,7 @@ function applyWidth(width: number | undefined) {
 	updateResizerValue();
 }
 
+/** Updates the handle's aria-valuenow to the sidebar's current width. */
 export function updateResizerValue(): void {
 	const resizer = document.getElementById(RESIZER_ID);
 	const nav = document.getElementById(NAV_ID);
@@ -48,6 +54,7 @@ export function updateResizerValue(): void {
 	}
 }
 
+/** Adds the resize handle and applies the remembered width. */
 export function initResizer(): void {
 	const resizer = document.createElement('div');
 	resizer.id = RESIZER_ID;

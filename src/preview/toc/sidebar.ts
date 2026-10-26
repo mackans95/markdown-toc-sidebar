@@ -6,13 +6,17 @@ import { readConfig, sidebarPosition } from './config.ts';
 import { HEADING_SELECTOR, keepDoubleClickInside, NAV_ID } from './dom.ts';
 import { assignRawHeadingIds, setDocumentHeadingMenuContexts, setHeadingMenuContext } from './headings.ts';
 import { onNavKeydown, setTabStop } from './keyboard.ts';
-import { buildEntries, hasChildren, type EntryFields } from './outline.ts';
+import { buildEntries, hasChildren } from './outline.ts';
 import { updateResizerValue } from './resizer.ts';
 import { updateSettingsMenu } from './settings-menu.ts';
 import { updateToggle } from './toggle.ts';
+import type { Entry } from '../../types/preview.ts';
 
-type Entry = { id: string; text: string; level: number } & EntryFields;
+// Rebuild at most once per frame, and only when the headings or the settings changed.
+let lastSignature = '';
+let buildFrame = 0;
 
+/** The sidebar's nav element, created with its keyboard handling the first time. */
 function getNav() {
 	let nav = document.getElementById(NAV_ID);
 	if (!nav) {
@@ -35,7 +39,7 @@ function getNav() {
 	return nav;
 }
 
-// Applies the settings from the config element: sidebar side, toggle icon and the menu's links.
+/** Applies the settings from the config element: sidebar side, toggle icon and the menu's links. */
 function applyConfig() {
 	const config = document.getElementById(CONFIG_ELEMENT_ID);
 	// Without the config element (src/extension.ts not active), settings can't be changed from here.
@@ -45,6 +49,7 @@ function applyConfig() {
 	updateSettingsMenu();
 }
 
+/** The link for one entry, with its number when numbering is on. */
 function createLink(entry: Entry) {
 	const link = document.createElement('a');
 	link.href = '#' + entry.id;
@@ -64,6 +69,7 @@ function createLink(entry: Entry) {
 	return link;
 }
 
+/** Rebuilds the list from the document's headings and the current settings. */
 function buildToc() {
 	resetActive();
 	const headings = Array.from(document.querySelectorAll<HTMLElement>(HEADING_SELECTOR));
@@ -123,10 +129,7 @@ function buildToc() {
 	updateActive();
 }
 
-// Rebuild at most once per frame, and only when the headings or the settings changed.
-let lastSignature = '';
-let buildFrame = 0;
-
+/** Rebuilds the sidebar on the next frame if the headings or the settings changed; calls within one frame share a rebuild. */
 export function scheduleBuild(): void {
 	if (buildFrame) {
 		return;

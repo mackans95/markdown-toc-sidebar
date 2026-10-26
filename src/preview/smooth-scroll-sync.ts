@@ -5,10 +5,12 @@ import { SYNCED_SCROLL_EVENT } from '../shared/constants.ts';
 
 declare global {
 	interface Window {
+		/** Set once this script has started, so loading it twice doesn't start it twice. */
 		__mdTocSmoothSyncInitialized?: boolean;
 	}
 }
 
+/** Replaces window.scroll and window.scrollTo so the preview's sync jumps glide instead. */
 function start() {
 	// window.scroll calls this soon after an 'updateView' message are the preview following the editor.
 	const SYNC_WINDOW_MS = 200;
@@ -36,7 +38,10 @@ function start() {
 		true,
 	);
 
-	// window.scroll and window.scrollTo take either an options object or x and y.
+	/**
+	 * Wraps window.scroll or window.scrollTo: sync jumps glide, every other call goes straight to the
+	 * native one. Both take either an options object or x and y.
+	 */
 	function intercept(native: typeof window.scrollTo): typeof window.scrollTo {
 		return (...args: [options?: ScrollToOptions] | [x: number, y: number]) => {
 			const [x, y] = args;
@@ -52,10 +57,12 @@ function start() {
 	window.scroll = intercept(window.scroll.bind(window));
 	window.scrollTo = intercept(nativeScrollTo);
 
+	/** The furthest the page can scroll down. */
 	function maxScroll() {
 		return Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
 	}
 
+	/** Glides towards y, or retargets a glide that is already running. */
 	function glideTo(y: number) {
 		if (target === null) {
 			position = window.scrollY;
@@ -68,6 +75,7 @@ function start() {
 		}
 	}
 
+	/** One frame of the glide: covers part of the remaining distance and tells listeners about the new position. */
 	function step(now: number) {
 		frame = 0;
 		if (target === null) {
@@ -97,6 +105,7 @@ function start() {
 		}
 	}
 
+	/** Cancels the glide where it is. */
 	function stop() {
 		cancelAnimationFrame(frame);
 		frame = 0;

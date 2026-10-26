@@ -10,15 +10,7 @@ let tocIds = new Set<string>();
 // Contains the entry that was last highlighted, so we don't update the DOM unnecessarily.
 let latestActiveId: string | undefined | null = null;
 
-export function setTocIds(ids: Set<string>): void {
-	tocIds = ids;
-}
-
-// Makes the next update highlight the active entry again, after the list changed.
-export function resetActive(): void {
-	latestActiveId = null;
-}
-
+/** The heading of the section being read: the last one scrolled to the top, or the last heading once the page is scrolled to the bottom. */
 function findActiveHeading(headings: HTMLElement[]) {
 	if (headings.length === 0) {
 		return undefined;
@@ -42,6 +34,17 @@ function findActiveHeading(headings: HTMLElement[]) {
 	return active;
 }
 
+/** Sets which headings the sidebar lists, after a rebuild. */
+export function setTocIds(ids: Set<string>): void {
+	tocIds = ids;
+}
+
+/** Makes the next update highlight the active entry again, after the list changed. */
+export function resetActive(): void {
+	latestActiveId = null;
+}
+
+/** Highlights the entry for a heading, and tints the sections containing it. */
 export function setActiveLink(id: string | undefined): void {
 	if (latestActiveId === id) {
 		return;
@@ -94,6 +97,7 @@ export function setActiveLink(id: string | undefined): void {
 	}
 }
 
+/** Highlights the entry for the section being read, or the clicked one while its scroll is in flight. */
 export function updateActive(): void {
 	const pinned = pinnedId();
 	if (pinned) {

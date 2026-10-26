@@ -11,7 +11,7 @@ import { CONFIG_ELEMENT_ID } from './shared/constants.ts';
 import { escapeAttribute, toKebabCase } from './shared/helpers.ts';
 import type { SettingValue, PackageJson, HeadingContext, MarkdownIt, Setting } from './types/extension.ts';
 
-/** The markdown-it token type (and rule name) that renders the hidden config element. */
+// The markdown-it token type (and rule name) that renders the hidden config element.
 const CONFIG_TOKEN_TYPE = 'md_toc_sidebar_config';
 
 /**
@@ -19,12 +19,12 @@ const CONFIG_TOKEN_TYPE = 'md_toc_sidebar_config';
  * Only reads and writes values that package.json allows.
  */
 class Settings {
-	/** The settings prefix in package.json, e.g. "markdownTocSidebar.position". */
+	// The settings prefix in package.json, e.g. "markdownTocSidebar.position".
 	static readonly SECTION = 'markdownTocSidebar';
 
-	/** Allowed values and the default for each setting, by short key, e.g. "position". */
+	// Allowed values and the default for each setting, by short key, e.g. "position".
 	private readonly allowed: Record<string, Setting> = {};
-	/** Settings currently being saved from the sidebar's menu. Open previews already show those values, so the change doesn't need the (slow, full-reload) preview refresh. */
+	// Settings currently being saved from the sidebar's menu. Open previews already show those values, so the change doesn't need the (slow, full-reload) preview refresh.
 	private readonly savingFromMenu = new Set<string>();
 
 	/** package.json is the only source for the settings, so we read them from there and map them to a format we can use. */

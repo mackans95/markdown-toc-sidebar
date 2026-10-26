@@ -1,22 +1,32 @@
 // The outline the sidebar lists: which headings, how deep, and which sections contain which.
 // The functions only ask for the fields they use, so the tests can pass in bare levels.
+import type { BuildOptions, EntryFields } from '../../types/preview.ts';
 
-export interface BuildOptions {
-	// The deepest heading level to list (1-6).
-	maxDepth?: number;
-	// 'title' marks a lone top heading with isTitle.
-	topHeading?: 'list' | 'title';
-	// Gives every entry but the title a number like '2.1'.
-	numbering?: boolean;
+/**
+ * Numbers entries by their place in the outline: an entry's parent is the closest earlier one
+ * with a lower level, the same rule ancestorIndices uses. A skipped level (## then ####) doesn't
+ * add a 0, and a heading that comes back up past a deeper one (#### then ###) continues its count.
+ */
+function addNumbers(entries: { level: number; number?: string }[]) {
+	// The open sections from the outermost in, with how many entries each level has had so far.
+	const stack: { level: number; count: number }[] = [];
+	for (const entry of entries) {
+		let closed;
+		while (stack.length > 0 && stack[stack.length - 1].level > entry.level) {
+			closed = stack.pop();
+		}
+		const top = stack[stack.length - 1];
+		if (top && top.level === entry.level) {
+			top.count++;
+		} else {
+			// A new level here; if a deeper one was just closed, this entry is its next sibling.
+			stack.push({ level: entry.level, count: closed ? closed.count + 1 : 1 });
+		}
+		entry.number = stack.map(section => section.count).join('.');
+	}
 }
 
-// What buildEntries adds to each heading.
-export interface EntryFields {
-	depth: number;
-	isTitle?: boolean;
-	number?: string;
-}
-
+/** The headings the sidebar lists, with their depth in the list, plus the title and numbers when the options ask for them. */
 export function buildEntries<T extends { level: number }>(
 	headings: T[],
 	options: BuildOptions = {},
@@ -53,30 +63,10 @@ export function buildEntries<T extends { level: number }>(
 	return entries;
 }
 
-// Numbers entries by their place in the outline: an entry's parent is the closest earlier one
-// with a lower level, the same rule ancestorIndices uses. A skipped level (## then ####) doesn't
-// add a 0, and a heading that comes back up past a deeper one (#### then ###) continues its count.
-function addNumbers(entries: { level: number; number?: string }[]) {
-	// The open sections from the outermost in, with how many entries each level has had so far.
-	const stack: { level: number; count: number }[] = [];
-	for (const entry of entries) {
-		let closed;
-		while (stack.length > 0 && stack[stack.length - 1].level > entry.level) {
-			closed = stack.pop();
-		}
-		const top = stack[stack.length - 1];
-		if (top && top.level === entry.level) {
-			top.count++;
-		} else {
-			// A new level here; if a deeper one was just closed, this entry is its next sibling.
-			stack.push({ level: entry.level, count: closed ? closed.count + 1 : 1 });
-		}
-		entry.number = stack.map(section => section.count).join('.');
-	}
-}
-
-// The sections containing the active one: walking back up the list, each entry with a
-// lower level than the last one found is the next enclosing section.
+/**
+ * The sections containing the active one: walking back up the list, each entry with a
+ * lower level than the last one found is the next enclosing section.
+ */
 export function ancestorIndices(entries: { level: number }[], index: number): Set<number> {
 	const ancestors = new Set<number>();
 	if (index >= 0) {
@@ -94,15 +84,19 @@ export function ancestorIndices(entries: { level: number }[], index: number): Se
 	return ancestors;
 }
 
-// Whether an entry has sections under it: the next entry is deeper. Same rule as ancestorIndices,
-// so a skipped level (## then ####) still counts as a child.
+/**
+ * Whether an entry has sections under it: the next entry is deeper. Same rule as ancestorIndices,
+ * so a skipped level (## then ####) still counts as a child.
+ */
 export function hasChildren(entries: { level: number }[], index: number): boolean {
 	return index + 1 < entries.length && entries[index + 1].level > entries[index].level;
 }
 
-// The entries hidden by collapsed sections: everything after a collapsed entry that is deeper than
-// it, up to the next entry at its level or above. A collapsed section inside a hidden one changes
-// nothing, and a collapsed entry without children hides nothing.
+/**
+ * The entries hidden by collapsed sections: everything after a collapsed entry that is deeper than
+ * it, up to the next entry at its level or above. A collapsed section inside a hidden one changes
+ * nothing, and a collapsed entry without children hides nothing.
+ */
 export function hiddenIndices(entries: { id: string; level: number }[], collapsedIds: Set<string>): Set<number> {
 	const hidden = new Set<number>();
 	let collapsedLevel: number | null = null;

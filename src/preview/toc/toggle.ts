@@ -11,14 +11,12 @@ import { closeSettingsMenu } from './settings-menu.ts';
 const HIDDEN_KEY = 'md-toc-sidebar.collapsed';
 const HIDDEN_CLASS = 'md-toc-collapsed';
 
-export function readHidden(): boolean {
-	return readStored(HIDDEN_KEY) === 'true';
-}
-
+/** Remembers whether the sidebar is hidden. */
 function writeHidden(hidden: boolean) {
 	writeStored(HIDDEN_KEY, String(hidden));
 }
 
+/** The hide/show button, created the first time. */
 function getToggle() {
 	let toggle = document.getElementById(TOGGLE_ID);
 	if (!toggle) {
@@ -34,6 +32,12 @@ function getToggle() {
 	return toggle;
 }
 
+/** Whether the sidebar was hidden last time. */
+export function readHidden(): boolean {
+	return readStored(HIDDEN_KEY) === 'true';
+}
+
+/** Hides or shows the sidebar, and remembers the choice. */
 export function setSidebarHidden(hidden: boolean): void {
 	resetActive();
 	document.body.classList.toggle(HIDDEN_CLASS, hidden);
@@ -45,6 +49,7 @@ export function setSidebarHidden(hidden: boolean): void {
 	}
 }
 
+/** Updates the button's icon and labels to whether the sidebar is hidden and which side it's on. */
 export function updateToggle(): void {
 	const hidden = document.body.classList.contains(HIDDEN_CLASS);
 	const toggle = getToggle();

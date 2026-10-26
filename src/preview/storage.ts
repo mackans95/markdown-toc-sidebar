@@ -1,6 +1,7 @@
 // localStorage for the preview scripts. It can be unavailable (or full): reads then return the
 // fallback and writes do nothing, so whatever was stored just isn't remembered.
 
+/** Reads the value as-is. */
 export function readStored(key: string): string | null {
 	try {
 		return localStorage.getItem(key);
@@ -9,7 +10,7 @@ export function readStored(key: string): string | null {
 	}
 }
 
-// The parsed value, or the fallback when there is none or it isn't valid JSON.
+/** The parsed value, or the fallback when there is none or it isn't valid JSON. */
 export function readStoredJson<T>(key: string, fallback: T): T {
 	try {
 		return JSON.parse(localStorage.getItem(key) ?? 'null') || fallback;
@@ -18,7 +19,7 @@ export function readStoredJson<T>(key: string, fallback: T): T {
 	}
 }
 
-// Stores the value, or removes the key for undefined.
+/** Stores the value, or removes the key for undefined. */
 export function writeStored(key: string, value: string | undefined): void {
 	try {
 		if (value === undefined) {

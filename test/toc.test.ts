@@ -3,13 +3,8 @@ import { describe, test } from 'node:test';
 import { storeCollapsed } from '../src/preview/toc/collapse.ts';
 import { headingLinks } from '../src/preview/toc/headings.ts';
 import { focusTarget } from '../src/preview/toc/keyboard.ts';
-import {
-	ancestorIndices,
-	buildEntries,
-	hasChildren,
-	hiddenIndices,
-	type BuildOptions,
-} from '../src/preview/toc/outline.ts';
+import { ancestorIndices, buildEntries, hasChildren, hiddenIndices } from '../src/preview/toc/outline.ts';
+import type { BuildOptions } from '../src/types/preview.ts';
 
 function levels(...ls: number[]) {
 	return ls.map(level => ({ level }));
