@@ -1,7 +1,7 @@
 // The sidebar itself: the list of entries, rebuilt whenever the headings or the settings change.
 import { CONFIG_ELEMENT_ID } from '../../shared/constants.ts';
 import { resetActive, setTocIds, updateActive } from './active.ts';
-import { applyCollapsed, createChevron, createChevronSpacer, loadCollapsedIds } from './collapse.ts';
+import { collapsedSections } from './collapse.ts';
 import { readConfig, sidebarPosition } from './config.ts';
 import { HEADING_SELECTOR, keepDoubleClickInside, NAV_ID } from './dom.ts';
 import { assignRawHeadingIds, setDocumentHeadingMenuContexts, setHeadingMenuContext } from './headings.ts';
@@ -98,7 +98,11 @@ function buildToc() {
 		const item = document.createElement('li');
 		item.style.setProperty('--md-toc-depth', String(entry.depth));
 		if (collapsible) {
-			item.appendChild(hasChildren(listEntries, i) ? createChevron(entry) : createChevronSpacer());
+			item.appendChild(
+				hasChildren(listEntries, i)
+					? collapsedSections.createChevron(entry)
+					: collapsedSections.createChevronSpacer(),
+			);
 		}
 		item.appendChild(createLink(entry));
 		list.appendChild(item);
@@ -123,8 +127,8 @@ function buildToc() {
 
 	nav.replaceChildren(header, list);
 	document.body.classList.add('md-toc-visible');
-	loadCollapsedIds();
-	applyCollapsed();
+	collapsedSections.load();
+	collapsedSections.apply();
 	updateResizerValue();
 	updateActive();
 }
