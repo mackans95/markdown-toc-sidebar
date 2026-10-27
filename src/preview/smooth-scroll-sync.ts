@@ -1,7 +1,7 @@
 // Runs inside VS Code's built-in Markdown preview webview.
 // The preview follows the editor by jumping straight to a new position (at most ~20 times a second),
 // which looks jumpy. This intercepts those sync jumps and glides to the target instead.
-import { SYNCED_SCROLL_EVENT } from '../shared/constants.ts'
+import { SYNCED_SCROLL_EVENT, USER_SCROLL_EVENTS } from '../shared/constants.ts'
 
 /** Makes the preview's sync jumps glide: intercepts window.scroll and window.scrollTo while the preview follows the editor. */
 class SmoothScrollSync {
@@ -32,7 +32,7 @@ class SmoothScrollSync {
 		window.addEventListener('scroll', event => this.onScroll(event), true)
 
 		// The user taking over the preview cancels the glide immediately.
-		for (const type of ['wheel', 'touchstart', 'keydown', 'mousedown']) {
+		for (const type of USER_SCROLL_EVENTS) {
 			window.addEventListener(type, () => this.stop(), { capture: true, passive: true })
 		}
 	}

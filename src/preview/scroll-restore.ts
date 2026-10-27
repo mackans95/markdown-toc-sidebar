@@ -4,7 +4,7 @@
 // scroll position from back then (where the editor was when the preview opened), and the preview
 // restores that instead of where you had scrolled to since, so it jumps back, often to the top.
 // This remembers where you were and goes back there when the same render is rebuilt.
-import { SYNCED_SCROLL_EVENT } from '../shared/constants.ts'
+import { SYNCED_SCROLL_EVENT, USER_SCROLL_EVENTS } from '../shared/constants.ts'
 import { readStoredJson, writeStored } from './storage.ts'
 import type { Position, SavedPosition } from '../types/preview.ts'
 
@@ -45,7 +45,7 @@ class ScrollRestore {
 	private startSettling(): void {
 		this.resizeObserver.observe(document.body)
 		// The user scrolling themselves ends it right away.
-		for (const type of ['wheel', 'touchstart', 'keydown', 'mousedown']) {
+		for (const type of USER_SCROLL_EVENTS) {
 			window.addEventListener(type, () => this.stopSettling(), { capture: true, passive: true })
 		}
 		if (document.readyState === 'complete') {

@@ -1,5 +1,5 @@
 // Scrolling: to a heading when its entry is clicked, and keeping the highlight in step with the page.
-import { SYNCED_SCROLL_EVENT } from '../../shared/constants.ts'
+import { SYNCED_SCROLL_EVENT, USER_SCROLL_EVENTS } from '../../shared/constants.ts'
 import { activeHighlight } from './active.ts'
 import { scrollBehavior } from './config.ts'
 import { NAV_ID } from './dom.ts'
@@ -54,7 +54,7 @@ class Scrolling {
 		document.addEventListener('click', event => this.onClick(event), true)
 
 		// The user taking over cancels the animation.
-		for (const type of ['wheel', 'touchstart', 'keydown', 'mousedown']) {
+		for (const type of USER_SCROLL_EVENTS) {
 			window.addEventListener(type, () => this.stopScrollAnimation(), { capture: true, passive: true })
 		}
 
