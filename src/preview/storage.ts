@@ -4,18 +4,18 @@
 /** Reads the value as-is. */
 export function readStored(key: string): string | null {
 	try {
-		return localStorage.getItem(key);
+		return localStorage.getItem(key)
 	} catch {
-		return null;
+		return null
 	}
 }
 
 /** The parsed value, or the fallback when there is none or it isn't valid JSON. */
 export function readStoredJson<T>(key: string, fallback: T): T {
 	try {
-		return JSON.parse(localStorage.getItem(key) ?? 'null') || fallback;
+		return JSON.parse(localStorage.getItem(key) ?? 'null') || fallback
 	} catch {
-		return fallback;
+		return fallback
 	}
 }
 
@@ -23,9 +23,9 @@ export function readStoredJson<T>(key: string, fallback: T): T {
 export function writeStored(key: string, value: string | undefined): void {
 	try {
 		if (value === undefined) {
-			localStorage.removeItem(key);
+			localStorage.removeItem(key)
 		} else {
-			localStorage.setItem(key, value);
+			localStorage.setItem(key, value)
 		}
 	} catch {
 		// Storage unavailable; see above.

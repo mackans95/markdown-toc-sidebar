@@ -1,17 +1,17 @@
 // The document's headings, and the links to them that the right-click menu copies.
-import { HEADING_SELECTOR } from './dom.ts';
+import { HEADING_SELECTOR } from './dom.ts'
 
 // Prefix for ids we give headings written as HTML. They only exist in the preview, so a link to
 // one wouldn't work anywhere else.
-const RAW_ID_PREFIX = 'md-toc-raw-';
+const RAW_ID_PREFIX = 'md-toc-raw-'
 
 /**
  * What the context menu's copy commands put on the clipboard: the heading's anchor, and a Markdown
  * link to it. Brackets and backslashes in the text are escaped so they don't end the link text.
  */
 export function headingLinks(id: string, text: string): { link: string; markdownLink: string } {
-	const link = '#' + id;
-	return { link, markdownLink: `[${text.replace(/[\\[\]]/g, '\\$&')}](${link})` };
+	const link = '#' + id
+	return { link, markdownLink: `[${text.replace(/[\\[\]]/g, '\\$&')}](${link})` }
 }
 
 /**
@@ -21,13 +21,13 @@ export function headingLinks(id: string, text: string): { link: string; markdown
  * MutationObserver, which only watches the content and the text.
  */
 export function assignRawHeadingIds(): void {
-	let n = 0;
+	let n = 0
 	for (const heading of document.querySelectorAll('.markdown-body :is(h1, h2, h3, h4, h5, h6):not([id])')) {
-		let id;
+		let id
 		do {
-			id = RAW_ID_PREFIX + ++n;
-		} while (document.getElementById(id));
-		heading.id = id;
+			id = RAW_ID_PREFIX + ++n
+		} while (document.getElementById(id))
+		heading.id = id
 	}
 }
 
@@ -39,17 +39,17 @@ export function assignRawHeadingIds(): void {
  */
 export function setHeadingMenuContext(element: HTMLElement, id: string, text: string, inSidebar: boolean): void {
 	if (id.startsWith(RAW_ID_PREFIX)) {
-		delete element.dataset.vscodeContext;
-		return;
+		delete element.dataset.vscodeContext
+		return
 	}
 	const context = JSON.stringify({
 		webviewSection: 'mdTocHeading',
 		headingText: text,
 		...headingLinks(id, text),
 		...(inSidebar ? { preventDefaultContextMenuItems: true } : {}),
-	});
+	})
 	if (element.dataset.vscodeContext !== context) {
-		element.dataset.vscodeContext = context;
+		element.dataset.vscodeContext = context
 	}
 }
 
@@ -59,6 +59,6 @@ export function setHeadingMenuContext(element: HTMLElement, id: string, text: st
  */
 export function setDocumentHeadingMenuContexts(): void {
 	for (const heading of document.querySelectorAll<HTMLElement>(HEADING_SELECTOR)) {
-		setHeadingMenuContext(heading, heading.id, heading.textContent.trim(), false);
+		setHeadingMenuContext(heading, heading.id, heading.textContent.trim(), false)
 	}
 }

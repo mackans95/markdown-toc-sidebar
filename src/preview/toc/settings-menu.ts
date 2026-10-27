@@ -1,13 +1,13 @@
 // Settings menu behind the cog button. Its options are vscode:// links: the preview can't change
 // VS Code settings itself, so VS Code hands those links to src/extension.ts, which updates the
 // setting and refreshes the preview (which then shows the new value here).
-import { CONFIG_ELEMENT_ID } from '../../shared/constants.ts';
-import { writeStored } from '../storage.ts';
-import { readConfig } from './config.ts';
-import { keepDoubleClickInside, REFRESH_BUTTON_ID, SETTINGS_BUTTON_ID, SETTINGS_MENU_ID } from './dom.ts';
-import { ICON_CLOSE, ICON_REFRESH, ICON_SETTINGS } from './icons.ts';
-import { scheduleBuild } from './sidebar.ts';
-import type { SettingGroup } from '../../types/preview.ts';
+import { CONFIG_ELEMENT_ID } from '../../shared/constants.ts'
+import { writeStored } from '../storage.ts'
+import { readConfig } from './config.ts'
+import { keepDoubleClickInside, REFRESH_BUTTON_ID, SETTINGS_BUTTON_ID, SETTINGS_MENU_ID } from './dom.ts'
+import { ICON_CLOSE, ICON_REFRESH, ICON_SETTINGS } from './icons.ts'
+import { scheduleBuild } from './sidebar.ts'
+import type { SettingGroup } from '../../types/preview.ts'
 
 const SETTING_GROUPS: SettingGroup[] = [
 	{
@@ -62,125 +62,125 @@ const SETTING_GROUPS: SettingGroup[] = [
 			['true', 'On'],
 		],
 	},
-];
+]
 
 // Other open previews share this page's storage, so a key written here reaches them as a
 // 'storage' event. That lets a choice from the menu show up everywhere without a reload.
-const LIVE_SETTING_KEY = 'md-toc-sidebar.live-setting';
+const LIVE_SETTING_KEY = 'md-toc-sidebar.live-setting'
 
 /** Opens the menu; from the keyboard, focuses the current value. */
 function openSettingsMenu(fromKeyboard: boolean) {
-	const menu = document.getElementById(SETTINGS_MENU_ID)!;
-	menu.hidden = false;
-	document.getElementById(SETTINGS_BUTTON_ID)!.setAttribute('aria-expanded', 'true');
+	const menu = document.getElementById(SETTINGS_MENU_ID)!
+	menu.hidden = false
+	document.getElementById(SETTINGS_BUTTON_ID)!.setAttribute('aria-expanded', 'true')
 	if (fromKeyboard) {
-		menu.querySelector<HTMLElement>('[aria-checked="true"]')?.focus();
+		menu.querySelector<HTMLElement>('[aria-checked="true"]')?.focus()
 	}
 }
 
 /** Applies a setting to this preview right away through the config element, before VS Code has saved it. */
 function applySettingLocally(key: string, value: string) {
-	const config = document.getElementById(CONFIG_ELEMENT_ID);
+	const config = document.getElementById(CONFIG_ELEMENT_ID)
 	if (config) {
-		config.dataset[key] = value;
-		scheduleBuild();
+		config.dataset[key] = value
+		scheduleBuild()
 	}
 }
 
 /** Tells the other open previews about a setting chosen here (see LIVE_SETTING_KEY). */
 function broadcastSetting(key: string, value: string) {
 	// The timestamp makes every write a change, so repeated choices still fire the event.
-	writeStored(LIVE_SETTING_KEY, JSON.stringify({ key, value, time: Date.now() }));
+	writeStored(LIVE_SETTING_KEY, JSON.stringify({ key, value, time: Date.now() }))
 }
 
 /** Adds the cog button and its settings menu, and handles choosing options and closing the menu. */
 export function initSettings(): void {
-	const button = document.createElement('button');
-	button.id = SETTINGS_BUTTON_ID;
-	button.type = 'button';
-	button.innerHTML = ICON_SETTINGS;
-	button.title = 'Table of contents settings';
-	button.setAttribute('aria-label', 'Table of contents settings');
-	button.setAttribute('aria-haspopup', 'menu');
-	button.setAttribute('aria-controls', SETTINGS_MENU_ID);
-	button.setAttribute('aria-expanded', 'false');
-	keepDoubleClickInside(button);
+	const button = document.createElement('button')
+	button.id = SETTINGS_BUTTON_ID
+	button.type = 'button'
+	button.innerHTML = ICON_SETTINGS
+	button.title = 'Table of contents settings'
+	button.setAttribute('aria-label', 'Table of contents settings')
+	button.setAttribute('aria-haspopup', 'menu')
+	button.setAttribute('aria-controls', SETTINGS_MENU_ID)
+	button.setAttribute('aria-expanded', 'false')
+	keepDoubleClickInside(button)
 
-	const menu = document.createElement('div');
-	menu.id = SETTINGS_MENU_ID;
-	menu.setAttribute('role', 'menu');
-	menu.setAttribute('aria-label', 'Table of contents settings');
-	menu.hidden = true;
-	keepDoubleClickInside(menu);
+	const menu = document.createElement('div')
+	menu.id = SETTINGS_MENU_ID
+	menu.setAttribute('role', 'menu')
+	menu.setAttribute('aria-label', 'Table of contents settings')
+	menu.hidden = true
+	keepDoubleClickInside(menu)
 
-	const header = document.createElement('div');
-	header.className = 'md-toc-menu-header';
-	const heading = document.createElement('span');
-	heading.textContent = 'Settings';
-	const close = document.createElement('button');
-	close.type = 'button';
-	close.className = 'md-toc-menu-close';
-	close.innerHTML = ICON_CLOSE;
-	close.title = 'Close';
-	close.setAttribute('aria-label', 'Close settings');
+	const header = document.createElement('div')
+	header.className = 'md-toc-menu-header'
+	const heading = document.createElement('span')
+	heading.textContent = 'Settings'
+	const close = document.createElement('button')
+	close.type = 'button'
+	close.className = 'md-toc-menu-close'
+	close.innerHTML = ICON_CLOSE
+	close.title = 'Close'
+	close.setAttribute('aria-label', 'Close settings')
 	close.addEventListener('click', () => {
-		closeSettingsMenu();
-		button.focus();
-	});
-	header.append(heading, close);
-	menu.appendChild(header);
+		closeSettingsMenu()
+		button.focus()
+	})
+	header.append(heading, close)
+	menu.appendChild(header)
 
 	for (const group of SETTING_GROUPS) {
-		const label = document.createElement('div');
-		label.className = 'md-toc-menu-label';
-		label.textContent = group.label;
-		const options = document.createElement('div');
-		options.className = 'md-toc-menu-options';
-		options.setAttribute('role', 'group');
-		options.setAttribute('aria-label', group.label);
+		const label = document.createElement('div')
+		label.className = 'md-toc-menu-label'
+		label.textContent = group.label
+		const options = document.createElement('div')
+		options.className = 'md-toc-menu-options'
+		options.setAttribute('role', 'group')
+		options.setAttribute('aria-label', group.label)
 		for (const [value, text] of group.options) {
-			const option = document.createElement('a');
-			option.className = 'md-toc-menu-option';
-			option.setAttribute('role', 'menuitemradio');
-			option.dataset.key = group.key;
-			option.dataset.value = value;
-			option.textContent = text;
-			options.appendChild(option);
+			const option = document.createElement('a')
+			option.className = 'md-toc-menu-option'
+			option.setAttribute('role', 'menuitemradio')
+			option.dataset.key = group.key
+			option.dataset.value = value
+			option.textContent = text
+			options.appendChild(option)
 		}
-		menu.append(label, options);
+		menu.append(label, options)
 	}
-	const allSettings = document.createElement('a');
-	allSettings.className = 'md-toc-menu-link';
-	allSettings.setAttribute('role', 'menuitem');
-	allSettings.dataset.path = '/open-settings';
-	allSettings.textContent = 'Open all settings…';
-	menu.appendChild(allSettings);
+	const allSettings = document.createElement('a')
+	allSettings.className = 'md-toc-menu-link'
+	allSettings.setAttribute('role', 'menuitem')
+	allSettings.dataset.path = '/open-settings'
+	allSettings.textContent = 'Open all settings…'
+	menu.appendChild(allSettings)
 
-	document.body.append(button, menu);
+	document.body.append(button, menu)
 
 	button.addEventListener('click', event => {
 		if (menu.hidden) {
-			openSettingsMenu(event.detail === 0);
+			openSettingsMenu(event.detail === 0)
 		} else {
-			closeSettingsMenu();
+			closeSettingsMenu()
 		}
-	});
+	})
 	// Picking an option applies it right away, here and in other open previews; the link itself
 	// then goes to VS Code (via src/extension.ts) to save the setting. The menu stays open.
 	menu.addEventListener('click', event => {
-		const option = event.target instanceof Element && event.target.closest<HTMLElement>('.md-toc-menu-option');
-		if (!option) return;
+		const option = event.target instanceof Element && event.target.closest<HTMLElement>('.md-toc-menu-option')
+		if (!option) return
 		if (option.getAttribute('aria-checked') === 'true') {
 			// Already the current value: nothing to save.
-			event.preventDefault();
-			return;
+			event.preventDefault()
+			return
 		}
 		// Every option gets both from initSettings.
-		const key = option.dataset.key!;
-		const value = option.dataset.value!;
-		applySettingLocally(key, value);
-		broadcastSetting(key, value);
-	});
+		const key = option.dataset.key!
+		const value = option.dataset.value!
+		applySettingLocally(key, value)
+		broadcastSetting(key, value)
+	})
 	document.addEventListener(
 		'pointerdown',
 		event => {
@@ -190,30 +190,30 @@ export function initSettings(): void {
 				!menu.contains(event.target) &&
 				!button.contains(event.target)
 			) {
-				closeSettingsMenu();
+				closeSettingsMenu()
 			}
 		},
 		true,
-	);
+	)
 	document.addEventListener('keydown', event => {
 		if (event.key === 'Escape' && !menu.hidden) {
-			closeSettingsMenu();
-			button.focus();
+			closeSettingsMenu()
+			button.focus()
 		}
-	});
+	})
 
 	// A choice made in another open preview.
 	window.addEventListener('storage', event => {
-		if (event.key !== LIVE_SETTING_KEY || !event.newValue) return;
+		if (event.key !== LIVE_SETTING_KEY || !event.newValue) return
 		try {
-			const { key, value } = JSON.parse(event.newValue);
+			const { key, value } = JSON.parse(event.newValue)
 			if (SETTING_GROUPS.some(group => group.key === key && group.options.some(([v]) => v === value))) {
-				applySettingLocally(key, value);
+				applySettingLocally(key, value)
 			}
 		} catch {
 			// Ignore malformed values.
 		}
-	});
+	})
 }
 
 /**
@@ -221,41 +221,41 @@ export function initSettings(): void {
  * runs the built-in "Markdown: Refresh Preview", which re-renders all previews from the source.
  */
 export function initRefresh(): void {
-	const button = document.createElement('a');
-	button.id = REFRESH_BUTTON_ID;
-	button.setAttribute('role', 'button');
-	button.innerHTML = ICON_REFRESH;
-	button.title = 'Refresh preview';
-	button.setAttribute('aria-label', 'Refresh preview');
-	keepDoubleClickInside(button);
-	document.body.appendChild(button);
+	const button = document.createElement('a')
+	button.id = REFRESH_BUTTON_ID
+	button.setAttribute('role', 'button')
+	button.innerHTML = ICON_REFRESH
+	button.title = 'Refresh preview'
+	button.setAttribute('aria-label', 'Refresh preview')
+	keepDoubleClickInside(button)
+	document.body.appendChild(button)
 }
 
 /** Closes the settings menu if it's open. */
 export function closeSettingsMenu(): void {
-	const menu = document.getElementById(SETTINGS_MENU_ID);
+	const menu = document.getElementById(SETTINGS_MENU_ID)
 	if (menu && !menu.hidden) {
-		menu.hidden = true;
-		document.getElementById(SETTINGS_BUTTON_ID)!.setAttribute('aria-expanded', 'false');
+		menu.hidden = true
+		document.getElementById(SETTINGS_BUTTON_ID)!.setAttribute('aria-expanded', 'false')
 	}
 }
 
 /** Points the menu's links (and the refresh button's) at the extension, and marks the current values. */
 export function updateSettingsMenu(): void {
-	const config = document.getElementById(CONFIG_ELEMENT_ID);
-	const menu = document.getElementById(SETTINGS_MENU_ID);
-	if (!menu || !config) return;
-	const uriBase = config.dataset.uriBase || '';
-	document.getElementById(REFRESH_BUTTON_ID)?.setAttribute('href', uriBase + '/refresh');
+	const config = document.getElementById(CONFIG_ELEMENT_ID)
+	const menu = document.getElementById(SETTINGS_MENU_ID)
+	if (!menu || !config) return
+	const uriBase = config.dataset.uriBase || ''
+	document.getElementById(REFRESH_BUTTON_ID)?.setAttribute('href', uriBase + '/refresh')
 	for (const option of menu.querySelectorAll<HTMLElement>('.md-toc-menu-option')) {
-		const key = option.dataset.key!;
-		const value = option.dataset.value!;
-		const href = uriBase + '/set?' + new URLSearchParams({ [key]: value });
+		const key = option.dataset.key!
+		const value = option.dataset.value!
+		const href = uriBase + '/set?' + new URLSearchParams({ [key]: value })
 		if (option.getAttribute('href') !== href) {
-			option.setAttribute('href', href);
+			option.setAttribute('href', href)
 		}
-		option.setAttribute('aria-checked', String(readConfig(key, '') === value));
+		option.setAttribute('aria-checked', String(readConfig(key, '') === value))
 	}
-	const allSettings = menu.querySelector<HTMLElement>('.md-toc-menu-link')!;
-	allSettings.setAttribute('href', uriBase + allSettings.dataset.path);
+	const allSettings = menu.querySelector<HTMLElement>('.md-toc-menu-link')!
+	allSettings.setAttribute('href', uriBase + allSettings.dataset.path)
 }

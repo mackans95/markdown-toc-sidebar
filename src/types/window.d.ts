@@ -2,9 +2,9 @@
 // start it twice.
 interface Window {
 	/** Set once toc/index.ts has started. */
-	__mdTocSidebarInitialized?: boolean;
+	__mdTocSidebarInitialized?: boolean
 	/** Set once smooth-scroll-sync.ts has started. */
-	__mdTocSmoothSyncInitialized?: boolean;
+	__mdTocSmoothSyncInitialized?: boolean
 	/** Set once scroll-restore.ts has started. */
-	__mdTocScrollRestoreInitialized?: boolean;
+	__mdTocScrollRestoreInitialized?: boolean
 }
