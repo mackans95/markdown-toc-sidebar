@@ -32,6 +32,45 @@ function findActiveHeading(headings: HTMLElement[]): HTMLElement | undefined {
 	return active
 }
 
+/** Which entry is shown as active: inside a collapsed section the active entry is hidden, so its closest visible parent is shown instead. */
+function shownEntryIndex(links: HTMLAnchorElement[], activeIndex: number, ancestors: Set<number>): number {
+	if (activeIndex < 0 || !isHidden(links[activeIndex])) {
+		return activeIndex
+	}
+
+	// The ancestors come closest first.
+	return [...ancestors].find(i => !isHidden(links[i])) ?? -1
+}
+
+/** Marks the entry shown as active, and tints the parents above it. */
+function markLinks(links: HTMLAnchorElement[], shownIndex: number, ancestors: Set<number>): void {
+	links.forEach((link, i) => {
+		link.classList.toggle('active', i === shownIndex)
+
+		if (i === shownIndex) {
+			link.setAttribute('aria-current', 'location')
+		} else {
+			link.removeAttribute('aria-current')
+		}
+
+		// Parents above the entry shown as active (any below it are inside the collapsed section). The
+		// document title contains everything, so as a parent it would always be tinted.
+		link.classList.toggle(
+			'active-ancestor',
+			ancestors.has(i) && i < shownIndex && !link.classList.contains('md-toc-doc-title'),
+		)
+	})
+}
+
+/** Tabbing into the list lands on the entry shown as active. While focus is in the list, the focused entry stays the tab stop, unless a collapsed section has just hidden it. */
+function updateTabStop(nav: HTMLElement, links: HTMLAnchorElement[], shownIndex: number): void {
+	const stop = links.find(link => link.tabIndex === 0)
+
+	if (!nav.contains(document.activeElement) || !stop || isHidden(stop)) {
+		setTabStop(nav, links[shownIndex] ?? links.find(link => !isHidden(link)))
+	}
+}
+
 /** Which entry is highlighted as the section being read, and the sections containing it. */
 class ActiveHighlight {
 	// The tests load this file in Node, without a DOM, so these only start as a Set and null.
@@ -79,47 +118,19 @@ class ActiveHighlight {
 
 		const links = Array.from(nav.querySelectorAll('a'))
 		const activeIndex = links.findIndex(link => link.dataset.target === id)
-
 		const ancestors = ancestorIndices(
 			links.map(l => ({ level: Number(l.dataset.level) })),
 			activeIndex,
 		)
+		const shownIndex = shownEntryIndex(links, activeIndex, ancestors)
 
-		// Inside a collapsed section the active entry is hidden; show its closest visible parent as active
-		// instead. The ancestors come closest first.
-		const shownIndex =
-			activeIndex >= 0 && isHidden(links[activeIndex])
-				? ([...ancestors].find(i => !isHidden(links[i])) ?? -1)
-				: activeIndex
-
-		links.forEach((link, i) => {
-			link.classList.toggle('active', i === shownIndex)
-
-			if (i === shownIndex) {
-				link.setAttribute('aria-current', 'location')
-			} else {
-				link.removeAttribute('aria-current')
-			}
-
-			// Parents above the entry shown as active (any below it are inside the collapsed section). The
-			// document title contains everything, so as a parent it would always be tinted.
-			link.classList.toggle(
-				'active-ancestor',
-				ancestors.has(i) && i < shownIndex && !link.classList.contains('md-toc-doc-title'),
-			)
-		})
+		markLinks(links, shownIndex, ancestors)
 
 		if (shownIndex >= 0) {
 			links[shownIndex].scrollIntoView({ block: 'nearest' })
 		}
 
-		// Tabbing into the list lands on the entry shown as active. While focus is in the list, the
-		// focused entry stays the tab stop, unless a collapsed section has just hidden it.
-		const stop = links.find(link => link.tabIndex === 0)
-
-		if (!nav.contains(document.activeElement) || !stop || isHidden(stop)) {
-			setTabStop(nav, links[shownIndex] ?? links.find(link => !isHidden(link)))
-		}
+		updateTabStop(nav, links, shownIndex)
 	}
 }
 
