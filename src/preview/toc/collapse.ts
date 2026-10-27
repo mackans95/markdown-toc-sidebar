@@ -1,6 +1,6 @@
 // Collapsed sections (markdownTocSidebar.collapsible), remembered per file.
 import { readStoredJson, writeStored } from '../storage.ts'
-import { resetActive, updateActive } from './active.ts'
+import { activeHighlight } from './active.ts'
 import { NAV_ID } from './dom.ts'
 import { ICON_CHEVRON } from './icons.ts'
 import { hiddenIndices } from './outline.ts'
@@ -96,8 +96,8 @@ class CollapsedSections {
 		this.save()
 		this.apply()
 		// The active entry may have been hidden or shown: pick it again.
-		resetActive()
-		updateActive()
+		activeHighlight.reset()
+		activeHighlight.update()
 	}
 
 	/** Saves the collapsed sections of the file in the preview. */

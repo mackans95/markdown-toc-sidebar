@@ -1,6 +1,6 @@
 // The sidebar itself: the list of entries, rebuilt whenever the headings or the settings change.
 import { CONFIG_ELEMENT_ID } from '../../shared/constants.ts'
-import { resetActive, setTocIds, updateActive } from './active.ts'
+import { activeHighlight } from './active.ts'
 import { collapsedSections } from './collapse.ts'
 import { readConfig, sidebarPosition } from './config.ts'
 import { HEADING_SELECTOR, keepDoubleClickInside, NAV_ID } from './dom.ts'
@@ -57,7 +57,7 @@ function createLink(entry: Entry) {
 	link.dataset.target = entry.id
 	link.dataset.level = String(entry.level)
 	link.title = entry.text
-	// setActiveLink makes one entry the tab stop; the arrow keys move between them.
+	// activeHighlight.highlight makes one entry the tab stop; the arrow keys move between them.
 	link.tabIndex = -1
 	setHeadingMenuContext(link, entry.id, entry.text, true)
 	if (entry.number) {
@@ -71,12 +71,12 @@ function createLink(entry: Entry) {
 
 /** Rebuilds the list from the document's headings and the current settings. */
 function buildToc() {
-	resetActive()
+	activeHighlight.reset()
 	const headings = Array.from(document.querySelectorAll<HTMLElement>(HEADING_SELECTOR))
 	const nav = getNav()
 
 	if (headings.length === 0) {
-		setTocIds(new Set())
+		activeHighlight.setListedIds(new Set())
 		nav.replaceChildren()
 		document.body.classList.remove('md-toc-visible')
 		return
@@ -89,7 +89,7 @@ function buildToc() {
 		headings.map(h => ({ id: h.id, text: h.textContent.trim(), level: Number(h.tagName[1]) })),
 		{ maxDepth, topHeading, numbering },
 	)
-	setTocIds(new Set(entries.map(entry => entry.id)))
+	activeHighlight.setListedIds(new Set(entries.map(entry => entry.id)))
 
 	const collapsible = readConfig('collapsible', 'false') === 'true'
 	const listEntries = entries.filter(entry => !entry.isTitle)
@@ -130,7 +130,7 @@ function buildToc() {
 	collapsedSections.load()
 	collapsedSections.apply()
 	updateResizerValue()
-	updateActive()
+	activeHighlight.update()
 }
 
 /** Rebuilds the sidebar on the next frame if the headings or the settings changed; calls within one frame share a rebuild. */

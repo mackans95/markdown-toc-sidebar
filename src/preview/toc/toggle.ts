@@ -1,7 +1,7 @@
 // The button that hides the sidebar for the full width, and brings it back. The hidden state is
 // remembered for all previews of the same kind.
 import { readStored, writeStored } from '../storage.ts'
-import { resetActive, updateActive } from './active.ts'
+import { activeHighlight } from './active.ts'
 import { sidebarPosition } from './config.ts'
 import { keepDoubleClickInside, NAV_ID, TOGGLE_ID } from './dom.ts'
 import { ICON_HIDE_LEFT, ICON_HIDE_RIGHT, ICON_SHOW } from './icons.ts'
@@ -39,13 +39,13 @@ export function readHidden(): boolean {
 
 /** Hides or shows the sidebar, and remembers the choice. */
 export function setSidebarHidden(hidden: boolean): void {
-	resetActive()
+	activeHighlight.reset()
 	document.body.classList.toggle(HIDDEN_CLASS, hidden)
 	updateToggle()
 	closeSettingsMenu()
 	writeHidden(hidden)
 	if (!hidden) {
-		updateActive()
+		activeHighlight.update()
 	}
 }
 

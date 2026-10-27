@@ -1,6 +1,6 @@
 // Scrolling: to a heading when its entry is clicked, and keeping the highlight in step with the page.
 import { SYNCED_SCROLL_EVENT } from '../../shared/constants.ts'
-import { setActiveLink, updateActive } from './active.ts'
+import { activeHighlight } from './active.ts'
 import { scrollBehavior } from './config.ts'
 import { NAV_ID } from './dom.ts'
 
@@ -77,7 +77,7 @@ class Scrolling {
 
 		if (target) {
 			this.pinActive(target)
-			setActiveLink(target.id)
+			activeHighlight.highlight(target.id)
 
 			if (scrollBehavior() === 'smooth') {
 				this.animateScrollTo(headingScrollTop(target))
@@ -108,7 +108,7 @@ class Scrolling {
 		if (!this.scrollFrame) {
 			this.scrollFrame = requestAnimationFrame(() => {
 				this.scrollFrame = 0
-				updateActive()
+				activeHighlight.update()
 			})
 		}
 	}
