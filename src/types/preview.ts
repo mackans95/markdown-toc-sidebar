@@ -21,7 +21,7 @@ export interface EntryFields {
 /** One setting in the sidebar's settings menu, with the options it offers. */
 export interface SettingGroup {
 	/** The setting's name without the markdownTocSidebar. prefix, as in the config element's dataset. */
-	key: string
+	key: keyof PreviewConfig
 	label: string
 	/** [value, text] for each option, with the value as the config element has it. */
 	options: [string, string][]
@@ -41,3 +41,13 @@ export interface SavedPosition extends Position {
 
 /** A heading as the sidebar lists it. */
 export type Entry = { id: string; text: string; level: number } & EntryFields
+
+/** The settings in the config element's dataset, by short key, with the values src/extension.ts can write for each. */
+export interface PreviewConfig {
+	scrollBehavior: 'smooth' | 'instant'
+	position: 'right' | 'left'
+	maxDepth: '1' | '2' | '3' | '4' | '5' | '6'
+	topHeading: 'list' | 'title'
+	numbering: 'true' | 'false'
+	collapsible: 'true' | 'false'
+}

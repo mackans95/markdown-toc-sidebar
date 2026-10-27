@@ -120,9 +120,9 @@ class Sidebar {
 			return
 		}
 
-		const maxDepth = Number(readConfig('maxDepth', '6'))
-		const topHeading = readConfig('topHeading', 'list') === 'title' ? 'title' : 'list'
-		const numbering = readConfig('numbering', 'false') === 'true'
+		const maxDepth = Number(readConfig('maxDepth'))
+		const topHeading = readConfig('topHeading')
+		const numbering = readConfig('numbering') === 'true'
 		const entries = buildEntries(
 			headings.map(h => ({ id: h.id, text: h.textContent.trim(), level: Number(h.tagName[1]) })),
 			{ maxDepth, topHeading, numbering },
@@ -130,7 +130,7 @@ class Sidebar {
 
 		activeHighlight.setListedIds(new Set(entries.map(entry => entry.id)))
 
-		const collapsible = readConfig('collapsible', 'false') === 'true'
+		const collapsible = readConfig('collapsible') === 'true'
 		const listEntries = entries.filter(entry => !entry.isTitle)
 		const list = document.createElement('ul')
 

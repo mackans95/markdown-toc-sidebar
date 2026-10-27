@@ -3,7 +3,6 @@
 // setting and refreshes the preview (which then shows the new value here).
 import { CONFIG_ELEMENT_ID } from '../../shared/constants.ts'
 import { writeStored } from '../storage.ts'
-import { readConfig } from './config.ts'
 import { keepDoubleClickInside, REFRESH_BUTTON_ID, SETTINGS_BUTTON_ID, SETTINGS_MENU_ID } from './dom.ts'
 import { ICON_CLOSE, ICON_REFRESH, ICON_SETTINGS } from './icons.ts'
 import { sidebar } from './sidebar.ts'
@@ -315,7 +314,7 @@ export function updateSettingsMenu(): void {
 		if (option.getAttribute('href') !== href) {
 			option.setAttribute('href', href)
 		}
-		option.setAttribute('aria-checked', String(readConfig(key, '') === value))
+		option.setAttribute('aria-checked', String(config.dataset[key] === value))
 	}
 	const allSettings = menu.querySelector<HTMLElement>('.md-toc-menu-link')!
 	allSettings.setAttribute('href', uriBase + allSettings.dataset.path)
