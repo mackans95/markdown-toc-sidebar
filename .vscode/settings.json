@@ -1,5 +1,5 @@
 {
-  // Oxfmt formats the code with the settings in .oxfmtrc.json (tabs, semicolons, single quotes).
+  // Oxfmt formats the code with the settings in .oxfmtrc.json (tabs, no semicolons, single quotes).
   // These override personal defaults such as Prettier, so Format Document keeps the project's style.
   "[javascript]": {
     "editor.defaultFormatter": "oxc.oxc-vscode",
