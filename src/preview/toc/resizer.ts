@@ -9,6 +9,9 @@ const MIN_WIDTH = 140
 const MIN_CONTENT_WIDTH = 240
 const KEYBOARD_STEP = 16
 
+// The width while the handle is being dragged, saved once the drag ends.
+let dragWidth: number | undefined
+
 /** The width the user chose, or undefined for the default. */
 function readWidth(): number | undefined {
 	const width = Number(readStored(WIDTH_KEY))
@@ -45,17 +48,13 @@ function applyWidth(width: number | undefined) {
 	updateResizerValue()
 }
 
-/** Updates the handle's aria-valuenow to the sidebar's current width. */
-export function updateResizerValue(): void {
-	const resizer = document.getElementById(RESIZER_ID)
-	const nav = document.getElementById(NAV_ID)
-	if (resizer && nav) {
-		resizer.setAttribute('aria-valuenow', String(Math.round(nav.getBoundingClientRect().width)))
-	}
+/** The sidebar's current width. The nav is created on the first build, which runs before any input reaches the resizer. */
+function navWidth(): number {
+	return document.getElementById(NAV_ID)!.getBoundingClientRect().width
 }
 
-/** Adds the resize handle and applies the remembered width. */
-export function initResizer(): void {
+/** The resize handle on the sidebar's inner edge: a vertical separator that can be focused. */
+function createResizer(): HTMLDivElement {
 	const resizer = document.createElement('div')
 	resizer.id = RESIZER_ID
 	resizer.tabIndex = 0
@@ -65,57 +64,91 @@ export function initResizer(): void {
 	resizer.setAttribute('aria-label', 'Resize table of contents')
 	resizer.setAttribute('aria-valuemin', String(MIN_WIDTH))
 	resizer.title = 'Drag to resize, double-click to reset'
+
 	keepDoubleClickInside(resizer)
+
+	return resizer
+}
+
+/** Starts a drag when the main button goes down on the handle. */
+function startDrag(event: PointerEvent, resizer: HTMLElement): void {
+	if (event.button !== 0) return
+
+	// No preventDefault here: it would also suppress the double-click used to reset the width.
+	// Text selection during the drag is prevented by the md-toc-resizing class instead.
+	resizer.setPointerCapture(event.pointerId)
+	document.body.classList.add('md-toc-resizing')
+	dragWidth = navWidth()
+}
+
+/** Follows the pointer while dragging: the sidebar is pinned to one edge, so its width is the pointer's distance from that edge. */
+function drag(event: PointerEvent, resizer: HTMLElement): void {
+	if (!resizer.hasPointerCapture(event.pointerId)) return
+
+	const distance = sidebarPosition() === 'left' ? event.clientX : viewportWidth() - event.clientX
+	dragWidth = clampWidth(distance)
+	applyWidth(dragWidth)
+}
+
+/** Ends a drag, also a cancelled one, and remembers the width it ended at. */
+function endDrag(event: PointerEvent, resizer: HTMLElement): void {
+	if (!resizer.hasPointerCapture(event.pointerId)) return
+
+	resizer.releasePointerCapture(event.pointerId)
+	document.body.classList.remove('md-toc-resizing')
+	writeWidth(dragWidth)
+}
+
+/** Goes back to the default width from toc.css. */
+function resetWidth(): void {
+	writeWidth(undefined)
+	applyWidth(undefined)
+}
+
+/** How much an arrow key changes the width: moving the handle away from the sidebar's edge widens it. 0 for other keys. */
+function keyboardDelta(key: string): number {
+	const outward = sidebarPosition() === 'left' ? 'ArrowRight' : 'ArrowLeft'
+	const inward = sidebarPosition() === 'left' ? 'ArrowLeft' : 'ArrowRight'
+
+	return key === outward ? KEYBOARD_STEP : key === inward ? -KEYBOARD_STEP : 0
+}
+
+/** Changes the width by KEYBOARD_STEP with the arrow keys, and remembers it. */
+function onResizerKeyDown(event: KeyboardEvent): void {
+	const delta = keyboardDelta(event.key)
+
+	if (!delta) return
+
+	event.preventDefault()
+
+	const width = clampWidth(navWidth() + delta)
+
+	applyWidth(width)
+	writeWidth(width)
+}
+
+/** Adds the resize handle and applies the remembered width. */
+export function initResizer(): void {
+	const resizer = createResizer()
 	document.body.appendChild(resizer)
 
-	// The nav is created on the first build, which runs before any input reaches the resizer.
-	const currentWidth = () => document.getElementById(NAV_ID)!.getBoundingClientRect().width
-	let dragWidth: number | undefined
-
-	resizer.addEventListener('pointerdown', event => {
-		if (event.button !== 0) return
-		// No preventDefault here: it would also suppress the dblclick used to reset the width.
-		// Text selection during the drag is prevented by the md-toc-resizing class instead.
-		resizer.setPointerCapture(event.pointerId)
-		document.body.classList.add('md-toc-resizing')
-		dragWidth = currentWidth()
-	})
-
-	resizer.addEventListener('pointermove', event => {
-		if (!resizer.hasPointerCapture(event.pointerId)) return
-		// The sidebar is pinned to one edge, so its width is the pointer's distance from that edge.
-		const distance = sidebarPosition() === 'left' ? event.clientX : viewportWidth() - event.clientX
-		dragWidth = clampWidth(distance)
-		applyWidth(dragWidth)
-	})
-
-	const endDrag = (event: PointerEvent) => {
-		if (!resizer.hasPointerCapture(event.pointerId)) return
-		resizer.releasePointerCapture(event.pointerId)
-		document.body.classList.remove('md-toc-resizing')
-		writeWidth(dragWidth)
-	}
-	resizer.addEventListener('pointerup', endDrag)
-	resizer.addEventListener('pointercancel', endDrag)
-
-	resizer.addEventListener('dblclick', () => {
-		writeWidth(undefined)
-		applyWidth(undefined)
-	})
-
-	resizer.addEventListener('keydown', event => {
-		// Moving the handle away from the sidebar's edge widens it.
-		const outward = sidebarPosition() === 'left' ? 'ArrowRight' : 'ArrowLeft'
-		const inward = sidebarPosition() === 'left' ? 'ArrowLeft' : 'ArrowRight'
-		const delta = event.key === outward ? KEYBOARD_STEP : event.key === inward ? -KEYBOARD_STEP : 0
-		if (!delta) return
-		event.preventDefault()
-		const width = clampWidth(currentWidth() + delta)
-		applyWidth(width)
-		writeWidth(width)
-	})
+	resizer.addEventListener('pointerdown', e => startDrag(e, resizer))
+	resizer.addEventListener('pointermove', e => drag(e, resizer))
+	resizer.addEventListener('pointerup', e => endDrag(e, resizer))
+	resizer.addEventListener('pointercancel', e => endDrag(e, resizer))
+	resizer.addEventListener('dblclick', resetWidth)
+	resizer.addEventListener('keydown', onResizerKeyDown)
 
 	// Re-clamp the stored width when the preview pane itself is resized.
 	window.addEventListener('resize', () => applyWidth(readWidth()))
 	applyWidth(readWidth())
+}
+
+/** Updates the handle's aria-valuenow to the sidebar's current width. */
+export function updateResizerValue(): void {
+	const resizer = document.getElementById(RESIZER_ID)
+	const nav = document.getElementById(NAV_ID)
+	if (resizer && nav) {
+		resizer.setAttribute('aria-valuenow', String(Math.round(nav.getBoundingClientRect().width)))
+	}
 }
