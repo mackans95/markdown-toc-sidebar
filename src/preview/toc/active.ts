@@ -46,14 +46,10 @@ export function resetActive(): void {
 
 /** Highlights the entry for a heading, and tints the sections containing it. */
 export function setActiveLink(id: string | undefined): void {
-	if (latestActiveId === id) {
-		return;
-	}
+	if (latestActiveId === id) return;
 
 	const nav = document.getElementById(NAV_ID);
-	if (!nav) {
-		return;
-	}
+	if (!nav) return;
 
 	latestActiveId = id;
 

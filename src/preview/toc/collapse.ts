@@ -33,9 +33,7 @@ class CollapsedSections {
 	/** Picks up the saved sections when the preview shows a different file than before. */
 	load(): void {
 		const source = previewSource();
-		if (source === this.source) {
-			return;
-		}
+		if (source === this.source) return;
 		this.source = source;
 		this.ids = new Set((source && this.readStore()[source]?.ids) || []);
 	}
@@ -104,9 +102,7 @@ class CollapsedSections {
 
 	/** Saves the collapsed sections of the file in the preview. */
 	private save(): void {
-		if (!this.source) {
-			return;
-		}
+		if (!this.source) return;
 		// Only headings still in the document, so renamed or removed ones drop out.
 		const ids = [...this.ids].filter(id => document.getElementById(id));
 		const store = storeCollapsed(

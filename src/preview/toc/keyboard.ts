@@ -55,9 +55,7 @@ export function onNavKeydown(event: KeyboardEvent): void {
 	const current = event.target.closest('a') ?? event.target.closest('li')?.querySelector('a');
 	const links = Array.from(nav.querySelectorAll('a'));
 	const index = current ? links.indexOf(current) : -1;
-	if (!current || index < 0) {
-		return;
-	}
+	if (!current || index < 0) return;
 
 	const chevron = current.closest('li')?.querySelector<HTMLButtonElement>('.md-toc-chevron');
 	const expanded = chevron?.getAttribute('aria-expanded');
@@ -74,9 +72,7 @@ export function onNavKeydown(event: KeyboardEvent): void {
 
 	const entries = links.map(link => ({ level: Number(link.dataset.level), hidden: isHidden(link) }));
 	const target = focusTarget(entries, index, event.key);
-	if (target === undefined) {
-		return;
-	}
+	if (target === undefined) return;
 	// Also at the ends of the list, so the keys don't scroll the page instead.
 	event.preventDefault();
 	event.stopPropagation();

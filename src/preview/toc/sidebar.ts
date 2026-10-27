@@ -135,9 +135,7 @@ function buildToc() {
 
 /** Rebuilds the sidebar on the next frame if the headings or the settings changed; calls within one frame share a rebuild. */
 export function scheduleBuild(): void {
-	if (buildFrame) {
-		return;
-	}
+	if (buildFrame) return;
 	buildFrame = requestAnimationFrame(() => {
 		buildFrame = 0;
 		applyConfig();

@@ -29,9 +29,7 @@ class ScrollRestore {
 
 	/** Saves the position as you scroll, and restores the saved one if this page is a rebuild of a render seen before. */
 	start(): void {
-		if (!this.renderId) {
-			return;
-		}
+		if (!this.renderId) return;
 
 		this.restoring = this.readPositions()[this.renderId];
 		window.addEventListener('scroll', () => this.onScroll(), { passive: true });

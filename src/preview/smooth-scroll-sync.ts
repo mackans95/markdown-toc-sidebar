@@ -92,9 +92,7 @@ class SmoothScrollSync {
 	/** One frame of the glide: covers part of the remaining distance and tells listeners about the new position. */
 	private step(now: number) {
 		this.frame = 0;
-		if (this.target === null) {
-			return;
-		}
+		if (this.target === null) return;
 		const elapsedFrames = Math.min(4, (now - this.lastTime) / (1000 / 60));
 		this.lastTime = now;
 		const remaining = this.target - this.position;

@@ -21,9 +21,7 @@ const CONFIG_TOKEN_TYPE = 'md_toc_sidebar_config';
 function copyHeadingLink(field: 'link' | 'markdownLink'): (item?: Partial<HeadingContext>) => Promise<void> {
 	return async item => {
 		const text = item?.[field];
-		if (typeof text !== 'string') {
-			return;
-		}
+		if (typeof text !== 'string') return;
 		await vscode.env.clipboard.writeText(text);
 		vscode.window.setStatusBarMessage(`Copied link to "${item?.headingText}"`, 3000);
 	};

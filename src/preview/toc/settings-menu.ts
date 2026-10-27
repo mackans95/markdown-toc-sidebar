@@ -169,9 +169,7 @@ export function initSettings(): void {
 	// then goes to VS Code (via src/extension.ts) to save the setting. The menu stays open.
 	menu.addEventListener('click', event => {
 		const option = event.target instanceof Element && event.target.closest<HTMLElement>('.md-toc-menu-option');
-		if (!option) {
-			return;
-		}
+		if (!option) return;
 		if (option.getAttribute('aria-checked') === 'true') {
 			// Already the current value: nothing to save.
 			event.preventDefault();
@@ -206,9 +204,7 @@ export function initSettings(): void {
 
 	// A choice made in another open preview.
 	window.addEventListener('storage', event => {
-		if (event.key !== LIVE_SETTING_KEY || !event.newValue) {
-			return;
-		}
+		if (event.key !== LIVE_SETTING_KEY || !event.newValue) return;
 		try {
 			const { key, value } = JSON.parse(event.newValue);
 			if (SETTING_GROUPS.some(group => group.key === key && group.options.some(([v]) => v === value))) {
@@ -248,9 +244,7 @@ export function closeSettingsMenu(): void {
 export function updateSettingsMenu(): void {
 	const config = document.getElementById(CONFIG_ELEMENT_ID);
 	const menu = document.getElementById(SETTINGS_MENU_ID);
-	if (!menu || !config) {
-		return;
-	}
+	if (!menu || !config) return;
 	const uriBase = config.dataset.uriBase || '';
 	document.getElementById(REFRESH_BUTTON_ID)?.setAttribute('href', uriBase + '/refresh');
 	for (const option of menu.querySelectorAll<HTMLElement>('.md-toc-menu-option')) {

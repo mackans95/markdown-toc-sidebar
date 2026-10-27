@@ -73,9 +73,7 @@ export function initResizer(): void {
 	let dragWidth: number | undefined;
 
 	resizer.addEventListener('pointerdown', event => {
-		if (event.button !== 0) {
-			return;
-		}
+		if (event.button !== 0) return;
 		// No preventDefault here: it would also suppress the dblclick used to reset the width.
 		// Text selection during the drag is prevented by the md-toc-resizing class instead.
 		resizer.setPointerCapture(event.pointerId);
@@ -84,9 +82,7 @@ export function initResizer(): void {
 	});
 
 	resizer.addEventListener('pointermove', event => {
-		if (!resizer.hasPointerCapture(event.pointerId)) {
-			return;
-		}
+		if (!resizer.hasPointerCapture(event.pointerId)) return;
 		// The sidebar is pinned to one edge, so its width is the pointer's distance from that edge.
 		const distance = sidebarPosition() === 'left' ? event.clientX : viewportWidth() - event.clientX;
 		dragWidth = clampWidth(distance);
@@ -94,9 +90,7 @@ export function initResizer(): void {
 	});
 
 	const endDrag = (event: PointerEvent) => {
-		if (!resizer.hasPointerCapture(event.pointerId)) {
-			return;
-		}
+		if (!resizer.hasPointerCapture(event.pointerId)) return;
 		resizer.releasePointerCapture(event.pointerId);
 		document.body.classList.remove('md-toc-resizing');
 		writeWidth(dragWidth);
@@ -114,9 +108,7 @@ export function initResizer(): void {
 		const outward = sidebarPosition() === 'left' ? 'ArrowRight' : 'ArrowLeft';
 		const inward = sidebarPosition() === 'left' ? 'ArrowLeft' : 'ArrowRight';
 		const delta = event.key === outward ? KEYBOARD_STEP : event.key === inward ? -KEYBOARD_STEP : 0;
-		if (!delta) {
-			return;
-		}
+		if (!delta) return;
 		event.preventDefault();
 		const width = clampWidth(currentWidth() + delta);
 		applyWidth(width);
