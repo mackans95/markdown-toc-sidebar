@@ -76,6 +76,71 @@ function createLink(entry: Entry): HTMLAnchorElement {
 	return link
 }
 
+/** The settings and headings the list is built from, as one string, so a rebuild that would change nothing can be skipped. */
+function contentSignature(): string {
+	const config = document.getElementById(CONFIG_ELEMENT_ID)
+	const settings = config ? JSON.stringify(config.dataset) : ''
+	const headings = Array.from(document.querySelectorAll(HEADING_SELECTOR)).map(
+		h => `${h.tagName}#${h.id}:${h.textContent}`,
+	)
+
+	return `${settings}\n${headings.join('\n')}`
+}
+
+/** The entries to list for the document's headings, with the maxDepth, topHeading and numbering settings applied. */
+function listedEntries(headings: HTMLElement[]): Entry[] {
+	return buildEntries(
+		headings.map(h => ({ id: h.id, text: h.textContent.trim(), level: Number(h.tagName[1]) })),
+		{
+			maxDepth: Number(readConfig('maxDepth')),
+			topHeading: readConfig('topHeading'),
+			numbering: readConfig('numbering') === 'true',
+		},
+	)
+}
+
+/** The list of entries; with collapsible sections, each starts with a chevron, or a spacer that lines it up with them. */
+function createList(entries: Entry[], collapsible: boolean): HTMLUListElement {
+	const list = document.createElement('ul')
+
+	entries.forEach((entry, i) => {
+		const item = document.createElement('li')
+		item.style.setProperty('--md-toc-depth', String(entry.depth))
+
+		if (collapsible) {
+			item.appendChild(
+				hasChildren(entries, i)
+					? collapsedSections.createChevron(entry)
+					: collapsedSections.createChevronSpacer(),
+			)
+		}
+
+		item.appendChild(createLink(entry))
+		list.appendChild(item)
+	})
+
+	return list
+}
+
+/** Pinned while the list scrolls: the "Contents" row next to the header buttons, and the document's title below it when topHeading is 'title'. */
+function createHeader(titleEntry: Entry | undefined): HTMLDivElement {
+	const header = document.createElement('div')
+	header.className = 'md-toc-header'
+
+	const title = document.createElement('div')
+	title.className = 'md-toc-title'
+	title.textContent = 'Contents'
+	header.appendChild(title)
+
+	if (titleEntry) {
+		const docTitle = createLink(titleEntry)
+		docTitle.className = 'md-toc-doc-title'
+		header.appendChild(docTitle)
+	}
+
+	return header
+}
+
 /** The list of entries, rebuilt at most once per frame and only when the headings or the settings changed. */
 class Sidebar {
 	// The headings and settings the list was last built from, so a rebuild that would change nothing is skipped.
@@ -93,11 +158,7 @@ class Sidebar {
 			assignRawHeadingIds()
 			setDocumentHeadingMenuContexts()
 
-			const config = document.getElementById(CONFIG_ELEMENT_ID)
-			const settings = config ? JSON.stringify(config.dataset) : ''
-			const signature = `${settings}\n${Array.from(document.querySelectorAll(HEADING_SELECTOR))
-				.map(h => `${h.tagName}#${h.id}:${h.textContent}`)
-				.join('\n')}`
+			const signature = contentSignature()
 
 			if (signature !== this.lastSignature || !document.getElementById(NAV_ID)) {
 				this.lastSignature = signature
@@ -120,58 +181,19 @@ class Sidebar {
 			return
 		}
 
-		const maxDepth = Number(readConfig('maxDepth'))
-		const topHeading = readConfig('topHeading')
-		const numbering = readConfig('numbering') === 'true'
-		const entries = buildEntries(
-			headings.map(h => ({ id: h.id, text: h.textContent.trim(), level: Number(h.tagName[1]) })),
-			{ maxDepth, topHeading, numbering },
-		)
-
+		const entries = listedEntries(headings)
 		activeHighlight.setListedIds(new Set(entries.map(entry => entry.id)))
 
 		const collapsible = readConfig('collapsible') === 'true'
-		const listEntries = entries.filter(entry => !entry.isTitle)
-		const list = document.createElement('ul')
-
-		listEntries.forEach((entry, i) => {
-			const item = document.createElement('li')
-			item.style.setProperty('--md-toc-depth', String(entry.depth))
-
-			if (collapsible) {
-				item.appendChild(
-					hasChildren(listEntries, i)
-						? collapsedSections.createChevron(entry)
-						: collapsedSections.createChevronSpacer(),
-				)
-			}
-
-			item.appendChild(createLink(entry))
-			list.appendChild(item)
-		})
+		const titleEntry = entries.find(entry => entry.isTitle)
+		const list = createList(
+			entries.filter(entry => !entry.isTitle),
+			collapsible,
+		)
 
 		nav.classList.toggle('md-toc-collapsible', collapsible)
-
-		// Pinned while the list scrolls: the "Contents" row next to the header buttons, and the
-		// document's title below it when topHeading is 'title'.
-		const header = document.createElement('div')
-		header.className = 'md-toc-header'
-		const title = document.createElement('div')
-		title.className = 'md-toc-title'
-		title.textContent = 'Contents'
-
-		header.appendChild(title)
-
-		const titleEntry = entries.find(entry => entry.isTitle)
-
-		if (titleEntry) {
-			const docTitle = createLink(titleEntry)
-			docTitle.className = 'md-toc-doc-title'
-			header.appendChild(docTitle)
-		}
-
 		nav.classList.toggle('md-toc-has-doc-title', !!titleEntry)
-		nav.replaceChildren(header, list)
+		nav.replaceChildren(createHeader(titleEntry), list)
 		document.body.classList.add('md-toc-visible')
 
 		collapsedSections.load()
