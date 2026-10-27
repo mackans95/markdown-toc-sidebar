@@ -2,7 +2,7 @@
 import { HEADING_SELECTOR, NAV_ID } from './dom.ts';
 import { isHidden, setTabStop } from './keyboard.ts';
 import { ancestorIndices } from './outline.ts';
-import { pinnedId } from './scroll.ts';
+import { scrolling } from './scroll.ts';
 
 // Ids of the headings listed in the sidebar; headings deeper than maxDepth aren't in it.
 let tocIds = new Set<string>();
@@ -99,7 +99,7 @@ export function setActiveLink(id: string | undefined): void {
 
 /** Highlights the entry for the section being read, or the clicked one while its scroll is in flight. */
 export function updateActive(): void {
-	const pinned = pinnedId();
+	const pinned = scrolling.pinnedId;
 	if (pinned) {
 		setActiveLink(pinned);
 		return;

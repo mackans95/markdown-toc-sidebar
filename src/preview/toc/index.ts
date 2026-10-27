@@ -2,14 +2,14 @@
 // Builds a table of contents from the rendered headings and keeps it in sync.
 import { OWN_UI_SELECTOR } from './dom.ts';
 import { initResizer } from './resizer.ts';
-import { initScrolling } from './scroll.ts';
+import { scrolling } from './scroll.ts';
 import { initRefresh, initSettings } from './settings-menu.ts';
 import { scheduleBuild } from './sidebar.ts';
 import { readHidden, setSidebarHidden } from './toggle.ts';
 
 /** The only code that runs when the script loads; the other files just define functions. */
 function start() {
-	initScrolling();
+	scrolling.init();
 
 	// Our script loads async, so the preview content may arrive before or after we run.
 	// Watching the DOM catches the initial render and every later update regardless of timing.
