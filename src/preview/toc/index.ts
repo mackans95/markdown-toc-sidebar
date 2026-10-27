@@ -7,8 +7,8 @@ import { initRefresh, initSettings } from './settings-menu.ts'
 import { sidebar } from './sidebar.ts'
 import { readHidden, setSidebarHidden } from './toggle.ts'
 
-/** The only code that runs when the script loads; the other files just define functions. */
-function start() {
+/** The only code that does anything when the script loads; the other files only define functions and create instances that wait to be used. */
+function start(): void {
 	scrolling.init()
 
 	// Our script loads async, so the preview content may arrive before or after we run.
