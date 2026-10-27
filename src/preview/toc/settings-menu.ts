@@ -6,7 +6,7 @@ import { writeStored } from '../storage.ts'
 import { readConfig } from './config.ts'
 import { keepDoubleClickInside, REFRESH_BUTTON_ID, SETTINGS_BUTTON_ID, SETTINGS_MENU_ID } from './dom.ts'
 import { ICON_CLOSE, ICON_REFRESH, ICON_SETTINGS } from './icons.ts'
-import { scheduleBuild } from './sidebar.ts'
+import { sidebar } from './sidebar.ts'
 import type { SettingGroup } from '../../types/preview.ts'
 
 const SETTING_GROUPS: SettingGroup[] = [
@@ -83,7 +83,7 @@ function applySettingLocally(key: string, value: string) {
 	const config = document.getElementById(CONFIG_ELEMENT_ID)
 	if (config) {
 		config.dataset[key] = value
-		scheduleBuild()
+		sidebar.scheduleBuild()
 	}
 }
 

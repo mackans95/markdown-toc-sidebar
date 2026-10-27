@@ -4,7 +4,7 @@ import { OWN_UI_SELECTOR } from './dom.ts'
 import { initResizer } from './resizer.ts'
 import { scrolling } from './scroll.ts'
 import { initRefresh, initSettings } from './settings-menu.ts'
-import { scheduleBuild } from './sidebar.ts'
+import { sidebar } from './sidebar.ts'
 import { readHidden, setSidebarHidden } from './toggle.ts'
 
 /** The only code that runs when the script loads; the other files just define functions. */
@@ -17,18 +17,18 @@ function start() {
 	new MutationObserver(records => {
 		const isOwnUi = (node: Node) => (node instanceof Element ? node : node.parentElement)?.closest(OWN_UI_SELECTOR)
 		if (records.some(r => !isOwnUi(r.target))) {
-			scheduleBuild()
+			sidebar.scheduleBuild()
 		}
 	}).observe(document.body, { childList: true, subtree: true, characterData: true })
 
 	// Fired by the built-in preview after it patches in new content.
-	window.addEventListener('vscode.markdown.updateContent', scheduleBuild)
+	window.addEventListener('vscode.markdown.updateContent', () => sidebar.scheduleBuild())
 
 	initResizer()
 	initSettings()
 	initRefresh()
 	setSidebarHidden(readHidden())
-	scheduleBuild()
+	sidebar.scheduleBuild()
 }
 
 // Protects the script from running twice on the same page, no double initialization.
