@@ -15,6 +15,63 @@ import type { SettingValue, PackageJson, HeadingContext, MarkdownIt, Setting } f
 const CONFIG_TOKEN_TYPE = 'md_toc_sidebar_config';
 
 /**
+ * The heading context menu in the preview. VS Code passes the right-clicked element's
+ * data-vscode-context, where src/preview/toc/headings.ts has put the ready-made links.
+ */
+function copyHeadingLink(field: 'link' | 'markdownLink'): (item?: Partial<HeadingContext>) => Promise<void> {
+	return async item => {
+		const text = item?.[field];
+		if (typeof text !== 'string') {
+			return;
+		}
+		await vscode.env.clipboard.writeText(text);
+		vscode.window.setStatusBarMessage(`Copied link to "${item?.headingText}"`, 3000);
+	};
+}
+
+/** Registers a listener for configuration changes, and refreshes open previews when a setting changed. */
+function registerConfigListener(settings: Settings, context: vscode.ExtensionContext) {
+	context.subscriptions.push(
+		vscode.workspace.onDidChangeConfiguration(event => {
+			if (settings.changedOutsideMenu(event)) {
+				vscode.commands.executeCommand('markdown.preview.refresh');
+			}
+		}),
+	);
+}
+
+/** Registers a URI handler for the sidebar's settings menu, which is made of vscode:// links. */
+function registerUriHandler(settings: Settings, context: vscode.ExtensionContext, extensionId: string) {
+	context.subscriptions.push(
+		vscode.window.registerUriHandler({
+			/**
+			 * Handles vscode://<extension id>/set?key=value, /open-settings and /refresh.
+			 */
+			async handleUri(uri: vscode.Uri) {
+				if (uri.path === '/set') {
+					const params = new URLSearchParams(uri.query);
+					for (const [key, value] of params) {
+						await settings.saveFromMenu(key, value);
+					}
+				} else if (uri.path === '/open-settings') {
+					await vscode.commands.executeCommand('workbench.action.openSettings', `@ext:${extensionId}`);
+				} else if (uri.path === '/refresh') {
+					await vscode.commands.executeCommand('markdown.preview.refresh');
+				}
+			},
+		}),
+	);
+}
+
+/** Registers commands for the heading context menu in the preview. */
+function registerCommands(context: vscode.ExtensionContext) {
+	context.subscriptions.push(
+		vscode.commands.registerCommand(`${Settings.SECTION}.copyHeadingLink`, copyHeadingLink('link')),
+		vscode.commands.registerCommand(`${Settings.SECTION}.copyHeadingMarkdownLink`, copyHeadingLink('markdownLink')),
+	);
+}
+
+/**
  * The extension's settings, as package.json declares them.
  * Only reads and writes values that package.json allows.
  */
@@ -95,63 +152,6 @@ class Settings {
 
 		return config.update(key, value, target);
 	}
-}
-
-/**
- * The heading context menu in the preview. VS Code passes the right-clicked element's
- * data-vscode-context, where src/preview/toc/headings.ts has put the ready-made links.
- */
-function copyHeadingLink(field: 'link' | 'markdownLink'): (item?: Partial<HeadingContext>) => Promise<void> {
-	return async item => {
-		const text = item?.[field];
-		if (typeof text !== 'string') {
-			return;
-		}
-		await vscode.env.clipboard.writeText(text);
-		vscode.window.setStatusBarMessage(`Copied link to "${item?.headingText}"`, 3000);
-	};
-}
-
-/** Registers a listener for configuration changes, and refreshes open previews when a setting changed. */
-function registerConfigListener(settings: Settings, context: vscode.ExtensionContext) {
-	context.subscriptions.push(
-		vscode.workspace.onDidChangeConfiguration(event => {
-			if (settings.changedOutsideMenu(event)) {
-				vscode.commands.executeCommand('markdown.preview.refresh');
-			}
-		}),
-	);
-}
-
-/** Registers a URI handler for the sidebar's settings menu, which is made of vscode:// links. */
-function registerUriHandler(settings: Settings, context: vscode.ExtensionContext, extensionId: string) {
-	context.subscriptions.push(
-		vscode.window.registerUriHandler({
-			/**
-			 * Handles vscode://<extension id>/set?key=value, /open-settings and /refresh.
-			 */
-			async handleUri(uri: vscode.Uri) {
-				if (uri.path === '/set') {
-					const params = new URLSearchParams(uri.query);
-					for (const [key, value] of params) {
-						await settings.saveFromMenu(key, value);
-					}
-				} else if (uri.path === '/open-settings') {
-					await vscode.commands.executeCommand('workbench.action.openSettings', `@ext:${extensionId}`);
-				} else if (uri.path === '/refresh') {
-					await vscode.commands.executeCommand('markdown.preview.refresh');
-				}
-			},
-		}),
-	);
-}
-
-/** Registers commands for the heading context menu in the preview. */
-function registerCommands(context: vscode.ExtensionContext) {
-	context.subscriptions.push(
-		vscode.commands.registerCommand(`${Settings.SECTION}.copyHeadingLink`, copyHeadingLink('link')),
-		vscode.commands.registerCommand(`${Settings.SECTION}.copyHeadingMarkdownLink`, copyHeadingLink('markdownLink')),
-	);
 }
 
 /** Activates the extension. */

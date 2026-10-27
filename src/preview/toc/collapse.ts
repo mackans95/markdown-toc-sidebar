@@ -7,6 +7,18 @@ import { hiddenIndices } from './outline.ts';
 import type { CollapsedStore } from '../../types/preview.ts';
 
 /**
+ * The file shown in the preview, from the data the built-in preview renders into the page. Without
+ * that data, reading it throws and there's no file.
+ */
+function previewSource(): string | undefined {
+	try {
+		return JSON.parse(document.getElementById('vscode-markdown-preview-data')!.dataset.settings!).source;
+	} catch {
+		return undefined;
+	}
+}
+
+/**
  * The collapsed sections (markdownTocSidebar.collapsible) of the file in the preview. Saved per file,
  * so they're still collapsed after switching files, editing or reopening the preview.
  */
@@ -110,18 +122,6 @@ class CollapsedSections {
 	/** The saved collapsed sections of every file. */
 	private readStore(): CollapsedStore {
 		return readStoredJson<CollapsedStore>(CollapsedSections.STORAGE_KEY, {});
-	}
-}
-
-/**
- * The file shown in the preview, from the data the built-in preview renders into the page. Without
- * that data, reading it throws and there's no file.
- */
-function previewSource(): string | undefined {
-	try {
-		return JSON.parse(document.getElementById('vscode-markdown-preview-data')!.dataset.settings!).source;
-	} catch {
-		return undefined;
 	}
 }
 
