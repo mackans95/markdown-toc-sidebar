@@ -7,11 +7,15 @@ import { ancestorIndices, hasChildren } from './outline.ts'
  * are skipped. ArrowRight goes to the first child and ArrowLeft to the parent; expanding and
  * collapsing with those keys is handled before this.
  */
-export function focusTarget(
-	entries: { level: number; hidden?: boolean }[],
-	index: number,
-	key: string,
-): number | undefined {
+export function focusTarget({
+	entries,
+	index,
+	key,
+}: {
+	entries: { level: number; hidden?: boolean }[]
+	index: number
+	key: string
+}): number | undefined {
 	const visible = entries.flatMap((entry, i) => (entry.hidden ? [] : [i]))
 	const position = visible.indexOf(index)
 	switch (key) {
@@ -73,7 +77,7 @@ export function onNavKeydown(e: KeyboardEvent): void {
 	}
 
 	const entries = links.map(link => ({ level: Number(link.dataset.level), hidden: isHidden(link) }))
-	const target = focusTarget(entries, index, e.key)
+	const target = focusTarget({ entries, index, key: e.key })
 	if (target === undefined) return
 	// Also at the ends of the list, so the keys don't scroll the page instead.
 	e.preventDefault()

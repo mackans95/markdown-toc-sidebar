@@ -123,7 +123,7 @@ describe('focusTarget', () => {
 	// 4   h2
 	// 5     h3
 	const outline = [1, 2, 3, 3, 2, 3].map((level, i) => ({ level, hidden: i === 2 || i === 3 }))
-	const move = (index: number, key: string) => focusTarget(outline, index, key)
+	const move = (index: number, key: string) => focusTarget({ entries: outline, index, key })
 
 	test('moves down and up past hidden entries', () => {
 		assert.equal(move(1, 'ArrowDown'), 4)
@@ -153,8 +153,8 @@ describe('focusTarget', () => {
 	})
 	test('treats a skipped level as parent and child', () => {
 		const skipped = [{ level: 2 }, { level: 4 }]
-		assert.equal(focusTarget(skipped, 1, 'ArrowLeft'), 0)
-		assert.equal(focusTarget(skipped, 0, 'ArrowRight'), 1)
+		assert.equal(focusTarget({ entries: skipped, index: 1, key: 'ArrowLeft' }), 0)
+		assert.equal(focusTarget({ entries: skipped, index: 0, key: 'ArrowRight' }), 1)
 	})
 	test('ignores other keys', () => {
 		assert.equal(move(1, 'Enter'), undefined)
