@@ -98,9 +98,8 @@ VS Code 1.82 or later. The extension only adds to the built-in Markdown preview,
 
 ## Known limitations
 
-- When a preview's tab comes back from the background, VS Code shows it as it was last fully rendered. Edits you made while the preview was visible may be missing until you edit again; run **Markdown: Refresh Preview** from the Command Palette to update it right away.
 - The sidebar width and the hidden/shown state are saved per kind of preview (side-by-side, or the Markdown Preview editor), not per file. Collapsed sections are saved per file, but also separately for each kind of preview.
-- Headings written as HTML, like `<h2>`, are listed, but have no *Copy Link to Heading*: the anchor the sidebar gives them only exists in the preview, so a link to it wouldn't work anywhere else.
+- Headings written as HTML, like `<h2>`, are listed, but have no *Copy Link to Heading*: the anchor the sidebar gives them only exists in the preview, so a link to it wouldn't work anywhere else. Give the heading its own `id`, like `<h2 id="setup">`, and both copy items work for it.
 
 ## Privacy
 
@@ -112,9 +111,10 @@ The extension uses VS Code's Markdown preview extension points (`markdown.previe
 
 - `src/preview/toc/` builds the sidebar from the rendered headings and rebuilds it whenever the preview content or a setting changes. Markdown headings already have `id`s; headings written as HTML get one from the sidebar. It also marks headings for the right-click menu (`data-vscode-context`), with the links ready to copy. `index.ts` starts it; `sidebar.ts` builds the list from the entries `outline.ts` works out, `active.ts` and `scroll.ts` keep the current section highlighted, and the other files each hold one part of the sidebar, like `collapse.ts`, `keyboard.ts`, `resizer.ts`, `toggle.ts` and `settings-menu.ts`.
 - `src/preview/smooth-scroll-sync.ts` takes over the preview's scroll-sync jumps and animates them instead.
-- `src/preview/scroll-restore.ts` remembers where you are in the preview. VS Code rebuilds a preview from its last full render when its tab comes back from the background, and the preview then scrolls to the position saved in that render; this puts it back where you were.
+- `src/preview/scroll-restore.ts` remembers where you are in the preview. VS Code rebuilds a preview from its last full render when its tab comes back from the background, and the preview then scrolls to the position saved in that render; this puts it back where you were. It also remembers where you were in each file, so a refresh doesn't move you either.
 - `media/toc.css` styles the sidebar using your theme's colors.
 - `src/extension.ts` connects the preview to VS Code settings, which the preview can't access itself. It reads the settings and their allowed values from `package.json`, adds a hidden element carrying the settings to each rendered preview, and refreshes open previews when a setting changes. The cog menu's options are `vscode://` links, which VS Code hands to this file's URI handler to update the setting. The refresh button is such a link too, and runs VS Code's *Markdown: Refresh Preview*. The commands behind the right-click menu's copy items are in this file too.
+- `src/preview-refresher.ts` keeps previews in background tabs up to date. While a preview is on screen, edits and cog-menu choices only update the running page, and VS Code would bring a preview back from the background as it was last fully rendered. So when a preview goes to the background after such a change, this runs *Markdown: Refresh Preview*, which also renders the previews in the background anew.
 - `src/shared/` holds the constants and helpers that both the extension and the preview scripts use. `src/types/` holds the types: `extension.ts` for the extension, `preview.ts` and `window.d.ts` for the preview scripts, and `shared.ts` for the data passed between the two, like the links the right-click menu copies.
 
 ## Development

@@ -6,7 +6,9 @@
 //   routes to the URI handler registered below. The preview has already applied the choice
 //   itself, so saving it doesn't need to refresh the previews. The sidebar's refresh button is
 //   such a link too.
+// Previews in background tabs are kept up to date by src/preview-refresher.ts.
 import * as vscode from 'vscode'
+import { PreviewRefresher } from './preview-refresher.ts'
 import { CONFIG_ELEMENT_ID } from './shared/constants.ts'
 import { escapeAttribute, toKebabCase } from './shared/helpers.ts'
 import type { SettingValue, PackageJson, MarkdownIt, Setting, MarkdownItPlugin } from './types/extension.ts'
@@ -29,18 +31,27 @@ function copyHeadingLink(field: keyof HeadingLinks): (item?: Partial<HeadingCont
 }
 
 /** Registers a listener for configuration changes, and refreshes open previews when a setting changed. */
-function registerConfigListener(settings: Settings, context: vscode.ExtensionContext): void {
+function registerConfigListener(
+	settings: Settings,
+	refresher: PreviewRefresher,
+	context: vscode.ExtensionContext,
+): void {
 	context.subscriptions.push(
 		vscode.workspace.onDidChangeConfiguration(e => {
 			if (settings.changedOutsideMenu(e)) {
-				vscode.commands.executeCommand('markdown.preview.refresh')
+				refresher.refresh()
 			}
 		}),
 	)
 }
 
 /** Registers a URI handler for the sidebar's settings menu, which is made of vscode:// links. */
-function registerUriHandler(settings: Settings, context: vscode.ExtensionContext, extensionId: string): void {
+function registerUriHandler(
+	settings: Settings,
+	refresher: PreviewRefresher,
+	context: vscode.ExtensionContext,
+	extensionId: string,
+): void {
 	context.subscriptions.push(
 		vscode.window.registerUriHandler({
 			/**
@@ -52,10 +63,11 @@ function registerUriHandler(settings: Settings, context: vscode.ExtensionContext
 					for (const [key, value] of params) {
 						await settings.saveFromMenu(key, value)
 					}
+					await refresher.onMenuSave()
 				} else if (uri.path === '/open-settings') {
 					await vscode.commands.executeCommand('workbench.action.openSettings', `@ext:${extensionId}`)
 				} else if (uri.path === '/refresh') {
-					await vscode.commands.executeCommand('markdown.preview.refresh')
+					await refresher.refresh()
 				}
 			},
 		}),
@@ -156,11 +168,13 @@ class Settings {
 /** Activates the extension. */
 export function activate(context: vscode.ExtensionContext): MarkdownItPlugin {
 	const settings = new Settings(context.extension.packageJSON)
+	const refresher = new PreviewRefresher()
 	const extensionId = context.extension.id
 	const uriBase = `${vscode.env.uriScheme}://${extensionId}`
 
-	registerConfigListener(settings, context)
-	registerUriHandler(settings, context, extensionId)
+	refresher.register(context)
+	registerConfigListener(settings, refresher, context)
+	registerUriHandler(settings, refresher, context, extensionId)
 	registerCommands(context)
 
 	return {
@@ -179,11 +193,18 @@ export function activate(context: vscode.ExtensionContext): MarkdownItPlugin {
 			})
 			// The values are filled in when rendering rather than when parsing: the markdown extension
 			// caches parsed tokens, so values baked in at parse time could be stale.
-			md.renderer.rules[CONFIG_TOKEN_TYPE] = () => {
+			md.renderer.rules[CONFIG_TOKEN_TYPE] = (_tokens, _index, _options, env) => {
 				const attributes = settings.keys.map(
 					key => `data-${toKebabCase(key)}="${escapeAttribute(settings.read(key))}"`,
 				)
 				attributes.push(`data-uri-base="${escapeAttribute(uriBase)}"`)
+				// For src/preview/scroll-restore.ts: which file this is, and whether a refresh rendered it.
+				if (env?.currentDocument) {
+					attributes.push(`data-document="${escapeAttribute(env.currentDocument.toString())}"`)
+				}
+				if (refresher.isRefreshing()) {
+					attributes.push('data-from-refresh="true"')
+				}
 				return `<div id="${CONFIG_ELEMENT_ID}" ${attributes.join(' ')} hidden></div>\n`
 			}
 			return md
