@@ -9,7 +9,14 @@
 import * as vscode from 'vscode'
 import { CONFIG_ELEMENT_ID } from './shared/constants.ts'
 import { escapeAttribute, toKebabCase } from './shared/helpers.ts'
-import type { SettingValue, PackageJson, HeadingContext, MarkdownIt, Setting } from './types/extension.ts'
+import type {
+	SettingValue,
+	PackageJson,
+	HeadingContext,
+	MarkdownIt,
+	Setting,
+	MarkdownItPlugin,
+} from './types/extension.ts'
 
 // The markdown-it token type (and rule name) that renders the hidden config element.
 const CONFIG_TOKEN_TYPE = 'md_toc_sidebar_config'
@@ -28,7 +35,7 @@ function copyHeadingLink(field: 'link' | 'markdownLink'): (item?: Partial<Headin
 }
 
 /** Registers a listener for configuration changes, and refreshes open previews when a setting changed. */
-function registerConfigListener(settings: Settings, context: vscode.ExtensionContext) {
+function registerConfigListener(settings: Settings, context: vscode.ExtensionContext): void {
 	context.subscriptions.push(
 		vscode.workspace.onDidChangeConfiguration(e => {
 			if (settings.changedOutsideMenu(e)) {
@@ -39,13 +46,13 @@ function registerConfigListener(settings: Settings, context: vscode.ExtensionCon
 }
 
 /** Registers a URI handler for the sidebar's settings menu, which is made of vscode:// links. */
-function registerUriHandler(settings: Settings, context: vscode.ExtensionContext, extensionId: string) {
+function registerUriHandler(settings: Settings, context: vscode.ExtensionContext, extensionId: string): void {
 	context.subscriptions.push(
 		vscode.window.registerUriHandler({
 			/**
 			 * Handles vscode://<extension id>/set?key=value, /open-settings and /refresh.
 			 */
-			async handleUri(uri: vscode.Uri) {
+			async handleUri(uri: vscode.Uri): Promise<void> {
 				if (uri.path === '/set') {
 					const params = new URLSearchParams(uri.query)
 					for (const [key, value] of params) {
@@ -62,7 +69,7 @@ function registerUriHandler(settings: Settings, context: vscode.ExtensionContext
 }
 
 /** Registers commands for the heading context menu in the preview. */
-function registerCommands(context: vscode.ExtensionContext) {
+function registerCommands(context: vscode.ExtensionContext): void {
 	context.subscriptions.push(
 		vscode.commands.registerCommand(`${Settings.SECTION}.copyHeadingLink`, copyHeadingLink('link')),
 		vscode.commands.registerCommand(`${Settings.SECTION}.copyHeadingMarkdownLink`, copyHeadingLink('markdownLink')),
@@ -153,7 +160,7 @@ class Settings {
 }
 
 /** Activates the extension. */
-export function activate(context: vscode.ExtensionContext) {
+export function activate(context: vscode.ExtensionContext): MarkdownItPlugin {
 	const settings = new Settings(context.extension.packageJSON)
 	const extensionId = context.extension.id
 	const uriBase = `${vscode.env.uriScheme}://${extensionId}`
@@ -167,7 +174,7 @@ export function activate(context: vscode.ExtensionContext) {
 		 * Called by the built-in Markdown extension (package.json's "markdown.markdownItPlugins"):
 		 * adds the hidden config element to every rendered preview.
 		 */
-		extendMarkdownIt(md: MarkdownIt) {
+		extendMarkdownIt(md: MarkdownIt): MarkdownIt {
 			md.core.ruler.push(CONFIG_TOKEN_TYPE, state => {
 				// Inline-only renders (e.g. a single line) have no document to attach the element to.
 				if (!state.inlineMode) {
@@ -189,6 +196,3 @@ export function activate(context: vscode.ExtensionContext) {
 		},
 	}
 }
-
-/** Deactivates the extension. */
-export function deactivate() {}

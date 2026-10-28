@@ -68,7 +68,7 @@ const SETTING_GROUPS: SettingGroup[] = [
 const LIVE_SETTING_KEY = 'md-toc-sidebar.live-setting'
 
 /** Opens the menu; from the keyboard, focuses the current value. */
-function openSettingsMenu(fromKeyboard: boolean) {
+function openSettingsMenu(fromKeyboard: boolean): void {
 	const menu = document.getElementById(SETTINGS_MENU_ID)!
 	menu.hidden = false
 	document.getElementById(SETTINGS_BUTTON_ID)!.setAttribute('aria-expanded', 'true')
@@ -78,7 +78,7 @@ function openSettingsMenu(fromKeyboard: boolean) {
 }
 
 /** Applies a setting to this preview right away through the config element, before VS Code has saved it. */
-function applySettingLocally(key: string, value: string) {
+function applySettingLocally(key: string, value: string): void {
 	const config = document.getElementById(CONFIG_ELEMENT_ID)
 	if (config) {
 		config.dataset[key] = value
@@ -87,7 +87,7 @@ function applySettingLocally(key: string, value: string) {
 }
 
 /** Tells the other open previews about a setting chosen here (see LIVE_SETTING_KEY). */
-function broadcastSetting(key: string, value: string) {
+function broadcastSetting(key: string, value: string): void {
 	// The timestamp makes every write a change, so repeated choices still fire the event.
 	writeStored(LIVE_SETTING_KEY, JSON.stringify({ key, value, time: Date.now() }))
 }

@@ -12,12 +12,12 @@ const HIDDEN_KEY = 'md-toc-sidebar.collapsed'
 const HIDDEN_CLASS = 'md-toc-collapsed'
 
 /** Remembers whether the sidebar is hidden. */
-function writeHidden(hidden: boolean) {
+function writeHidden(hidden: boolean): void {
 	writeStored(HIDDEN_KEY, String(hidden))
 }
 
 /** The hide/show button, created the first time. */
-function getToggle() {
+function getToggle(): HTMLElement {
 	let toggle = document.getElementById(TOGGLE_ID)
 	if (!toggle) {
 		toggle = document.createElement('button')

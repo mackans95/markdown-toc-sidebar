@@ -15,7 +15,8 @@ function start(): void {
 	// Watching the DOM catches the initial render and every later update regardless of timing.
 	// Changes inside our own UI (sidebar, buttons, menu) are ignored, or updating it would loop.
 	new MutationObserver(records => {
-		const isOwnUi = (node: Node) => (node instanceof Element ? node : node.parentElement)?.closest(OWN_UI_SELECTOR)
+		const isOwnUi = (node: Node): boolean =>
+			!!(node instanceof Element ? node : node.parentElement)?.closest(OWN_UI_SELECTOR)
 		if (records.some(r => !isOwnUi(r.target))) {
 			sidebar.scheduleBuild()
 		}

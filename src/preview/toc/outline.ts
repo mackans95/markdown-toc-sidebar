@@ -7,7 +7,7 @@ import type { BuildOptions, EntryFields } from '../../types/preview.ts'
  * with a lower level, the same rule ancestorIndices uses. A skipped level (## then ####) doesn't
  * add a 0, and a heading that comes back up past a deeper one (#### then ###) continues its count.
  */
-function addNumbers(entries: { level: number; number?: string }[]) {
+function addNumbers(entries: { level: number; number?: string }[]): void {
 	// The open sections from the outermost in, with how many entries each level has had so far.
 	const stack: { level: number; count: number }[] = []
 	for (const entry of entries) {

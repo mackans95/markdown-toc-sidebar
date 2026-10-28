@@ -19,17 +19,17 @@ function readWidth(): number | undefined {
 }
 
 /** Remembers the width the user chose; undefined goes back to the default. */
-function writeWidth(width: number | undefined) {
+function writeWidth(width: number | undefined): void {
 	writeStored(WIDTH_KEY, width === undefined ? undefined : String(Math.round(width)))
 }
 
 /** Width of the area fixed elements are laid out in: excludes the preview's own scrollbar. */
-function viewportWidth() {
+function viewportWidth(): number {
 	return document.documentElement.clientWidth
 }
 
 /** Keeps a width between MIN_WIDTH and what leaves MIN_CONTENT_WIDTH for the document. */
-function clampWidth(width: number) {
+function clampWidth(width: number): number {
 	const max = Math.max(MIN_WIDTH, viewportWidth() - MIN_CONTENT_WIDTH)
 	return Math.min(Math.max(width, MIN_WIDTH), max)
 }
@@ -38,7 +38,7 @@ function clampWidth(width: number) {
  * A user-chosen width overrides the responsive default from toc.css; undefined restores it.
  * The stored value is kept unclamped so a narrow window doesn't permanently shrink it.
  */
-function applyWidth(width: number | undefined) {
+function applyWidth(width: number | undefined): void {
 	const root = document.documentElement
 	if (width === undefined) {
 		root.style.removeProperty('--md-toc-width')

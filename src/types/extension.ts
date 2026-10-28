@@ -54,3 +54,10 @@ export interface HeadingContext {
 	link: string
 	markdownLink: string
 }
+
+/**
+ * What activate() returns: the built-in Markdown extension calls extendMarkdownIt for every preview it renders.
+ */
+export interface MarkdownItPlugin {
+	extendMarkdownIt(md: MarkdownIt): MarkdownIt
+}

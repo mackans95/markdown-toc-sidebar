@@ -5,7 +5,7 @@ import { scrollBehavior } from './config.ts'
 import { NAV_ID } from './dom.ts'
 
 /** Briefly highlights a heading after jumping to it, so it's easy to see where you landed. */
-function flashHeading(heading: HTMLElement) {
+function flashHeading(heading: HTMLElement): void {
 	heading.classList.remove('md-toc-flash')
 	// Force a reflow so the animation restarts when the same heading is clicked again.
 	void heading.offsetWidth
@@ -14,7 +14,7 @@ function flashHeading(heading: HTMLElement) {
 }
 
 /** Where the page has to scroll for a heading to sit at the top, honoring its scroll-margin-top. */
-function headingScrollTop(heading: HTMLElement) {
+function headingScrollTop(heading: HTMLElement): number {
 	const margin = parseFloat(getComputedStyle(heading).scrollMarginTop) || 0
 	const top = window.scrollY + heading.getBoundingClientRect().top - margin
 	const max = document.documentElement.scrollHeight - window.innerHeight
@@ -163,7 +163,7 @@ class Scrolling {
 		const duration = Math.min(600, Math.max(250, Math.abs(distance) * 0.15))
 		const startTime = performance.now()
 
-		const step = (now: number) => {
+		const step = (now: number): void => {
 			const t = Math.min(1, (now - startTime) / duration)
 			const eased = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
 

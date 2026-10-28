@@ -38,7 +38,7 @@ class SmoothScrollSync {
 	}
 
 	/** The furthest the page can scroll down. */
-	private maxScroll() {
+	private maxScroll(): number {
 		return Math.max(0, document.documentElement.scrollHeight - window.innerHeight)
 	}
 
@@ -77,7 +77,7 @@ class SmoothScrollSync {
 	}
 
 	/** Glides towards y, or retargets a glide that is already running. */
-	private glideTo(y: number) {
+	private glideTo(y: number): void {
 		if (this.target === null) {
 			this.position = window.scrollY
 			this.lastTime = performance.now()
@@ -90,7 +90,7 @@ class SmoothScrollSync {
 	}
 
 	/** One frame of the glide: covers part of the remaining distance and tells listeners about the new position. */
-	private step(now: number) {
+	private step(now: number): void {
 		this.frame = 0
 		if (this.target === null) return
 		const elapsedFrames = Math.min(4, (now - this.lastTime) / (1000 / 60))
@@ -119,7 +119,7 @@ class SmoothScrollSync {
 	}
 
 	/** Cancels the glide where it is. */
-	private stop() {
+	private stop(): void {
 		cancelAnimationFrame(this.frame)
 		this.frame = 0
 		this.target = null
