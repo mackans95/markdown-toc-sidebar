@@ -1,157 +1,191 @@
 // Scrolling: to a heading when its entry is clicked, and keeping the highlight in step with the page.
-import { SYNCED_SCROLL_EVENT } from '../../shared/constants.ts';
-import { setActiveLink, updateActive } from './active.ts';
-import { scrollBehavior } from './config.ts';
-import { NAV_ID } from './dom.ts';
+import { SYNCED_SCROLL_EVENT, USER_SCROLL_EVENTS } from '../../shared/constants.ts'
+import { activeHighlight } from './active.ts'
+import { scrollBehavior } from './config.ts'
+import { NAV_ID } from './dom.ts'
 
-// While a TOC click's scroll is in flight, keep the clicked entry highlighted instead of
-// recomputing from scroll position (short sections or the end of the page would pick another).
-let pinned: string | null = null;
-// Heading to flash once the scroll arrives, so a smooth scroll doesn't fade it before it's in view.
-let pinnedHeading: HTMLElement | null = null;
-let settleTimer = 0;
-// How long the page has to be still before a click's scroll counts as finished. Covers clicks
-// that don't scroll at all, where no scrollend event fires.
-const SETTLE_MS = 150;
-
-// The clicked entry's heading while its scroll is in flight, otherwise null.
-export function pinnedId(): string | null {
-	return pinned;
-}
-
-function pinActive(heading: HTMLElement) {
-	pinned = heading.id;
-	pinnedHeading = heading;
-	restartSettleTimer();
-}
-
-function restartSettleTimer() {
-	clearTimeout(settleTimer);
-	// Through window, so the type checker sees the browser's setTimeout (which returns a number) even
-	// when the tests, which have Node's types, import this file.
-	settleTimer = window.setTimeout(settle, SETTLE_MS);
-}
-
-function settle() {
-	clearTimeout(settleTimer);
-	if (!pinned) {
-		return;
-	}
-	// Drop any recompute queued by the scroll so it can't override the clicked entry.
-	cancelAnimationFrame(scrollFrame);
-	scrollFrame = 0;
-	const heading = pinnedHeading;
-	pinned = null;
-	pinnedHeading = null;
-	if (heading && heading.isConnected) {
-		flashHeading(heading);
-	}
-}
-
-// Briefly highlights a heading after jumping to it, so it's easy to see where you landed.
-function flashHeading(heading: HTMLElement) {
-	heading.classList.remove('md-toc-flash');
+/** Briefly highlights a heading after jumping to it, so it's easy to see where you landed. */
+function flashHeading(heading: HTMLElement): void {
+	heading.classList.remove('md-toc-flash')
 	// Force a reflow so the animation restarts when the same heading is clicked again.
-	void heading.offsetWidth;
-	heading.classList.add('md-toc-flash');
-	heading.addEventListener('animationend', () => heading.classList.remove('md-toc-flash'), { once: true });
+	void heading.offsetWidth
+	heading.classList.add('md-toc-flash')
+	heading.addEventListener('animationend', () => heading.classList.remove('md-toc-flash'), { once: true })
 }
 
-// Where the page has to scroll for a heading to sit at the top, honoring its scroll-margin-top.
-function headingScrollTop(heading: HTMLElement) {
-	const margin = parseFloat(getComputedStyle(heading).scrollMarginTop) || 0;
-	const top = window.scrollY + heading.getBoundingClientRect().top - margin;
-	const max = document.documentElement.scrollHeight - window.innerHeight;
-	return Math.min(Math.max(0, top), Math.max(0, max));
+/** Where the page has to scroll for a heading to sit at the top, honoring its scroll-margin-top. */
+function headingScrollTop(heading: HTMLElement): number {
+	const margin = parseFloat(getComputedStyle(heading).scrollMarginTop) || 0
+	const top = window.scrollY + heading.getBoundingClientRect().top - margin
+	const max = document.documentElement.scrollHeight - window.innerHeight
+	return Math.min(Math.max(0, top), Math.max(0, max))
 }
 
-// Our own animation rather than scrollIntoView's smooth behavior: the browser's takes up to
-// ~1.5s for long jumps, which feels sluggish for navigation. This one stays within 250-600ms.
-let scrollAnimation = 0;
+/** Scrolls to a heading when its entry is clicked, and keeps the highlight in step with the scroll position. */
+class Scrolling {
+	// How long the page has to be still before a click's scroll counts as finished. Covers clicks
+	// that don't scroll at all, where no scrollend event fires.
+	private static readonly SETTLE_MS = 150
 
-function animateScrollTo(top: number) {
-	stopScrollAnimation();
-	const start = window.scrollY;
-	const distance = top - start;
-	if (Math.abs(distance) < 1) {
-		return;
+	// The tests load this file in Node, without a DOM, so these only start as numbers and null.
+	// While a TOC click's scroll is in flight, keep the clicked entry highlighted instead of
+	// recomputing from scroll position (short sections or the end of the page would pick another).
+	private pinned: string | null = null
+
+	// Heading to flash once the scroll arrives, so a smooth scroll doesn't fade it before it's in view.
+	private pinnedHeading: HTMLElement | null = null
+
+	private settleTimer = 0
+
+	// Our own animation rather than scrollIntoView's smooth behavior: the browser's takes up to
+	// ~1.5s for long jumps, which feels sluggish for navigation. This one stays within 250-600ms.
+	private scrollAnimation = 0
+
+	private scrollFrame = 0
+
+	/** The clicked entry's heading while its scroll is in flight, otherwise null. */
+	get pinnedId(): string | null {
+		return this.pinned
 	}
-	const duration = Math.min(600, Math.max(250, Math.abs(distance) * 0.15));
-	const startTime = performance.now();
-	const step = (now: number) => {
-		const t = Math.min(1, (now - startTime) / duration);
-		const eased = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-		window.scrollTo({ top: start + distance * eased, behavior: 'instant' });
-		if (t < 1) {
-			scrollAnimation = requestAnimationFrame(step);
-		} else {
-			scrollAnimation = 0;
-			// Arrived: settle on the next frame, after the last scroll event has been handled.
-			requestAnimationFrame(settle);
+
+	/** Handles clicks on the sidebar's entries, and keeps the highlight in step with the scroll position. */
+	init(): void {
+		// Capture phase, so we handle the click before the preview's own link handler can interfere.
+		document.addEventListener('click', e => this.onClick(e), true)
+
+		// The user taking over cancels the animation.
+		for (const type of USER_SCROLL_EVENTS) {
+			window.addEventListener(type, () => this.stopScrollAnimation(), { capture: true, passive: true })
 		}
-	};
-	scrollAnimation = requestAnimationFrame(step);
-}
 
-function stopScrollAnimation() {
-	cancelAnimationFrame(scrollAnimation);
-	scrollAnimation = 0;
-}
-
-let scrollFrame = 0;
-function onScroll() {
-	if (pinned) {
-		// Still moving towards the clicked heading.
-		restartSettleTimer();
+		window.addEventListener('scrollend', () => this.onScrollEnd())
+		window.addEventListener('scroll', () => this.onScroll(), { passive: true })
+		// smooth-scroll-sync hides its gliding scroll events from regular listeners and fires this instead.
+		window.addEventListener(SYNCED_SCROLL_EVENT, () => this.onScroll())
 	}
-	if (!scrollFrame) {
-		scrollFrame = requestAnimationFrame(() => {
-			scrollFrame = 0;
-			updateActive();
-		});
-	}
-}
 
-export function initScrolling(): void {
-	// Handle clicks ourselves so the preview's own link handler doesn't interfere.
-	document.addEventListener(
-		'click',
-		event => {
-			const link = event.target instanceof Element && event.target.closest<HTMLElement>('#' + NAV_ID + ' a');
-			if (!link) {
-				return;
+	/** Scrolls to the heading of a clicked entry, keeping that entry highlighted on the way. */
+	private onClick(e: MouseEvent): void {
+		const link = e.target instanceof Element && e.target.closest<HTMLElement>(`#${NAV_ID} a`)
+
+		if (!link) return
+
+		e.preventDefault()
+		e.stopPropagation()
+
+		const target = document.getElementById(link.dataset.target ?? '')
+
+		if (target) {
+			this.pinActive(target)
+			activeHighlight.highlight(target.id)
+
+			if (scrollBehavior() === 'smooth') {
+				this.animateScrollTo(headingScrollTop(target))
+			} else {
+				this.stopScrollAnimation()
+				target.scrollIntoView({ block: 'start' })
 			}
-			event.preventDefault();
-			event.stopPropagation();
-			const target = document.getElementById(link.dataset.target ?? '');
-			if (target) {
-				pinActive(target);
-				setActiveLink(target.id);
-				if (scrollBehavior() === 'smooth') {
-					animateScrollTo(headingScrollTop(target));
-				} else {
-					stopScrollAnimation();
-					target.scrollIntoView({ block: 'start' });
-				}
-			}
-		},
-		true,
-	);
-
-	// The user taking over cancels the animation.
-	for (const type of ['wheel', 'touchstart', 'keydown', 'mousedown']) {
-		window.addEventListener(type, stopScrollAnimation, { capture: true, passive: true });
-	}
-
-	// Once the click-triggered scroll settles, go back to tracking the scroll position.
-	// Each animation frame can fire its own scrollend, so ignore those until the animation is done.
-	window.addEventListener('scrollend', () => {
-		if (!scrollAnimation) {
-			settle();
 		}
-	});
+	}
 
-	window.addEventListener('scroll', onScroll, { passive: true });
-	// smooth-scroll-sync hides its gliding scroll events from regular listeners and fires this instead.
-	window.addEventListener(SYNCED_SCROLL_EVENT, onScroll);
+	/**
+	 * Once the click-triggered scroll settles, goes back to tracking the scroll position.
+	 * Each animation frame can fire its own scrollend, so those are ignored until the animation is done.
+	 */
+	private onScrollEnd(): void {
+		if (!this.scrollAnimation) {
+			this.settle()
+		}
+	}
+
+	/** Updates the highlight once per frame while the page scrolls, and keeps a click's scroll from settling while it's still moving. */
+	private onScroll(): void {
+		if (this.pinned) {
+			// Still moving towards the clicked heading.
+			this.restartSettleTimer()
+		}
+
+		if (!this.scrollFrame) {
+			this.scrollFrame = requestAnimationFrame(() => {
+				this.scrollFrame = 0
+				activeHighlight.update()
+			})
+		}
+	}
+
+	/** Keeps a clicked entry's heading highlighted until its scroll settles. */
+	private pinActive(heading: HTMLElement): void {
+		this.pinned = heading.id
+		this.pinnedHeading = heading
+
+		this.restartSettleTimer()
+	}
+
+	/** Starts the SETTLE_MS wait over, since the page is still moving. */
+	private restartSettleTimer(): void {
+		clearTimeout(this.settleTimer)
+
+		// Through window, so the type checker sees the browser's setTimeout (which returns a number) even
+		// when the tests, which have Node's types, import this file.
+		this.settleTimer = window.setTimeout(() => this.settle(), Scrolling.SETTLE_MS)
+	}
+
+	/** Ends a click's scroll: unpins the entry and flashes its heading. */
+	private settle(): void {
+		clearTimeout(this.settleTimer)
+
+		if (!this.pinned) return
+
+		// Drop any recompute queued by the scroll so it can't override the clicked entry.
+		cancelAnimationFrame(this.scrollFrame)
+
+		this.scrollFrame = 0
+
+		const heading = this.pinnedHeading
+
+		this.pinned = null
+		this.pinnedHeading = null
+
+		if (heading && heading.isConnected) {
+			flashHeading(heading)
+		}
+	}
+
+	/** Scrolls smoothly to top, in 250-600ms depending on distance. */
+	private animateScrollTo(top: number): void {
+		this.stopScrollAnimation()
+
+		const start = window.scrollY
+		const distance = top - start
+
+		if (Math.abs(distance) < 1) return
+
+		const duration = Math.min(600, Math.max(250, Math.abs(distance) * 0.15))
+		const startTime = performance.now()
+
+		const step = (now: number): void => {
+			const t = Math.min(1, (now - startTime) / duration)
+			const eased = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
+
+			window.scrollTo({ top: start + distance * eased, behavior: 'instant' })
+
+			if (t < 1) {
+				this.scrollAnimation = requestAnimationFrame(step)
+			} else {
+				this.scrollAnimation = 0
+				// Arrived: settle on the next frame, after the last scroll event has been handled.
+				requestAnimationFrame(() => this.settle())
+			}
+		}
+
+		this.scrollAnimation = requestAnimationFrame(step)
+	}
+
+	/** Stops a smooth scroll where it is. */
+	private stopScrollAnimation(): void {
+		cancelAnimationFrame(this.scrollAnimation)
+		this.scrollAnimation = 0
+	}
 }
+
+export const scrolling = new Scrolling()

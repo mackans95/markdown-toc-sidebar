@@ -4,5 +4,5 @@
   "compilerOptions": {
     "lib": ["ES2022", "DOM", "DOM.Iterable"]
   },
-  "include": [".", "../shared"]
+  "include": [".", "../shared", "../types/preview.ts", "../types/window.d.ts"]
 }
