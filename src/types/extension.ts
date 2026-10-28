@@ -27,7 +27,14 @@ export interface PackageJson {
  */
 export interface MarkdownIt {
 	core: { ruler: { push(name: string, rule: (state: StateCore) => void): void } }
-	renderer: { rules: Record<string, () => string> }
+	renderer: { rules: Record<string, (tokens: Token[], index: number, options: unknown, env?: RenderEnv) => string> }
+}
+
+/**
+ * The parts of the env the built-in Markdown extension renders with; currentDocument is missing for plain strings.
+ */
+export interface RenderEnv {
+	currentDocument?: { toString(): string }
 }
 
 /**

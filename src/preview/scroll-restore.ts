@@ -4,21 +4,29 @@
 // scroll position from back then (where the editor was when the preview opened), and the preview
 // restores that instead of where you had scrolled to since, so it jumps back, often to the top.
 // This remembers where you were and goes back there when the same render is rebuilt.
-import { SYNCED_SCROLL_EVENT, USER_SCROLL_EVENTS } from '../shared/constants.ts'
+// It also remembers where you were in each file, for when src/preview-refresher.ts refreshes the previews:
+// the refresh makes a new render, which would otherwise start where the preview puts it.
+import { CONFIG_ELEMENT_ID, SYNCED_SCROLL_EVENT, USER_SCROLL_EVENTS } from '../shared/constants.ts'
 import { keepNewest, readStoredJson, writeStored } from './storage.ts'
 import type { Position, SavedPosition } from '../types/preview.ts'
 
-/** Remembers where you were in a render, and goes back there when VS Code rebuilds the page from it. */
+/** Remembers where you were in a render and in its file, and goes back there when VS Code rebuilds the page or a refresh renders it anew. */
 class ScrollRestore {
 	private static readonly STORAGE_KEY = 'md-toc-sidebar.scroll-positions'
+	private static readonly FILE_STORAGE_KEY = 'md-toc-sidebar.file-scroll-positions'
 	private static readonly MAX_ENTRIES = 50
 	// How long after the page has loaded we keep correcting the position while it settles.
 	private static readonly SETTLE_MS = 1000
 	private static readonly SAVE_DELAY_MS = 100
 
 	// Every full render gets a new CSP nonce, and a rebuilt page reuses its HTML, nonce included.
-	// So the nonce tells a rebuilt page (restore) apart from a new render (leave it to the preview).
+	// So the nonce tells a rebuilt page (restore) apart from a new render (leave it to the preview, unless a refresh made it).
 	private readonly renderId = document.querySelector<HTMLScriptElement>('script[nonce]')?.nonce ?? ''
+	// The file this render shows, from the config element; empty until it's there, or without it.
+	private file = ''
+	// The preview puts the content, config element included, into the page after this script may have
+	// started. Until it's there, the file isn't known, so nothing is saved.
+	private waitingForConfig = false
 	// The saved position to put back while the page settles; undefined once it has settled, or when
 	// this render has none saved.
 	private restoring: Position | undefined
@@ -27,15 +35,58 @@ class ScrollRestore {
 	// the sidebar and images make the content reflow. While settling, each resize puts the position back.
 	private readonly resizeObserver = new ResizeObserver(() => this.reapply())
 
-	/** Saves the position as you scroll, and restores the saved one if this page is a rebuild of a render seen before. */
+	/**
+	 * Saves the position as you scroll. Restores the saved one if this page is a rebuild of a render seen
+	 * before, or the file's if it's a new render that a refresh made.
+	 */
 	start(): void {
 		if (!this.renderId) return
 
-		this.restoring = this.readPositions()[this.renderId]
+		this.restoring = this.readPositions(ScrollRestore.STORAGE_KEY)[this.renderId]
 		window.addEventListener('scroll', () => this.onScroll(), { passive: true })
 		window.addEventListener(SYNCED_SCROLL_EVENT, () => this.onScroll())
 		window.addEventListener('pagehide', () => this.onPageHide())
 
+		if (this.restoring) {
+			this.startSettling()
+		}
+		this.waitingForConfig = true
+		this.waitForConfig()
+	}
+
+	/** Calls onConfig once the config element is in the page, or gives up when the page has loaded without it. */
+	private waitForConfig(): void {
+		if (document.getElementById(CONFIG_ELEMENT_ID)) {
+			this.onConfig()
+			return
+		}
+		const observer = new MutationObserver(() => {
+			if (document.getElementById(CONFIG_ELEMENT_ID)) {
+				observer.disconnect()
+				this.onConfig()
+			}
+		})
+		observer.observe(document, { childList: true, subtree: true })
+		window.addEventListener(
+			'load',
+			() => {
+				observer.disconnect()
+				this.onConfig()
+			},
+			{ once: true },
+		)
+	}
+
+	/** Notes the file once the config element is there. A new render that a refresh made then restores the file's position. */
+	private onConfig(): void {
+		if (!this.waitingForConfig) return
+		this.waitingForConfig = false
+
+		const config = document.getElementById(CONFIG_ELEMENT_ID)
+		this.file = config?.dataset.document ?? ''
+		if (this.restoring || !this.file || config?.dataset.fromRefresh !== 'true') return
+
+		this.restoring = this.readPositions(ScrollRestore.FILE_STORAGE_KEY)[this.file]
 		if (this.restoring) {
 			this.startSettling()
 		}
@@ -69,13 +120,14 @@ class ScrollRestore {
 			this.reapply()
 			return
 		}
+		if (this.waitingForConfig) return
 		clearTimeout(this.saveTimer)
 		this.saveTimer = setTimeout(() => this.savePosition(), ScrollRestore.SAVE_DELAY_MS)
 	}
 
 	/** The tab going to the background destroys the page, so the last position is saved right away instead of left pending. */
 	private onPageHide(): void {
-		if (!this.restoring) {
+		if (!this.restoring && !this.waitingForConfig) {
 			clearTimeout(this.saveTimer)
 			this.savePosition()
 		}
@@ -98,16 +150,25 @@ class ScrollRestore {
 		}, 0)
 	}
 
-	/** The saved positions, by render id. */
-	private readPositions(): Record<string, SavedPosition> {
-		return readStoredJson(ScrollRestore.STORAGE_KEY, {})
+	/** The saved positions under a storage key: by render id, or by file. */
+	private readPositions(storageKey: string): Record<string, SavedPosition> {
+		return readStoredJson(storageKey, {})
 	}
 
-	/** Saves the current position for this render, keeping only the MAX_ENTRIES most recent renders. */
+	/** Saves the current position for this render and its file, keeping only the MAX_ENTRIES most recent of each. */
 	private savePosition(): void {
-		const positions = this.readPositions()
-		positions[this.renderId] = { ...this.currentPosition(), time: Date.now() }
-		writeStored(ScrollRestore.STORAGE_KEY, JSON.stringify(keepNewest(positions, ScrollRestore.MAX_ENTRIES)))
+		const position = { ...this.currentPosition(), time: Date.now() }
+		this.storePosition(ScrollRestore.STORAGE_KEY, this.renderId, position)
+		if (this.file) {
+			this.storePosition(ScrollRestore.FILE_STORAGE_KEY, this.file, position)
+		}
+	}
+
+	/** Stores a position under a storage key and id, keeping only the MAX_ENTRIES most recent. */
+	private storePosition(storageKey: string, id: string, position: SavedPosition): void {
+		const positions = this.readPositions(storageKey)
+		positions[id] = position
+		writeStored(storageKey, JSON.stringify(keepNewest(positions, ScrollRestore.MAX_ENTRIES)))
 	}
 
 	/**

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- A preview whose tab comes back from the background now shows the edits you made before it went there, instead of how it was last fully rendered.
+- A choice from the cog menu now also reaches previews in background tabs, and a preview editor and a side preview that are both on screen, without a manual refresh.
+- Refreshing, with the sidebar's refresh button or by changing a setting in the Settings editor, no longer moves previews in background tabs away from where you were.
+
 ## 0.2.1
 
 - Now also published on [Open VSX](https://open-vsx.org/extension/mackans95/markdown-toc-sidebar), for VSCodium, Cursor, Windsurf and other editors that use it.
