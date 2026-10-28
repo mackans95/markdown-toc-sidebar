@@ -115,6 +115,7 @@ The extension uses VS Code's Markdown preview extension points (`markdown.previe
 - `src/preview/scroll-restore.ts` remembers where you are in the preview. VS Code rebuilds a preview from its last full render when its tab comes back from the background, and the preview then scrolls to the position saved in that render; this puts it back where you were.
 - `media/toc.css` styles the sidebar using your theme's colors.
 - `src/extension.ts` connects the preview to VS Code settings, which the preview can't access itself. It reads the settings and their allowed values from `package.json`, adds a hidden element carrying the settings to each rendered preview, and refreshes open previews when a setting changes. The cog menu's options are `vscode://` links, which VS Code hands to this file's URI handler to update the setting. The refresh button is such a link too, and runs VS Code's *Markdown: Refresh Preview*. The commands behind the right-click menu's copy items are in this file too.
+- `src/shared/` holds the constants and helpers that both the extension and the preview scripts use. `src/types/` holds the types: `extension.ts` for the extension, `preview.ts` and `window.d.ts` for the preview scripts, and `shared.ts` for the data passed between the two, like the links the right-click menu copies.
 
 ## Development
 
