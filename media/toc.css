@@ -75,6 +75,9 @@ body.md-toc-visible {
 	color: var(--vscode-foreground);
 	opacity: 0.75;
 	cursor: pointer;
+	transition:
+		background-color 0.1s ease-out,
+		opacity 0.1s ease-out;
 }
 
 #md-toc-toggle {
@@ -98,12 +101,21 @@ body.md-toc-visible.md-toc-configurable:not(.md-toc-collapsed) #md-toc-refresh-b
 }
 
 #md-toc-toggle:hover,
+#md-toc-toggle:focus-visible,
 #md-toc-settings-button:hover,
+#md-toc-settings-button:focus-visible,
 #md-toc-settings-button[aria-expanded='true'],
-#md-toc-refresh-button:hover {
+#md-toc-refresh-button:hover,
+#md-toc-refresh-button:focus-visible {
 	background: var(--vscode-toolbar-hoverBackground, var(--vscode-list-hoverBackground));
 	color: var(--vscode-foreground);
 	opacity: 1;
+}
+
+/* The preview's own stylesheet outlines every focused link, which flashed on the refresh button when
+   clicked. Like the others, it only gets a focus ring from the keyboard. */
+#md-toc-refresh-button:focus {
+	outline: none;
 }
 
 #md-toc-toggle:focus-visible,
@@ -111,6 +123,95 @@ body.md-toc-visible.md-toc-configurable:not(.md-toc-collapsed) #md-toc-refresh-b
 #md-toc-refresh-button:focus-visible {
 	outline: 1px solid var(--vscode-focusBorder);
 	outline-offset: -1px;
+}
+
+/* Tooltips: the webview doesn't show the native ones for title, so the buttons show their
+   aria-label below them on hover, after the same short delay as VS Code's own hovers. Not on keyboard
+   focus: the focused button's tooltip would stay up next to the one under the pointer. They open
+   towards the middle of the preview, so they stay inside it. */
+#md-toc-toggle::after,
+#md-toc-settings-button::after,
+#md-toc-refresh-button::after,
+#md-toc-settings-menu .md-toc-menu-close::after {
+	content: attr(aria-label);
+	position: absolute;
+	top: calc(100% + 6px);
+	right: 0;
+	z-index: 1;
+	padding: 2px 8px;
+	border: 1px solid var(--vscode-editorHoverWidget-border, var(--vscode-widget-border, rgba(128, 128, 128, 0.35)));
+	border-radius: 3px;
+	background: var(--vscode-editorHoverWidget-background, var(--vscode-editorWidget-background));
+	color: var(--vscode-editorHoverWidget-foreground, var(--vscode-foreground));
+	box-shadow: 0 2px 8px var(--vscode-widget-shadow, rgba(0, 0, 0, 0.36));
+	font-size: 12px;
+	font-weight: normal;
+	line-height: 18px;
+	white-space: nowrap;
+	pointer-events: none;
+	opacity: 0;
+	visibility: hidden;
+	transition:
+		opacity 0.1s ease-out,
+		visibility 0s linear 0.1s;
+}
+
+#md-toc-toggle:hover::after,
+#md-toc-settings-button:hover::after,
+#md-toc-refresh-button:hover::after,
+#md-toc-settings-menu .md-toc-menu-close:hover::after {
+	opacity: 1;
+	visibility: visible;
+	transition:
+		opacity 0.1s ease-out 0.5s,
+		visibility 0s linear 0.5s;
+}
+
+/* The open menu is answer enough to what the cog does. */
+#md-toc-settings-button[aria-expanded='true']::after {
+	display: none;
+}
+
+body.md-toc-left #md-toc-toggle::after,
+body.md-toc-left #md-toc-settings-button::after,
+body.md-toc-left #md-toc-refresh-button::after {
+	right: auto;
+	left: 0;
+}
+
+/* The cog makes a quarter turn while the menu is open; its teeth line up again afterwards. */
+#md-toc-settings-button svg {
+	transition: transform 0.2s ease-out;
+}
+
+#md-toc-settings-button[aria-expanded='true'] svg {
+	transform: rotate(90deg);
+}
+
+/* The refresh icon spins from the click until the page is replaced, and the new page finishes the
+   turn (see initRefresh in settings-menu.ts). */
+#md-toc-refresh-button.md-toc-refreshing svg {
+	animation: md-toc-spin 0.8s linear infinite;
+}
+
+#md-toc-refresh-button.md-toc-refreshed svg {
+	animation: md-toc-spin-finish 0.6s ease-out;
+}
+
+@keyframes md-toc-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+/* From the angle the old page's spin had reached (--md-toc-spin-from) to a full turn. */
+@keyframes md-toc-spin-finish {
+	from {
+		transform: rotate(var(--md-toc-spin-from, 0deg));
+	}
+	to {
+		transform: rotate(360deg);
+	}
 }
 
 /* Collapsed: the toggle floats over the content, so give it a solid backing. */
@@ -151,10 +252,33 @@ body.md-toc-visible.md-toc-collapsed {
 	box-shadow: 0 2px 8px var(--vscode-widget-shadow, rgba(0, 0, 0, 0.36));
 	font-size: 0.85em;
 	line-height: 1.4;
+	/* Grows out of the cog and shrinks back into it. The origin is the cog's middle (right: 52px,
+	   top: 28px in the preview), measured from the menu's top right corner. */
+	transform-origin: calc(100% + var(--md-toc-width) - 44px) 16px;
+	animation: md-toc-menu-open 0.15s ease-out;
 }
 
 #md-toc-settings-menu[hidden] {
 	display: none;
+}
+
+/* Set by closeSettingsMenu, which hides the menu once this has finished. */
+#md-toc-settings-menu.md-toc-menu-closing {
+	animation: md-toc-menu-close 0.1s ease-in forwards;
+}
+
+@keyframes md-toc-menu-open {
+	from {
+		opacity: 0;
+		transform: scale(0.85);
+	}
+}
+
+@keyframes md-toc-menu-close {
+	to {
+		opacity: 0;
+		transform: scale(0.85);
+	}
 }
 
 #md-toc-settings-menu .md-toc-menu-header {
@@ -167,6 +291,8 @@ body.md-toc-visible.md-toc-collapsed {
 }
 
 #md-toc-settings-menu .md-toc-menu-close {
+	/* Holds its tooltip. */
+	position: relative;
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -419,7 +545,11 @@ body.md-toc-resizing {
 	outline-offset: -1px;
 }
 
-/* Collapsed: the arrow points at the entry instead of down at its sections. */
+/* Collapsed: the arrow points at the entry instead of down at its sections, and turns between the two. */
+#md-toc-sidebar .md-toc-chevron svg {
+	transition: transform 0.15s ease-out;
+}
+
 #md-toc-sidebar .md-toc-chevron[aria-expanded='false'] svg {
 	transform: rotate(-90deg);
 }
@@ -522,6 +652,8 @@ body.md-toc-left #md-toc-refresh-button {
 body.md-toc-left #md-toc-settings-menu {
 	right: auto;
 	left: calc(var(--md-toc-width) + 8px);
+	/* The cog's middle is at left: calc(var(--md-toc-width) - 52px), 60px left of the menu. */
+	transform-origin: -60px 16px;
 }
 
 body.md-toc-left #md-toc-resizer {
@@ -544,5 +676,20 @@ body.md-toc-left #md-toc-resizer {
 	body.md-toc-visible.md-toc-left {
 		padding-right: 26px !important;
 		padding-left: 26px !important;
+	}
+}
+
+/* Reduced motion: nothing moves or turns. Fades stay, and the menu just appears and disappears. */
+@media (prefers-reduced-motion: reduce) {
+	#md-toc-settings-menu,
+	#md-toc-settings-menu.md-toc-menu-closing,
+	#md-toc-refresh-button.md-toc-refreshing svg,
+	#md-toc-refresh-button.md-toc-refreshed svg {
+		animation: none;
+	}
+
+	#md-toc-settings-button svg,
+	#md-toc-sidebar .md-toc-chevron svg {
+		transition: none;
 	}
 }
