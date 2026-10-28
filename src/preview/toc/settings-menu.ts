@@ -2,7 +2,7 @@
 // VS Code settings itself, so VS Code hands those links to src/extension.ts, which updates the
 // setting and refreshes the preview (which then shows the new value here).
 import { CONFIG_ELEMENT_ID } from '../../shared/constants.ts'
-import { writeStored } from '../storage.ts'
+import { readStored, writeStored } from '../storage.ts'
 import { keepDoubleClickInside, REFRESH_BUTTON_ID, SETTINGS_BUTTON_ID, SETTINGS_MENU_ID } from './dom.ts'
 import { ICON_CLOSE, ICON_REFRESH, ICON_SETTINGS } from './icons.ts'
 import { sidebar } from './sidebar.ts'
@@ -66,10 +66,26 @@ const SETTING_GROUPS: SettingGroup[] = [
 // Other open previews share this page's storage, so a key written here reaches them as a
 // 'storage' event. That lets a choice from the menu show up everywhere without a reload.
 const LIVE_SETTING_KEY = 'md-toc-sidebar.live-setting'
+// When the refresh button was last clicked. The refresh replaces the page, so the new page reads
+// this to finish the icon's spin.
+const REFRESH_CLICK_KEY = 'md-toc-sidebar.refresh-clicked'
+// How soon after a click a new page still counts as that refresh.
+const REFRESH_SPIN_MS = 3000
+// How long one turn of the spin takes; the same as md-toc-refreshing's animation in toc.css.
+const REFRESH_TURN_MS = 800
+// The class that plays the menu's closing animation; see closeSettingsMenu.
+const CLOSING_CLASS = 'md-toc-menu-closing'
+
+/** Whether the menu is open. The cog's aria-expanded says so, also while the menu plays its closing animation. */
+function isMenuOpen(): boolean {
+	return document.getElementById(SETTINGS_BUTTON_ID)?.getAttribute('aria-expanded') === 'true'
+}
 
 /** Opens the menu; from the keyboard, focuses the current value. */
 function openSettingsMenu(fromKeyboard: boolean): void {
 	const menu = document.getElementById(SETTINGS_MENU_ID)!
+	// Reopened while it was still closing: show it again right away.
+	menu.classList.remove(CLOSING_CLASS)
 	menu.hidden = false
 	document.getElementById(SETTINGS_BUTTON_ID)!.setAttribute('aria-expanded', 'true')
 	if (fromKeyboard) {
@@ -99,7 +115,6 @@ function createSettingsButton(): HTMLButtonElement {
 	button.id = SETTINGS_BUTTON_ID
 	button.type = 'button'
 	button.innerHTML = ICON_SETTINGS
-	button.title = 'Table of contents settings'
 
 	button.setAttribute('aria-label', 'Table of contents settings')
 	button.setAttribute('aria-haspopup', 'menu')
@@ -123,7 +138,6 @@ function createMenuHeader(button: HTMLButtonElement): HTMLDivElement {
 	closeBtn.type = 'button'
 	closeBtn.className = 'md-toc-menu-close'
 	closeBtn.innerHTML = ICON_CLOSE
-	closeBtn.title = 'Close'
 	closeBtn.setAttribute('aria-label', 'Close settings')
 	closeBtn.addEventListener('click', () => {
 		closeSettingsMenu()
@@ -193,8 +207,8 @@ function createSettingsMenu(button: HTMLButtonElement): HTMLDivElement {
 }
 
 /** Opens the menu, or closes it when it's open. A click with detail 0 comes from the keyboard (Enter or Space). */
-function toggleSettingsMenu(menu: HTMLElement, e: MouseEvent): void {
-	if (menu.hidden) {
+function toggleSettingsMenu(e: MouseEvent): void {
+	if (!isMenuOpen()) {
 		openSettingsMenu(e.detail === 0)
 	} else {
 		closeSettingsMenu()
@@ -226,14 +240,14 @@ function onOptionClick(e: MouseEvent): void {
 
 /** Closes the menu when a pointer goes down anywhere outside it and the cog. */
 function closeOnOutsidePointer(e: PointerEvent, menu: HTMLElement, button: HTMLElement): void {
-	if (!menu.hidden && e.target instanceof Node && !menu.contains(e.target) && !button.contains(e.target)) {
+	if (isMenuOpen() && e.target instanceof Node && !menu.contains(e.target) && !button.contains(e.target)) {
 		closeSettingsMenu()
 	}
 }
 
 /** Closes the menu on Escape, and hands focus back to the cog. */
-function closeOnEscape(e: KeyboardEvent, menu: HTMLElement, button: HTMLElement): void {
-	if (e.key === 'Escape' && !menu.hidden) {
+function closeOnEscape(e: KeyboardEvent, button: HTMLElement): void {
+	if (e.key === 'Escape' && isMenuOpen()) {
 		closeSettingsMenu()
 		button.focus()
 	}
@@ -264,10 +278,10 @@ export function initSettings(): void {
 	const menu = createSettingsMenu(button)
 	document.body.append(button, menu)
 
-	button.addEventListener('click', e => toggleSettingsMenu(menu, e))
+	button.addEventListener('click', e => toggleSettingsMenu(e))
 	menu.addEventListener('click', onOptionClick)
 	document.addEventListener('pointerdown', e => closeOnOutsidePointer(e, menu, button), true)
-	document.addEventListener('keydown', e => closeOnEscape(e, menu, button))
+	document.addEventListener('keydown', e => closeOnEscape(e, button))
 	window.addEventListener('storage', onLiveSetting)
 }
 
@@ -280,18 +294,49 @@ export function initRefresh(): void {
 	button.id = REFRESH_BUTTON_ID
 	button.setAttribute('role', 'button')
 	button.innerHTML = ICON_REFRESH
-	button.title = 'Refresh preview'
 	button.setAttribute('aria-label', 'Refresh preview')
 	keepDoubleClickInside(button)
+
+	// The icon spins until the refresh replaces the page, and a page that a click just refreshed finishes the turn.
+	button.addEventListener('click', () => {
+		// The finishing turn from the last refresh would otherwise win over the spin.
+		button.classList.remove('md-toc-refreshed')
+		button.classList.add('md-toc-refreshing')
+		writeStored(REFRESH_CLICK_KEY, String(Date.now()))
+	})
+	const sinceClick = Date.now() - Number(readStored(REFRESH_CLICK_KEY))
+	if (sinceClick < REFRESH_SPIN_MS) {
+		// Starts the last turn where the old page's spin would be by now, so it looks like one spin.
+		const angle = ((sinceClick % REFRESH_TURN_MS) / REFRESH_TURN_MS) * 360
+		button.style.setProperty('--md-toc-spin-from', `${Math.round(angle)}deg`)
+		button.classList.add('md-toc-refreshed')
+	}
+	// Only once: the animation would play again whenever the button reappears, e.g. when the sidebar is shown.
+	button.addEventListener('animationend', () => button.classList.remove('md-toc-refreshed'))
+
 	document.body.appendChild(button)
 }
 
-/** Closes the settings menu if it's open. */
+/** Closes the settings menu if it's open, hiding it once its closing animation has played. */
 export function closeSettingsMenu(): void {
 	const menu = document.getElementById(SETTINGS_MENU_ID)
-	if (menu && !menu.hidden) {
-		menu.hidden = true
-		document.getElementById(SETTINGS_BUTTON_ID)!.setAttribute('aria-expanded', 'false')
+	if (!menu || !isMenuOpen()) return
+
+	document.getElementById(SETTINGS_BUTTON_ID)!.setAttribute('aria-expanded', 'false')
+	menu.classList.add(CLOSING_CLASS)
+
+	const hide = (): void => {
+		// Not when the menu was opened again meanwhile.
+		if (menu.classList.contains(CLOSING_CLASS)) {
+			menu.classList.remove(CLOSING_CLASS)
+			menu.hidden = true
+		}
+	}
+	// No animation runs with reduced motion, so there's nothing to wait for.
+	if (menu.getAnimations().length === 0) {
+		hide()
+	} else {
+		menu.addEventListener('animationend', hide, { once: true })
 	}
 }
 

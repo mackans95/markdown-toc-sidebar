@@ -5,6 +5,12 @@
 - A preview whose tab comes back from the background now shows the edits you made before it went there, instead of how it was last fully rendered.
 - A choice from the cog menu now also reaches previews in background tabs, and a preview editor and a side preview that are both on screen, without a manual refresh.
 - Refreshing, with the sidebar's refresh button or by changing a setting in the Settings editor, no longer moves previews in background tabs away from where you were.
+- The settings menu grows out of the cog when it opens and shrinks back into it when it closes, and the cog makes a quarter turn while the menu is open.
+- The refresh icon spins while the preview refreshes.
+- The arrows of collapsible sections turn instead of jumping, and the header buttons fade their hover background in.
+- The header buttons and the menu's close button show a tooltip with what they do.
+- With your system set to reduce motion, nothing moves or turns.
+- Only the list scrolls now, below the header, so its rounded scrollbar runs beside the entries instead of past the header buttons. Scrolling over the sidebar no longer scrolls the document, also not at the end of the list.
 
 ## 0.2.1
 
