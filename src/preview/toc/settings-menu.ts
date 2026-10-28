@@ -61,6 +61,15 @@ const SETTING_GROUPS: SettingGroup[] = [
 			['true', 'On'],
 		],
 	},
+	{
+		key: 'scrollbar',
+		label: 'Scrollbar',
+		options: [
+			['visible', 'Visible'],
+			['hover', 'On hover'],
+			['hidden', 'Hidden'],
+		],
+	},
 ]
 
 // Other open previews share this page's storage, so a key written here reaches them as a

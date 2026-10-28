@@ -50,4 +50,5 @@ export interface PreviewConfig {
 	topHeading: 'list' | 'title'
 	numbering: 'true' | 'false'
 	collapsible: 'true' | 'false'
+	scrollbar: 'visible' | 'hover' | 'hidden'
 }

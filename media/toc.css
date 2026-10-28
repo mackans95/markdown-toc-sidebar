@@ -510,6 +510,54 @@ body.md-toc-resizing {
 	border-radius: 5px;
 }
 
+/* markdownTocSidebar.scrollbar 'hover' and 'hidden': the list's own scrollbar, which takes space
+   beside the entries, is gone. The list still scrolls. */
+body:is(.md-toc-scrollbar-hover, .md-toc-scrollbar-hidden) #md-toc-sidebar > ul {
+	scrollbar-width: none;
+}
+
+body:is(.md-toc-scrollbar-hover, .md-toc-scrollbar-hidden) #md-toc-sidebar > ul::-webkit-scrollbar {
+	display: none;
+}
+
+/* 'hover': scrollbar.ts draws one on top of the right edge of the entries instead, which shows while
+   the pointer is over the sidebar. It looks like the one above; scrollbar.ts sets its top and height
+   to the list's. */
+#md-toc-sidebar .md-toc-scrollbar {
+	position: absolute;
+	right: 12px;
+	z-index: 1;
+	width: 10px;
+	border-radius: 5px;
+	background: var(--vscode-editor-background);
+	opacity: 0;
+	transition: opacity 0.15s ease-out;
+	/* Dragging the thumb would otherwise select text, starting where it was grabbed. */
+	user-select: none;
+}
+
+#md-toc-sidebar:hover .md-toc-scrollbar,
+#md-toc-sidebar .md-toc-scrollbar.md-toc-scrollbar-dragging {
+	opacity: 1;
+}
+
+#md-toc-sidebar .md-toc-scrollbar-thumb {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	border-radius: 5px;
+	background: var(--vscode-scrollbarSlider-background);
+}
+
+#md-toc-sidebar .md-toc-scrollbar-thumb:hover {
+	background: var(--vscode-scrollbarSlider-hoverBackground);
+}
+
+#md-toc-sidebar .md-toc-scrollbar-dragging .md-toc-scrollbar-thumb {
+	background: var(--vscode-scrollbarSlider-activeBackground);
+}
+
 #md-toc-sidebar li {
 	margin: 0;
 	padding-left: calc(var(--md-toc-depth, 0) * 12px);

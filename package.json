@@ -122,6 +122,22 @@
           "default": false,
           "markdownDescription": "Show an arrow before entries that have sections under them, to collapse and expand those sections in the table of contents. Collapsed sections stay collapsed while the preview is open.",
           "order": 6
+        },
+        "markdownTocSidebar.scrollbar": {
+          "type": "string",
+          "enum": [
+            "visible",
+            "hover",
+            "hidden"
+          ],
+          "enumDescriptions": [
+            "Always show the scrollbar next to the entries.",
+            "Show the scrollbar on top of the entries while the pointer is over the sidebar, so it takes no space.",
+            "Never show the scrollbar. The list still scrolls with the mouse wheel, touchpad and keyboard."
+          ],
+          "default": "visible",
+          "markdownDescription": "How to show the table of contents' scrollbar when the list is too long to fit.",
+          "order": 7
         }
       }
     },

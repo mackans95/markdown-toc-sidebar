@@ -57,6 +57,7 @@ If the preview is very narrow (under 360px), the sidebar hides itself so the doc
 | `markdownTocSidebar.topHeading` | `list` | How to show a document's single top heading, such as a `#` title above `##` sections: `list` lists it as the first entry, `title` shows it as a title above the list. Only applies when the first heading is the only one at the document's top level. |
 | `markdownTocSidebar.numbering` | `false` | Number the entries by their place in the outline, like `1`, `1.1` and `1.2`. |
 | `markdownTocSidebar.collapsible` | `false` | Show arrows that collapse and expand the sections under an entry. Collapsed sections are remembered for each file. |
+| `markdownTocSidebar.scrollbar` | `visible` | How to show the list's scrollbar when it's too long to fit: `visible` always, beside the entries; `hover` on top of the entries while the pointer is over the sidebar, so it takes no space; `hidden` never. The list still scrolls with the mouse wheel, touchpad and keyboard. |
 
 You can change these from the cog menu in the sidebar, or in VS Code's Settings (search for "Markdown TOC Sidebar"). Either way, open previews update right away.
 
@@ -109,7 +110,7 @@ The extension has no telemetry and makes no network requests.
 
 The extension uses VS Code's Markdown preview extension points (`markdown.previewScripts`, `markdown.previewStyles` and `markdown.markdownItPlugins`).
 
-- `src/preview/toc/` builds the sidebar from the rendered headings and rebuilds it whenever the preview content or a setting changes. Markdown headings already have `id`s; headings written as HTML get one from the sidebar. It also marks headings for the right-click menu (`data-vscode-context`), with the links ready to copy. `index.ts` starts it; `sidebar.ts` builds the list from the entries `outline.ts` works out, `active.ts` and `scroll.ts` keep the current section highlighted, and the other files each hold one part of the sidebar, like `collapse.ts`, `keyboard.ts`, `resizer.ts`, `toggle.ts` and `settings-menu.ts`.
+- `src/preview/toc/` builds the sidebar from the rendered headings and rebuilds it whenever the preview content or a setting changes. Markdown headings already have `id`s; headings written as HTML get one from the sidebar. It also marks headings for the right-click menu (`data-vscode-context`), with the links ready to copy. `index.ts` starts it; `sidebar.ts` builds the list from the entries `outline.ts` works out, `active.ts` and `scroll.ts` keep the current section highlighted, and the other files each hold one part of the sidebar, like `collapse.ts`, `keyboard.ts`, `resizer.ts`, `scrollbar.ts`, `toggle.ts` and `settings-menu.ts`.
 - `src/preview/smooth-scroll-sync.ts` takes over the preview's scroll-sync jumps and animates them instead.
 - `src/preview/scroll-restore.ts` remembers where you are in the preview. VS Code rebuilds a preview from its last full render when its tab comes back from the background, and the preview then scrolls to the position saved in that render; this puts it back where you were. It also remembers where you were in each file, so a refresh doesn't move you either.
 - `media/toc.css` styles the sidebar using your theme's colors.
