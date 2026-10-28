@@ -10,6 +10,7 @@
 - The arrows of collapsible sections turn instead of jumping, and the header buttons fade their hover background in.
 - The header buttons and the menu's close button show a tooltip with what they do.
 - With your system set to reduce motion, nothing moves or turns.
+- Only the list scrolls now, below the header, so its rounded scrollbar runs beside the entries instead of past the header buttons. Scrolling over the sidebar no longer scrolls the document, also not at the end of the list.
 
 ## 0.2.1
 

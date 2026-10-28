@@ -12,7 +12,22 @@ import { updateSettingsMenu } from './settings-menu.ts'
 import { updateToggle } from './toggle.ts'
 import type { Entry } from '../../types/preview.ts'
 
-/** The sidebar's nav element, created with its keyboard handling the first time. */
+/**
+ * Scrolling over the sidebar never moves the document behind it. Over a list long enough to scroll,
+ * the browser scrolls the list, and toc.css stops it at the ends. Anywhere else in the sidebar, the
+ * wheel does nothing. Ctrl+wheel (zooming) is left alone.
+ */
+function keepWheelInList(e: WheelEvent, nav: HTMLElement): void {
+	if (e.ctrlKey) return
+
+	const list = nav.querySelector(':scope > ul')
+	const overList = list && e.target instanceof Node && list.contains(e.target)
+	if (!overList || list.scrollHeight <= list.clientHeight) {
+		e.preventDefault()
+	}
+}
+
+/** The sidebar's nav element, created with its keyboard and wheel handling the first time. */
 function getNav(): HTMLElement {
 	let nav = document.getElementById(NAV_ID)
 
@@ -24,6 +39,7 @@ function getNav(): HTMLElement {
 		keepDoubleClickInside(created)
 
 		created.addEventListener('keydown', onNavKeydown)
+		created.addEventListener('wheel', e => keepWheelInList(e, created), { passive: false })
 		// Whichever entry gets focus, by keyboard or mouse, becomes the list's tab stop.
 		created.addEventListener('focusin', e => {
 			const link = e.target instanceof Element && e.target.closest('a')

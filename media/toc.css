@@ -36,7 +36,10 @@
 	bottom: 0;
 	width: var(--md-toc-width);
 	box-sizing: border-box;
-	overflow-y: auto;
+	/* The header on top, and the list below it filling the rest. Only the list scrolls, so its
+	   scrollbar runs beside the entries instead of past the header buttons. */
+	display: flex;
+	flex-direction: column;
 	padding: 0 12px 16px;
 	font-size: 0.85em;
 	line-height: 1.4;
@@ -441,11 +444,7 @@ body.md-toc-resizing {
 }
 
 #md-toc-sidebar .md-toc-header {
-	/* Stays pinned while the list scrolls, so the toggle button always sits in a header. */
-	position: sticky;
-	top: 0;
-	z-index: 1;
-	background: var(--vscode-sideBar-background, var(--vscode-editor-background));
+	flex: none;
 }
 
 #md-toc-sidebar .md-toc-title {
@@ -487,6 +486,28 @@ body.md-toc-resizing {
 	list-style: none;
 	margin: 0;
 	padding: 0;
+}
+
+/* The list scrolls on its own, below the header (see #md-toc-sidebar). At its ends the scrolling stops
+   there instead of moving on to the document; sidebar.ts also keeps the wheel off the document
+   when the list doesn't scroll. */
+#md-toc-sidebar > ul {
+	flex: 1;
+	min-height: 0;
+	overflow-y: auto;
+	overscroll-behavior: contain;
+	/* The webview sets scrollbar-color on the whole page, which draws a plain native scrollbar.
+	   Resetting it here lets the ::-webkit-scrollbar rules below round the track like the slider. */
+	scrollbar-color: auto;
+}
+
+#md-toc-sidebar > ul::-webkit-scrollbar-track {
+	border-radius: 5px;
+	background: var(--vscode-editor-background);
+}
+
+#md-toc-sidebar > ul::-webkit-scrollbar-thumb {
+	border-radius: 5px;
 }
 
 #md-toc-sidebar li {
@@ -555,8 +576,6 @@ body.md-toc-resizing {
 }
 
 #md-toc-sidebar a {
-	/* Keeps the active entry clear of the sticky header when it's scrolled into view. */
-	scroll-margin-top: 56px;
 	display: block;
 	padding: 2px 6px;
 	border-left: 2px solid transparent;
@@ -574,11 +593,6 @@ body.md-toc-resizing {
 	margin-right: 0.4em;
 	opacity: 0.7;
 	font-variant-numeric: tabular-nums;
-}
-
-/* The document title makes the sticky header taller. */
-#md-toc-sidebar.md-toc-has-doc-title a {
-	scroll-margin-top: 88px;
 }
 
 /* The preview's own stylesheet outlines every focused link, which made clicked entries look boxed in.
