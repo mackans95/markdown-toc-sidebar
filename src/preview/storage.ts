@@ -31,3 +31,12 @@ export function writeStored(key: string, value: string | undefined): void {
 		// Storage unavailable; see above.
 	}
 }
+
+/** The `max` entries with the newest time, so a stored record doesn't grow without end. */
+export function keepNewest<T extends { time: number }>(record: Record<string, T>, max: number): Record<string, T> {
+	const newest = Object.entries(record)
+		.sort((a, b) => b[1].time - a[1].time)
+		.slice(0, max)
+
+	return Object.fromEntries(newest)
+}

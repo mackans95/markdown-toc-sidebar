@@ -5,7 +5,7 @@
 // restores that instead of where you had scrolled to since, so it jumps back, often to the top.
 // This remembers where you were and goes back there when the same render is rebuilt.
 import { SYNCED_SCROLL_EVENT, USER_SCROLL_EVENTS } from '../shared/constants.ts'
-import { readStoredJson, writeStored } from './storage.ts'
+import { keepNewest, readStoredJson, writeStored } from './storage.ts'
 import type { Position, SavedPosition } from '../types/preview.ts'
 
 /** Remembers where you were in a render, and goes back there when VS Code rebuilds the page from it. */
@@ -107,10 +107,7 @@ class ScrollRestore {
 	private savePosition(): void {
 		const positions = this.readPositions()
 		positions[this.renderId] = { ...this.currentPosition(), time: Date.now() }
-		const newest = Object.entries(positions)
-			.sort((a, b) => b[1].time - a[1].time)
-			.slice(0, ScrollRestore.MAX_ENTRIES)
-		writeStored(ScrollRestore.STORAGE_KEY, JSON.stringify(Object.fromEntries(newest)))
+		writeStored(ScrollRestore.STORAGE_KEY, JSON.stringify(keepNewest(positions, ScrollRestore.MAX_ENTRIES)))
 	}
 
 	/**

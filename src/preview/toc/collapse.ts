@@ -1,5 +1,5 @@
 // Collapsed sections (markdownTocSidebar.collapsible), remembered per file.
-import { readStoredJson, writeStored } from '../storage.ts'
+import { keepNewest, readStoredJson, writeStored } from '../storage.ts'
 import { activeHighlight } from './active.ts'
 import { NAV_ID } from './dom.ts'
 import { ICON_CHEVRON } from './icons.ts'
@@ -138,10 +138,7 @@ export function storeCollapsed(
 	} else {
 		delete next[source]
 	}
-	const newest = Object.entries(next)
-		.sort((a, b) => b[1].time - a[1].time)
-		.slice(0, max)
-	return Object.fromEntries(newest)
+	return keepNewest(next, max)
 }
 
 export const collapsedSections = new CollapsedSections()

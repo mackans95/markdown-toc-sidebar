@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { describe, test } from 'node:test'
+import { keepNewest } from '../src/preview/storage.ts'
 import { storeCollapsed } from '../src/preview/toc/collapse.ts'
 import { headingLinks } from '../src/preview/toc/headings.ts'
 import { focusTarget } from '../src/preview/toc/keyboard.ts'
@@ -196,6 +197,22 @@ describe('storeCollapsed', () => {
 		const store = { 'a.md': { ids: ['x'], time: 1 } }
 		storeCollapsed(store, 'a.md', [], 2, 50)
 		assert.deepEqual(store, { 'a.md': { ids: ['x'], time: 1 } })
+	})
+})
+
+describe('keepNewest', () => {
+	test('keeps the entries with the newest time', () => {
+		const record = { a: { time: 1 }, b: { time: 3 }, c: { time: 2 } }
+		assert.deepEqual(Object.keys(keepNewest(record, 2)).sort(), ['b', 'c'])
+	})
+	test('keeps everything when there are no more than max', () => {
+		const record = { a: { time: 1 }, b: { time: 2 } }
+		assert.deepEqual(keepNewest(record, 5), record)
+	})
+	test('does not change the record', () => {
+		const record = { a: { time: 1 }, b: { time: 2 } }
+		keepNewest(record, 1)
+		assert.deepEqual(record, { a: { time: 1 }, b: { time: 2 } })
 	})
 })
 
