@@ -47,15 +47,6 @@ export interface Token {
 }
 
 /**
- * The data-vscode-context of a right-clicked heading, as src/preview/toc/headings.ts wrote it.
- */
-export interface HeadingContext {
-	headingText: string
-	link: string
-	markdownLink: string
-}
-
-/**
  * What activate() returns: the built-in Markdown extension calls extendMarkdownIt for every preview it renders.
  */
 export interface MarkdownItPlugin {

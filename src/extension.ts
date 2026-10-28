@@ -9,14 +9,8 @@
 import * as vscode from 'vscode'
 import { CONFIG_ELEMENT_ID } from './shared/constants.ts'
 import { escapeAttribute, toKebabCase } from './shared/helpers.ts'
-import type {
-	SettingValue,
-	PackageJson,
-	HeadingContext,
-	MarkdownIt,
-	Setting,
-	MarkdownItPlugin,
-} from './types/extension.ts'
+import type { SettingValue, PackageJson, MarkdownIt, Setting, MarkdownItPlugin } from './types/extension.ts'
+import type { HeadingContext, HeadingLinks } from './types/shared.ts'
 
 // The markdown-it token type (and rule name) that renders the hidden config element.
 const CONFIG_TOKEN_TYPE = 'md_toc_sidebar_config'
@@ -25,7 +19,7 @@ const CONFIG_TOKEN_TYPE = 'md_toc_sidebar_config'
  * The heading context menu in the preview. VS Code passes the right-clicked element's
  * data-vscode-context, where src/preview/toc/headings.ts has put the ready-made links.
  */
-function copyHeadingLink(field: 'link' | 'markdownLink'): (item?: Partial<HeadingContext>) => Promise<void> {
+function copyHeadingLink(field: keyof HeadingLinks): (item?: Partial<HeadingContext>) => Promise<void> {
 	return async item => {
 		const text = item?.[field]
 		if (typeof text !== 'string') return
