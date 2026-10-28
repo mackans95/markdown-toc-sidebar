@@ -193,9 +193,9 @@ function createSettingsMenu(button: HTMLButtonElement): HTMLDivElement {
 }
 
 /** Opens the menu, or closes it when it's open. A click with detail 0 comes from the keyboard (Enter or Space). */
-function toggleSettingsMenu(menu: HTMLElement, event: MouseEvent): void {
+function toggleSettingsMenu(menu: HTMLElement, e: MouseEvent): void {
 	if (menu.hidden) {
-		openSettingsMenu(event.detail === 0)
+		openSettingsMenu(e.detail === 0)
 	} else {
 		closeSettingsMenu()
 	}
@@ -205,14 +205,14 @@ function toggleSettingsMenu(menu: HTMLElement, event: MouseEvent): void {
  * Picking an option applies it right away, here and in other open previews; the link itself
  * then goes to VS Code (via src/extension.ts) to save the setting. The menu stays open.
  */
-function onOptionClick(event: MouseEvent): void {
-	const option = event.target instanceof Element && event.target.closest<HTMLElement>('.md-toc-menu-option')
+function onOptionClick(e: MouseEvent): void {
+	const option = e.target instanceof Element && e.target.closest<HTMLElement>('.md-toc-menu-option')
 
 	if (!option) return
 
 	if (option.getAttribute('aria-checked') === 'true') {
 		// Already the current value: nothing to save.
-		event.preventDefault()
+		e.preventDefault()
 		return
 	}
 
@@ -225,20 +225,15 @@ function onOptionClick(event: MouseEvent): void {
 }
 
 /** Closes the menu when a pointer goes down anywhere outside it and the cog. */
-function closeOnOutsidePointer(event: PointerEvent, menu: HTMLElement, button: HTMLElement): void {
-	if (
-		!menu.hidden &&
-		event.target instanceof Node &&
-		!menu.contains(event.target) &&
-		!button.contains(event.target)
-	) {
+function closeOnOutsidePointer(e: PointerEvent, menu: HTMLElement, button: HTMLElement): void {
+	if (!menu.hidden && e.target instanceof Node && !menu.contains(e.target) && !button.contains(e.target)) {
 		closeSettingsMenu()
 	}
 }
 
 /** Closes the menu on Escape, and hands focus back to the cog. */
-function closeOnEscape(event: KeyboardEvent, menu: HTMLElement, button: HTMLElement): void {
-	if (event.key === 'Escape' && !menu.hidden) {
+function closeOnEscape(e: KeyboardEvent, menu: HTMLElement, button: HTMLElement): void {
+	if (e.key === 'Escape' && !menu.hidden) {
 		closeSettingsMenu()
 		button.focus()
 	}
@@ -250,11 +245,11 @@ function isMenuOption(key: unknown, value: unknown): boolean {
 }
 
 /** Applies a choice made in another open preview, which reaches this one as a 'storage' event. */
-function onLiveSetting(event: StorageEvent): void {
-	if (event.key !== LIVE_SETTING_KEY || !event.newValue) return
+function onLiveSetting(e: StorageEvent): void {
+	if (e.key !== LIVE_SETTING_KEY || !e.newValue) return
 
 	try {
-		const { key, value } = JSON.parse(event.newValue)
+		const { key, value } = JSON.parse(e.newValue)
 		if (isMenuOption(key, value)) {
 			applySettingLocally(key, value)
 		}

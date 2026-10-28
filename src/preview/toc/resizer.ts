@@ -71,30 +71,30 @@ function createResizer(): HTMLDivElement {
 }
 
 /** Starts a drag when the main button goes down on the handle. */
-function startDrag(event: PointerEvent, resizer: HTMLElement): void {
-	if (event.button !== 0) return
+function startDrag(e: PointerEvent, resizer: HTMLElement): void {
+	if (e.button !== 0) return
 
 	// No preventDefault here: it would also suppress the double-click used to reset the width.
 	// Text selection during the drag is prevented by the md-toc-resizing class instead.
-	resizer.setPointerCapture(event.pointerId)
+	resizer.setPointerCapture(e.pointerId)
 	document.body.classList.add('md-toc-resizing')
 	dragWidth = navWidth()
 }
 
 /** Follows the pointer while dragging: the sidebar is pinned to one edge, so its width is the pointer's distance from that edge. */
-function drag(event: PointerEvent, resizer: HTMLElement): void {
-	if (!resizer.hasPointerCapture(event.pointerId)) return
+function drag(e: PointerEvent, resizer: HTMLElement): void {
+	if (!resizer.hasPointerCapture(e.pointerId)) return
 
-	const distance = sidebarPosition() === 'left' ? event.clientX : viewportWidth() - event.clientX
+	const distance = sidebarPosition() === 'left' ? e.clientX : viewportWidth() - e.clientX
 	dragWidth = clampWidth(distance)
 	applyWidth(dragWidth)
 }
 
 /** Ends a drag, also a cancelled one, and remembers the width it ended at. */
-function endDrag(event: PointerEvent, resizer: HTMLElement): void {
-	if (!resizer.hasPointerCapture(event.pointerId)) return
+function endDrag(e: PointerEvent, resizer: HTMLElement): void {
+	if (!resizer.hasPointerCapture(e.pointerId)) return
 
-	resizer.releasePointerCapture(event.pointerId)
+	resizer.releasePointerCapture(e.pointerId)
 	document.body.classList.remove('md-toc-resizing')
 	writeWidth(dragWidth)
 }
@@ -114,12 +114,12 @@ function keyboardDelta(key: string): number {
 }
 
 /** Changes the width by KEYBOARD_STEP with the arrow keys, and remembers it. */
-function onResizerKeyDown(event: KeyboardEvent): void {
-	const delta = keyboardDelta(event.key)
+function onResizerKeyDown(e: KeyboardEvent): void {
+	const delta = keyboardDelta(e.key)
 
 	if (!delta) return
 
-	event.preventDefault()
+	e.preventDefault()
 
 	const width = clampWidth(navWidth() + delta)
 

@@ -24,12 +24,12 @@ class SmoothScrollSync {
 	/** Listens for sync messages, replaces window.scroll and window.scrollTo, and hides the glide's scroll events. */
 	start(): void {
 		// Capture phase so this runs before the preview's own message handler performs the jump.
-		window.addEventListener('message', event => this.onMessage(event), true)
+		window.addEventListener('message', e => this.onMessage(e), true)
 
 		window.scroll = this.intercept(window.scroll.bind(window))
 		window.scrollTo = this.intercept(this.nativeScrollTo)
 
-		window.addEventListener('scroll', event => this.onScroll(event), true)
+		window.addEventListener('scroll', e => this.onScroll(e), true)
 
 		// The user taking over the preview cancels the glide immediately.
 		for (const type of USER_SCROLL_EVENTS) {
@@ -43,8 +43,8 @@ class SmoothScrollSync {
 	}
 
 	/** Opens the sync window when the preview is told to follow the editor ('updateView'). */
-	private onMessage(event: MessageEvent): void {
-		if (event.data && event.data.type === 'updateView') {
+	private onMessage(e: MessageEvent): void {
+		if (e.data && e.data.type === 'updateView') {
 			this.syncUntil = performance.now() + SmoothScrollSync.SYNC_WINDOW_MS
 		}
 	}
@@ -53,9 +53,9 @@ class SmoothScrollSync {
 	 * While gliding, hides the in-between scroll events from the preview's own scroll handler.
 	 * Otherwise it would report each position back to the editor and the two would fight.
 	 */
-	private onScroll(event: Event): void {
+	private onScroll(e: Event): void {
 		if (this.suppressScrollEvents) {
-			event.stopImmediatePropagation()
+			e.stopImmediatePropagation()
 		}
 	}
 

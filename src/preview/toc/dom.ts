@@ -20,5 +20,5 @@ export const HEADING_SELECTOR = '.markdown-body :is(h1, h2, h3, h4, h5, h6)[id]'
  * dblclick handlers run first.
  */
 export function keepDoubleClickInside(element: HTMLElement): void {
-	element.addEventListener('dblclick', event => event.stopPropagation())
+	element.addEventListener('dblclick', e => e.stopPropagation())
 }

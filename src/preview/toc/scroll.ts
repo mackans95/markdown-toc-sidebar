@@ -51,7 +51,7 @@ class Scrolling {
 	/** Handles clicks on the sidebar's entries, and keeps the highlight in step with the scroll position. */
 	init(): void {
 		// Capture phase, so we handle the click before the preview's own link handler can interfere.
-		document.addEventListener('click', event => this.onClick(event), true)
+		document.addEventListener('click', e => this.onClick(e), true)
 
 		// The user taking over cancels the animation.
 		for (const type of USER_SCROLL_EVENTS) {
@@ -65,13 +65,13 @@ class Scrolling {
 	}
 
 	/** Scrolls to the heading of a clicked entry, keeping that entry highlighted on the way. */
-	private onClick(event: MouseEvent): void {
-		const link = event.target instanceof Element && event.target.closest<HTMLElement>(`#${NAV_ID} a`)
+	private onClick(e: MouseEvent): void {
+		const link = e.target instanceof Element && e.target.closest<HTMLElement>(`#${NAV_ID} a`)
 
 		if (!link) return
 
-		event.preventDefault()
-		event.stopPropagation()
+		e.preventDefault()
+		e.stopPropagation()
 
 		const target = document.getElementById(link.dataset.target ?? '')
 

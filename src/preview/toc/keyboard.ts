@@ -46,13 +46,15 @@ export function setTabStop(nav: HTMLElement, stop: HTMLAnchorElement | undefined
  * Arrow keys, Home and End move between the visible entries. On an entry with sections under it,
  * ArrowRight expands and ArrowLeft collapses (markdownTocSidebar.collapsible) before moving.
  */
-export function onNavKeydown(event: KeyboardEvent): void {
-	if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || !(event.target instanceof Element)) {
-		return
-	}
-	const nav = event.currentTarget as HTMLElement
+export function onNavKeydown(e: KeyboardEvent): void {
+	const isModifierKeyHeld = e.altKey || e.ctrlKey || e.metaKey || e.shiftKey
+	const isTargetElement = e.target instanceof Element
+
+	if (isModifierKeyHeld || !isTargetElement) return
+
+	const nav = e.currentTarget as HTMLElement
 	// A chevron focused by a click stands in for its entry.
-	const current = event.target.closest('a') ?? event.target.closest('li')?.querySelector('a')
+	const current = e.target.closest('a') ?? e.target.closest('li')?.querySelector('a')
 	const links = Array.from(nav.querySelectorAll('a'))
 	const index = current ? links.indexOf(current) : -1
 	if (!current || index < 0) return
@@ -61,21 +63,21 @@ export function onNavKeydown(event: KeyboardEvent): void {
 	const expanded = chevron?.getAttribute('aria-expanded')
 	if (
 		chevron &&
-		((event.key === 'ArrowRight' && expanded === 'false') || (event.key === 'ArrowLeft' && expanded === 'true'))
+		((e.key === 'ArrowRight' && expanded === 'false') || (e.key === 'ArrowLeft' && expanded === 'true'))
 	) {
-		event.preventDefault()
-		event.stopPropagation()
+		e.preventDefault()
+		e.stopPropagation()
 		chevron.click()
 		current.focus()
 		return
 	}
 
 	const entries = links.map(link => ({ level: Number(link.dataset.level), hidden: isHidden(link) }))
-	const target = focusTarget(entries, index, event.key)
+	const target = focusTarget(entries, index, e.key)
 	if (target === undefined) return
 	// Also at the ends of the list, so the keys don't scroll the page instead.
-	event.preventDefault()
-	event.stopPropagation()
+	e.preventDefault()
+	e.stopPropagation()
 	if (target !== index) {
 		links[target].focus()
 	}

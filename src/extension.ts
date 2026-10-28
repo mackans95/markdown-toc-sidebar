@@ -30,8 +30,8 @@ function copyHeadingLink(field: 'link' | 'markdownLink'): (item?: Partial<Headin
 /** Registers a listener for configuration changes, and refreshes open previews when a setting changed. */
 function registerConfigListener(settings: Settings, context: vscode.ExtensionContext) {
 	context.subscriptions.push(
-		vscode.workspace.onDidChangeConfiguration(event => {
-			if (settings.changedOutsideMenu(event)) {
+		vscode.workspace.onDidChangeConfiguration(e => {
+			if (settings.changedOutsideMenu(e)) {
 				vscode.commands.executeCommand('markdown.preview.refresh')
 			}
 		}),
@@ -123,8 +123,8 @@ class Settings {
 	}
 
 	/** Whether the event changed any of our settings other than through the menu, e.g. in the Settings editor. */
-	changedOutsideMenu(event: vscode.ConfigurationChangeEvent): boolean {
-		const changed = this.keys.filter(key => event.affectsConfiguration(`${Settings.SECTION}.${key}`))
+	changedOutsideMenu(e: vscode.ConfigurationChangeEvent): boolean {
+		const changed = this.keys.filter(key => e.affectsConfiguration(`${Settings.SECTION}.${key}`))
 		// False when none of our settings changed: every() is true for an empty list.
 		return !changed.every(key => this.savingFromMenu.has(key))
 	}
