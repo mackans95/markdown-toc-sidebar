@@ -1,9 +1,10 @@
 // Collapsed sections (markdownTocSidebar.collapsible), remembered per file.
 import { keepNewest, readStoredJson, writeStored } from '../storage.ts'
 import { activeHighlight } from './active.ts'
+import { readConfig } from './config.ts'
 import { NAV_ID } from './dom.ts'
 import { ICON_CHEVRON, ICON_FOLD_ALL, ICON_UNFOLD_ALL } from './icons.ts'
-import { allFolded, hasChildren, hiddenIndices } from './outline.ts'
+import { allFolded, followCollapsedIds, hasChildren, hiddenIndices } from './outline.ts'
 import type { CollapsedStore } from '../../types/preview.ts'
 
 /**
@@ -26,6 +27,11 @@ function readList(nav: HTMLElement): { items: HTMLLIElement[]; entries: { id: st
 		return { id: link.dataset.target!, level: Number(link.dataset.level) }
 	})
 	return { items, entries }
+}
+
+/** Whether markdownTocSidebar.autoCollapse folds the sections to follow where you're reading; it needs collapsible sections. */
+function isFollowing(): boolean {
+	return readConfig('collapsible') === 'true' && readConfig('autoCollapse') === 'true'
 }
 
 /** Show Unfold All once everything you can see is folded, and Fold All otherwise. */
@@ -55,11 +61,25 @@ class CollapsedSections {
 	private ids = new Set<string>()
 	// The file the ids belong to.
 	private source: string | undefined
+	// Follow mode's own collapsed sections, never saved; undefined until it has followed an entry.
+	private followIds: Set<string> | undefined
+	// The entry follow mode last folded the list around, so picking the same one again keeps your own clicks.
+	private followedId: string | undefined
+	// Whether follow mode was on at the last load(), to notice it being turned on or off.
+	private following = false
 
-	/** Picks up the saved sections when the preview shows a different file than before. */
+	/** Picks up the saved sections when the preview shows a different file than before, and starts following afresh then or when follow mode is turned on or off. */
 	load(): void {
 		const source = previewSource()
+		const following = isFollowing()
+
+		if (source !== this.source || following !== this.following) {
+			this.following = following
+			this.followIds = undefined
+			this.followedId = undefined
+		}
 		if (source === this.source) return
+
 		this.source = source
 		this.ids = new Set((source && this.readStore()[source]?.ids) || [])
 	}
@@ -97,35 +117,54 @@ class CollapsedSections {
 		return button
 	}
 
+	/** In follow mode, folds the list around the entry the highlight picked, unless it already is. */
+	follow(id: string | undefined): void {
+		if (!isFollowing() || id === this.followedId) return
+
+		const { entries } = readList(document.getElementById(NAV_ID)!)
+		this.followedId = id
+		this.followIds = followCollapsedIds(
+			entries,
+			entries.findIndex(entry => entry.id === id),
+		)
+		this.apply()
+	}
+
 	/** Hides the entries inside collapsed sections and updates the chevrons to match. */
 	apply(): void {
 		// Only called once the list is built.
 		const nav = document.getElementById(NAV_ID)!
 		const { items, entries } = readList(nav)
-		const hidden = nav.classList.contains('md-toc-collapsible')
-			? hiddenIndices(entries, this.ids)
-			: new Set<number>()
+		const ids = this.collapsedIds()
+		const hidden = nav.classList.contains('md-toc-collapsible') ? hiddenIndices(entries, ids) : new Set<number>()
 
 		items.forEach((item, i) => {
 			item.hidden = hidden.has(i)
 			const chevron = item.querySelector<HTMLButtonElement>('.md-toc-chevron')
 			if (chevron) {
-				const collapsed = this.ids.has(entries[i].id)
+				const collapsed = ids.has(entries[i].id)
 				chevron.setAttribute('aria-expanded', String(!collapsed))
 				chevron.setAttribute('aria-label', (collapsed ? 'Expand ' : 'Collapse ') + chevron.dataset.text)
 				chevron.dataset.tooltip = collapsed ? 'Expand section' : 'Collapse section'
 			}
 		})
 
-		updateFoldAllButton(nav, allFolded(entries, this.ids))
+		updateFoldAllButton(nav, allFolded(entries, ids))
 	}
 
-	/** Collapses or expands a section, saves that, and updates the list and the highlight. */
+	/** The collapsed sections the list shows: follow mode's own, or the saved ones. */
+	private collapsedIds(): Set<string> {
+		return isFollowing() ? (this.followIds ??= new Set()) : this.ids
+	}
+
+	/** Collapses or expands a section, and updates the list and the highlight. */
 	private toggle(id: string): void {
-		if (this.ids.has(id)) {
-			this.ids.delete(id)
+		const ids = this.collapsedIds()
+
+		if (ids.has(id)) {
+			ids.delete(id)
 		} else {
-			this.ids.add(id)
+			ids.add(id)
 		}
 		this.changed()
 	}

@@ -245,6 +245,11 @@ body.md-toc-visible.md-toc-collapsed {
 	display: none;
 }
 
+/* Groups for a setting that needs another one turned on (settings-menu.ts), while it's off. */
+#md-toc-settings-menu [data-requires][hidden] {
+	display: none;
+}
+
 /* Set by closeSettingsMenu, which hides the menu once this has finished. */
 #md-toc-settings-menu.md-toc-menu-closing {
 	animation: md-toc-menu-close 0.1s ease-in forwards;

@@ -11,6 +11,7 @@ const FALLBACKS: PreviewConfig = {
 	topHeading: 'list',
 	numbering: 'false',
 	collapsible: 'false',
+	autoCollapse: 'false',
 	scrollbar: 'visible',
 }
 
