@@ -215,7 +215,10 @@ class Sidebar {
 		const titleEntry = entries.find(entry => entry.isTitle)
 		const listEntries = entries.filter(entry => !entry.isTitle)
 		const list = createList(listEntries, collapsible)
-		const canFold = collapsible && listEntries.some((_, i) => hasChildren(listEntries, i))
+		const canFold =
+			collapsible &&
+			readConfig('autoCollapse') !== 'true' &&
+			listEntries.some((_, i) => hasChildren(listEntries, i))
 
 		nav.classList.toggle('md-toc-collapsible', collapsible)
 		nav.classList.toggle('md-toc-has-doc-title', !!titleEntry)

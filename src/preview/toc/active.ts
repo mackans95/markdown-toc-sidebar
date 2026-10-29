@@ -78,10 +78,20 @@ class ActiveHighlight {
 	private listedIds = new Set<string>()
 	// The entry that was last highlighted, so we don't update the DOM unnecessarily.
 	private latestId: string | undefined | null = null
+	// Told about every entry the highlight picks; see onActiveChange.
+	private listener: ((id: string | undefined) => void) | undefined
 
 	/** Sets which headings the sidebar lists, after a rebuild. */
 	setListedIds(ids: Set<string>): void {
 		this.listedIds = ids
+	}
+
+	/**
+	 * Calls the listener each time the highlight picks its entry: when another one becomes active, and
+	 * again after reset(). It runs before the list is marked, so it can still change which entries are hidden.
+	 */
+	onActiveChange(listener: (id: string | undefined) => void): void {
+		this.listener = listener
 	}
 
 	/** Makes the next update highlight the active entry again, after the list changed. */
@@ -115,6 +125,8 @@ class ActiveHighlight {
 		if (!nav) return
 
 		this.latestId = id
+
+		this.listener?.(id)
 
 		const links = Array.from(nav.querySelectorAll('a'))
 		const activeIndex = links.findIndex(link => link.dataset.target === id)

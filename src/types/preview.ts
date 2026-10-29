@@ -25,6 +25,8 @@ export interface SettingGroup {
 	label: string
 	/** [value, text] for each option, with the value as the config element has it. */
 	options: [string, string][]
+	/** A setting this one only works with: the group is hidden while that one is off. */
+	requires?: keyof PreviewConfig
 }
 
 /** Where the view was: the block at its top and how far into it, with the plain offset as a fallback. */
@@ -50,6 +52,7 @@ export interface PreviewConfig {
 	topHeading: 'list' | 'title'
 	numbering: 'true' | 'false'
 	collapsible: 'true' | 'false'
+	autoCollapse: 'true' | 'false'
 	scrollbar: 'visible' | 'hover' | 'hidden'
 }
 

@@ -62,6 +62,15 @@ const SETTING_GROUPS: SettingGroup[] = [
 		],
 	},
 	{
+		key: 'autoCollapse',
+		label: 'Auto-collapse',
+		requires: 'collapsible',
+		options: [
+			['false', 'Off'],
+			['true', 'On'],
+		],
+	},
+	{
 		key: 'scrollbar',
 		label: 'Scrollbar',
 		options: [
@@ -179,6 +188,11 @@ function createSettingGroup(group: SettingGroup): [HTMLDivElement, HTMLDivElemen
 		option.dataset.value = value
 		option.textContent = text
 		options.appendChild(option)
+	}
+
+	if (group.requires) {
+		label.dataset.requires = group.requires
+		options.dataset.requires = group.requires
 	}
 
 	return [label, options]
@@ -356,9 +370,12 @@ export function closeSettingsMenu(): void {
 export function updateSettingsMenu(): void {
 	const config = document.getElementById(CONFIG_ELEMENT_ID)
 	const menu = document.getElementById(SETTINGS_MENU_ID)
+
 	if (!menu || !config) return
+
 	const uriBase = config.dataset.uriBase || ''
 	document.getElementById(REFRESH_BUTTON_ID)?.setAttribute('href', uriBase + '/refresh')
+
 	for (const option of menu.querySelectorAll<HTMLElement>('.md-toc-menu-option')) {
 		const key = option.dataset.key!
 		const value = option.dataset.value!
@@ -368,6 +385,11 @@ export function updateSettingsMenu(): void {
 		}
 		option.setAttribute('aria-checked', String(config.dataset[key] === value))
 	}
+	// Groups that only work with another setting are hidden while it's off.
+	for (const element of menu.querySelectorAll<HTMLElement>('[data-requires]')) {
+		element.hidden = config.dataset[element.dataset.requires!] !== 'true'
+	}
+
 	const allSettings = menu.querySelector<HTMLElement>('.md-toc-menu-link')!
 	allSettings.setAttribute('href', uriBase + allSettings.dataset.path)
 }

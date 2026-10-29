@@ -119,3 +119,14 @@ export function allFolded(entries: { id: string; level: number }[], collapsedIds
 	const sections = entries.filter((_, i) => !hidden.has(i) && hasChildren(entries, i))
 	return sections.length > 0 && sections.every(entry => collapsedIds.has(entry.id))
 }
+
+/**
+ * The sections follow mode (markdownTocSidebar.autoCollapse) collapses: every one except the active
+ * entry and the sections containing it, so the path to where you're reading stays open, with the
+ * sections right under it in view. Without an active entry (-1), every section is collapsed.
+ */
+export function followCollapsedIds(entries: { id: string; level: number }[], activeIndex: number): Set<string> {
+	const open = ancestorIndices(entries, activeIndex)
+	open.add(activeIndex)
+	return new Set(entries.filter((_, i) => hasChildren(entries, i) && !open.has(i)).map(entry => entry.id))
+}

@@ -4,7 +4,14 @@ import { keepNewest } from '../src/preview/storage.ts'
 import { storeCollapsed } from '../src/preview/toc/collapse.ts'
 import { headingLinks } from '../src/preview/toc/headings.ts'
 import { focusTarget } from '../src/preview/toc/keyboard.ts'
-import { allFolded, ancestorIndices, buildEntries, hasChildren, hiddenIndices } from '../src/preview/toc/outline.ts'
+import {
+	allFolded,
+	ancestorIndices,
+	buildEntries,
+	followCollapsedIds,
+	hasChildren,
+	hiddenIndices,
+} from '../src/preview/toc/outline.ts'
 import { thumbMetrics } from '../src/preview/toc/scrollbar.ts'
 import { tooltipPosition } from '../src/preview/toc/tooltip.ts'
 import type { BuildOptions } from '../src/types/preview.ts'
@@ -407,5 +414,29 @@ describe('allFolded', () => {
 	})
 	test('is false without any sections', () => {
 		assert.equal(allFolded(outline.slice(2, 4), new Set()), false)
+	})
+})
+
+describe('followCollapsedIds', () => {
+	// a h1
+	// b   h2
+	// c     h3
+	// d     h3
+	// e   h2
+	// f     h3
+	const outline = [1, 2, 3, 3, 2, 3].map((level, i) => ({ id: 'abcdef'[i], level }))
+	const follow = (active: string) => followCollapsedIds(outline, 'abcdef'.indexOf(active))
+
+	test('keeps the path to a deep entry open', () => {
+		assert.deepEqual(follow('c'), new Set(['e']))
+	})
+	test('keeps the active entry open, with its sections in view', () => {
+		assert.deepEqual(follow('a'), new Set(['b', 'e']))
+	})
+	test('collapses the sibling section of the active one', () => {
+		assert.deepEqual(follow('f'), new Set(['b']))
+	})
+	test('collapses every section without an active entry', () => {
+		assert.deepEqual(followCollapsedIds(outline, -1), new Set(['a', 'b', 'e']))
 	})
 })

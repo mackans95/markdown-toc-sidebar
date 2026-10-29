@@ -2,8 +2,9 @@
 
 ## Unreleased
 
-- Entries whose text is cut off show it in full in a tooltip when you hover over them, and the collapse arrows and the resize edge now have tooltips like the header buttons.
+- `markdownTocSidebar.autoCollapse` setting, also in the cog menu, to fold sections away as you read, so only the section you're in and the sections containing it stay open. It works with collapsible sections, and leaves the sections you've folded yourself as they were for when you turn it off.
 - With collapsible sections on, a button next to "Contents" folds every section at once, and unfolds them all again once everything you can see is folded.
+- Entries whose text is cut off show it in full in a tooltip when you hover over them, and the collapse arrows and the resize edge now have tooltips like the header buttons.
 
 ## 0.3.0
 

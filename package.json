@@ -124,6 +124,12 @@
           "markdownDescription": "Show an arrow before entries that have sections under them, to collapse and expand those sections in the table of contents. Collapsed sections stay collapsed while the preview is open.",
           "order": 6
         },
+        "markdownTocSidebar.autoCollapse": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Fold sections away as you read, so only the section you're in and the sections containing it stay open. Needs `#markdownTocSidebar.collapsible#`. The arrows still work until you move on to another section.",
+          "order": 7
+        },
         "markdownTocSidebar.scrollbar": {
           "type": "string",
           "enum": [
@@ -138,7 +144,7 @@
           ],
           "default": "visible",
           "markdownDescription": "How to show the table of contents' scrollbar when the list is too long to fit.",
-          "order": 7
+          "order": 8
         }
       }
     },
