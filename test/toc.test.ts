@@ -6,6 +6,7 @@ import { headingLinks } from '../src/preview/toc/headings.ts'
 import { focusTarget } from '../src/preview/toc/keyboard.ts'
 import { ancestorIndices, buildEntries, hasChildren, hiddenIndices } from '../src/preview/toc/outline.ts'
 import { thumbMetrics } from '../src/preview/toc/scrollbar.ts'
+import { tooltipPosition } from '../src/preview/toc/tooltip.ts'
 import type { BuildOptions } from '../src/types/preview.ts'
 
 function levels(...ls: number[]) {
@@ -341,5 +342,40 @@ describe('buildEntries', () => {
 				[false, false],
 			)
 		})
+	})
+})
+
+describe('tooltipPosition', () => {
+	const viewport = { width: 800, height: 600 }
+	const size = { width: 100, height: 20 }
+	const entry = { left: 600, right: 780, top: 300, bottom: 320 }
+
+	test('puts it below with the right edges lined up', () => {
+		const button = { left: 700, right: 724, top: 16, bottom: 40 }
+		assert.deepEqual(tooltipPosition({ anchor: button, size, viewport, placement: 'below', align: 'end' }), {
+			left: 624,
+			top: 46,
+		})
+	})
+	test('puts it above with the left edges lined up', () => {
+		assert.deepEqual(tooltipPosition({ anchor: entry, size, viewport, placement: 'above', align: 'start' }), {
+			left: 600,
+			top: 274,
+		})
+	})
+	test('keeps it inside the right edge of the window', () => {
+		const wide = { width: 300, height: 20 }
+		assert.deepEqual(tooltipPosition({ anchor: entry, size: wide, viewport, placement: 'above', align: 'start' }), {
+			left: 496,
+			top: 274,
+		})
+	})
+	test('flips it below when there is no room above', () => {
+		const top = { ...entry, top: 10, bottom: 30 }
+		assert.equal(tooltipPosition({ anchor: top, size, viewport, placement: 'above', align: 'start' }).top, 36)
+	})
+	test('flips it above when there is no room below', () => {
+		const bottom = { ...entry, top: 570, bottom: 590 }
+		assert.equal(tooltipPosition({ anchor: bottom, size, viewport, placement: 'below', align: 'start' }).top, 544)
 	})
 })

@@ -6,6 +6,7 @@ import { scrolling } from './scroll.ts'
 import { initRefresh, initSettings } from './settings-menu.ts'
 import { sidebar } from './sidebar.ts'
 import { readHidden, setSidebarHidden } from './toggle.ts'
+import { tooltip } from './tooltip.ts'
 
 /** The only code that does anything when the script loads; the other files only define functions and create instances that wait to be used. */
 function start(): void {
@@ -28,6 +29,7 @@ function start(): void {
 	initResizer()
 	initSettings()
 	initRefresh()
+	tooltip.init()
 	setSidebarHidden(readHidden())
 	sidebar.scheduleBuild()
 }
