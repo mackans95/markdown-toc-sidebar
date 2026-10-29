@@ -142,14 +142,21 @@ function createList(entries: Entry[], collapsible: boolean): HTMLUListElement {
 	return list
 }
 
-/** Pinned while the list scrolls: the "Contents" row next to the header buttons, and the document's title below it when topHeading is 'title'. */
-function createHeader(titleEntry: Entry | undefined): HTMLDivElement {
+/** Pinned while the list scrolls: the "Contents" row next to the header buttons, with Fold All when there are sections to fold, and the document's title below it when topHeading is 'title'. */
+function createHeader(titleEntry: Entry | undefined, canFold: boolean): HTMLDivElement {
 	const header = document.createElement('div')
 	header.className = 'md-toc-header'
-
 	const title = document.createElement('div')
 	title.className = 'md-toc-title'
-	title.textContent = 'Contents'
+	const text = document.createElement('span')
+	text.textContent = 'Contents'
+
+	title.appendChild(text)
+
+	if (canFold) {
+		title.appendChild(collapsedSections.createFoldAllButton())
+	}
+
 	header.appendChild(title)
 
 	if (titleEntry) {
@@ -206,14 +213,13 @@ class Sidebar {
 
 		const collapsible = readConfig('collapsible') === 'true'
 		const titleEntry = entries.find(entry => entry.isTitle)
-		const list = createList(
-			entries.filter(entry => !entry.isTitle),
-			collapsible,
-		)
+		const listEntries = entries.filter(entry => !entry.isTitle)
+		const list = createList(listEntries, collapsible)
+		const canFold = collapsible && listEntries.some((_, i) => hasChildren(listEntries, i))
 
 		nav.classList.toggle('md-toc-collapsible', collapsible)
 		nav.classList.toggle('md-toc-has-doc-title', !!titleEntry)
-		nav.replaceChildren(createHeader(titleEntry), list)
+		nav.replaceChildren(createHeader(titleEntry, canFold), list)
 		document.body.classList.add('md-toc-visible')
 		overlayScrollbar.attach(nav, list)
 

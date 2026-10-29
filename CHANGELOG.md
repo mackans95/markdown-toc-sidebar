@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Entries whose text is cut off show it in full in a tooltip when you hover over them, and the collapse arrows and the resize edge now have tooltips like the header buttons.
+- With collapsible sections on, a button next to "Contents" folds every section at once, and unfolds them all again once everything you can see is folded.
 
 ## 0.3.0
 

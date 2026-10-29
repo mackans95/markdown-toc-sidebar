@@ -109,3 +109,13 @@ export function hiddenIndices(entries: { id: string; level: number }[], collapse
 	})
 	return hidden
 }
+
+/**
+ * Whether there's nothing left to fold: every section you can see is collapsed. Sections inside
+ * collapsed ones are hidden, so they don't count. False when the list has no sections at all.
+ */
+export function allFolded(entries: { id: string; level: number }[], collapsedIds: Set<string>): boolean {
+	const hidden = hiddenIndices(entries, collapsedIds)
+	const sections = entries.filter((_, i) => !hidden.has(i) && hasChildren(entries, i))
+	return sections.length > 0 && sections.every(entry => collapsedIds.has(entry.id))
+}

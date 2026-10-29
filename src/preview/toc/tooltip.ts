@@ -49,7 +49,8 @@ function sideFor(
 
 	const anchor = target.getBoundingClientRect()
 
-	if (target.closest(`#${NAV_ID}`)) {
+	// Entries and their arrows; the Fold All button sits at the top with the header buttons.
+	if (target.closest(`#${NAV_ID}`) && !target.classList.contains('md-toc-fold-all')) {
 		return { anchor, placement: 'above', align: 'start' }
 	}
 
