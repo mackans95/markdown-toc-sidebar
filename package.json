@@ -2,7 +2,7 @@
   "name": "markdown-toc-sidebar",
   "displayName": "Markdown TOC Sidebar",
   "description": "Shows a table of contents sidebar inside the built-in Markdown preview.",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "publisher": "mackans95",
   "license": "MIT",
   "icon": "images/icon.png",
