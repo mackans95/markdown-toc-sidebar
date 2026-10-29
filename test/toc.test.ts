@@ -4,7 +4,7 @@ import { keepNewest } from '../src/preview/storage.ts'
 import { storeCollapsed } from '../src/preview/toc/collapse.ts'
 import { headingLinks } from '../src/preview/toc/headings.ts'
 import { focusTarget } from '../src/preview/toc/keyboard.ts'
-import { ancestorIndices, buildEntries, hasChildren, hiddenIndices } from '../src/preview/toc/outline.ts'
+import { allFolded, ancestorIndices, buildEntries, hasChildren, hiddenIndices } from '../src/preview/toc/outline.ts'
 import { thumbMetrics } from '../src/preview/toc/scrollbar.ts'
 import { tooltipPosition } from '../src/preview/toc/tooltip.ts'
 import type { BuildOptions } from '../src/types/preview.ts'
@@ -377,5 +377,35 @@ describe('tooltipPosition', () => {
 	test('flips it above when there is no room below', () => {
 		const bottom = { ...entry, top: 570, bottom: 590 }
 		assert.equal(tooltipPosition({ anchor: bottom, size, viewport, placement: 'below', align: 'start' }).top, 544)
+	})
+})
+
+describe('allFolded', () => {
+	// a h1
+	// b   h2
+	// c     h3
+	// d     h3
+	// e   h2
+	// f     h3
+	const outline = [1, 2, 3, 3, 2, 3].map((level, i) => ({ id: 'abcdef'[i], level }))
+	const folded = (...ids: string[]) => allFolded(outline, new Set(ids))
+
+	test('is false when nothing is folded', () => {
+		assert.equal(folded(), false)
+	})
+	test('is true when the top section is folded, whatever is inside it', () => {
+		assert.equal(folded('a'), true)
+	})
+	test('is true when every visible section is folded', () => {
+		assert.equal(folded('a', 'b', 'e'), true)
+	})
+	test('is false when an outer section is open around folded ones', () => {
+		assert.equal(folded('b', 'e'), false)
+	})
+	test('is false while a visible section is open', () => {
+		assert.equal(folded('b'), false)
+	})
+	test('is false without any sections', () => {
+		assert.equal(allFolded(outline.slice(2, 4), new Set()), false)
 	})
 })

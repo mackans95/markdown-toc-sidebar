@@ -436,6 +436,64 @@ body.md-toc-resizing {
 	color: color-mix(in srgb, var(--vscode-foreground) 80%, transparent);
 	white-space: nowrap;
 	user-select: none;
+	display: flex;
+	align-items: center;
+	min-height: 24px;
+}
+
+#md-toc-sidebar .md-toc-title > span {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* Fold All / Unfold All (markdownTocSidebar.collapsible), after "Contents" behind a thin line. A bit
+   smaller than the header buttons, so it reads as part of the title row. */
+#md-toc-sidebar .md-toc-fold-all {
+	position: relative;
+	display: flex;
+	flex: none;
+	align-items: center;
+	justify-content: center;
+	width: 20px;
+	height: 20px;
+	margin-left: 13px;
+	padding: 0;
+	border: none;
+	border-radius: 4px;
+	background: transparent;
+	color: var(--vscode-foreground);
+	opacity: 0.75;
+	cursor: pointer;
+	transition:
+		background-color 0.1s ease-out,
+		opacity 0.1s ease-out;
+}
+
+#md-toc-sidebar .md-toc-fold-all::before {
+	content: '';
+	position: absolute;
+	top: 4px;
+	bottom: 4px;
+	left: -7px;
+	width: 1px;
+	background: color-mix(in srgb, var(--vscode-foreground) 30%, transparent);
+	pointer-events: none;
+}
+
+#md-toc-sidebar .md-toc-fold-all:hover,
+#md-toc-sidebar .md-toc-fold-all:focus-visible {
+	background: var(--vscode-toolbar-hoverBackground, var(--vscode-list-hoverBackground));
+	opacity: 1;
+}
+
+#md-toc-sidebar .md-toc-fold-all:focus {
+	outline: none;
+}
+
+#md-toc-sidebar .md-toc-fold-all:focus-visible {
+	outline: 1px solid var(--vscode-focusBorder);
+	outline-offset: -1px;
 }
 
 /* The document's lone top heading (markdownTocSidebar.topHeading: title), below "Contents". Otherwise
@@ -457,6 +515,19 @@ body.md-toc-resizing {
 @container md-toc-sidebar (max-width: 144px) {
 	#md-toc-sidebar .md-toc-title {
 		color: transparent;
+	}
+}
+
+/* Too narrow for "Contents", the line and Fold All next to the header buttons: keep only the button.
+   The width is the sidebar's inside, without its padding and border. */
+@container md-toc-sidebar (max-width: 180px) {
+	#md-toc-sidebar .md-toc-title:has(.md-toc-fold-all) > span,
+	#md-toc-sidebar .md-toc-fold-all::before {
+		display: none;
+	}
+
+	#md-toc-sidebar .md-toc-fold-all {
+		margin-left: 0;
 	}
 }
 

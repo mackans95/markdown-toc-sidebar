@@ -2,8 +2,8 @@
 import { keepNewest, readStoredJson, writeStored } from '../storage.ts'
 import { activeHighlight } from './active.ts'
 import { NAV_ID } from './dom.ts'
-import { ICON_CHEVRON } from './icons.ts'
-import { hiddenIndices } from './outline.ts'
+import { ICON_CHEVRON, ICON_FOLD_ALL, ICON_UNFOLD_ALL } from './icons.ts'
+import { allFolded, hasChildren, hiddenIndices } from './outline.ts'
 import type { CollapsedStore } from '../../types/preview.ts'
 
 /**
@@ -16,6 +16,32 @@ function previewSource(): string | undefined {
 	} catch {
 		return undefined
 	}
+}
+
+/** The list's items, with the id and level of each entry. */
+function readList(nav: HTMLElement): { items: HTMLLIElement[]; entries: { id: string; level: number }[] } {
+	const items = Array.from(nav.querySelectorAll<HTMLLIElement>('ul > li'))
+	const entries = items.map(item => {
+		const link = item.querySelector('a')!
+		return { id: link.dataset.target!, level: Number(link.dataset.level) }
+	})
+	return { items, entries }
+}
+
+/** Show Unfold All once everything you can see is folded, and Fold All otherwise. */
+function updateFoldAllButton(nav: HTMLElement, folded: boolean): void {
+	const button = nav.querySelector<HTMLButtonElement>('.md-toc-fold-all')
+
+	if (!button) return
+
+	const label = folded ? 'Unfold All' : 'Fold All'
+	// Compare by name, like updateToggle: the browser re-serializes innerHTML, so comparing markup never matches.
+	if (button.dataset.icon !== label) {
+		button.dataset.icon = label
+		button.innerHTML = folded ? ICON_UNFOLD_ALL : ICON_FOLD_ALL
+	}
+	button.setAttribute('aria-label', label)
+	button.dataset.tooltip = label
 }
 
 /**
@@ -62,18 +88,24 @@ class CollapsedSections {
 		return spacer
 	}
 
+	/** The button next to "Contents" that folds every section, or unfolds them all once they are. apply() gives it its icon and label. */
+	createFoldAllButton(): HTMLButtonElement {
+		const button = document.createElement('button')
+		button.type = 'button'
+		button.className = 'md-toc-fold-all'
+		button.addEventListener('click', () => this.toggleAll())
+		return button
+	}
+
 	/** Hides the entries inside collapsed sections and updates the chevrons to match. */
 	apply(): void {
 		// Only called once the list is built.
 		const nav = document.getElementById(NAV_ID)!
-		const items = Array.from(nav.querySelectorAll<HTMLLIElement>('ul > li'))
-		const entries = items.map(item => {
-			const link = item.querySelector('a')!
-			return { id: link.dataset.target!, level: Number(link.dataset.level) }
-		})
+		const { items, entries } = readList(nav)
 		const hidden = nav.classList.contains('md-toc-collapsible')
 			? hiddenIndices(entries, this.ids)
 			: new Set<number>()
+
 		items.forEach((item, i) => {
 			item.hidden = hidden.has(i)
 			const chevron = item.querySelector<HTMLButtonElement>('.md-toc-chevron')
@@ -84,6 +116,8 @@ class CollapsedSections {
 				chevron.dataset.tooltip = collapsed ? 'Expand section' : 'Collapse section'
 			}
 		})
+
+		updateFoldAllButton(nav, allFolded(entries, this.ids))
 	}
 
 	/** Collapses or expands a section, saves that, and updates the list and the highlight. */
@@ -93,6 +127,20 @@ class CollapsedSections {
 		} else {
 			this.ids.add(id)
 		}
+		this.changed()
+	}
+
+	/** Folds every section, at every level like VS Code's Collapse All, or unfolds them all when there's nothing left to fold. */
+	private toggleAll(): void {
+		const { entries } = readList(document.getElementById(NAV_ID)!)
+		const sections = entries.filter((_, i) => hasChildren(entries, i)).map(entry => entry.id)
+
+		this.ids = allFolded(entries, this.ids) ? new Set() : new Set(sections)
+		this.changed()
+	}
+
+	/** Saves the collapsed sections, and updates the list and the highlight to match. */
+	private changed(): void {
 		this.save()
 		this.apply()
 		// The active entry may have been hidden or shown: pick it again.
