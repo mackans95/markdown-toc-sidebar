@@ -1,0 +1,24 @@
+name: Publish
+on:
+  release:
+    types: [published]
+permissions:
+  contents: read
+  # Lets vsce swap a GitHub OIDC token for a short-lived Marketplace credential (Trusted Publishing), so no PAT secret is needed.
+  id-token: write
+jobs:
+  marketplace:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+      - name: Download the .vsix from the release
+        # Publishes the exact file the release workflow attached instead of building it again.
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern '*.vsix'
+      - name: Publish to the VS Code Marketplace
+        run: npx --yes @vscode/vsce@^4.0.2 publish --oidc --packagePath ./*.vsix

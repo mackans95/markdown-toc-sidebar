@@ -143,7 +143,8 @@ The tests run in Node straight from TypeScript and cover the parts of `src/previ
 
 1. Bump `version` in `package.json` and move the changelog's *Unreleased* notes under the new version.
 2. Push a tag for it, like `v0.3.0`. The release workflow packages the extension and attaches the `.vsix` to the GitHub release, creating a draft release if there isn't one yet.
-3. Publish the `.vsix` from the release to the [VS Code Marketplace](https://marketplace.visualstudio.com/manage/publishers/mackans95) and to Open VSX with `npx ovsx publish markdown-toc-sidebar-0.3.0.vsix -p <token>`.
+3. Write the notes and publish the GitHub release. The publish workflow then uploads its `.vsix` to the [VS Code Marketplace](https://marketplace.visualstudio.com/manage/publishers/mackans95) through Trusted Publishing, so it needs no token. If that fails, upload the `.vsix` on the publisher page instead.
+4. Publish the `.vsix` to Open VSX with `npx ovsx publish markdown-toc-sidebar-0.3.0.vsix -p <token>`.
 
 ## License
 
