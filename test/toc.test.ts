@@ -5,6 +5,7 @@ import { storeCollapsed } from '../src/preview/toc/collapse.ts'
 import { headingLinks } from '../src/preview/toc/headings.ts'
 import { focusTarget } from '../src/preview/toc/keyboard.ts'
 import { ancestorIndices, buildEntries, hasChildren, hiddenIndices } from '../src/preview/toc/outline.ts'
+import { thumbMetrics } from '../src/preview/toc/scrollbar.ts'
 import type { BuildOptions } from '../src/types/preview.ts'
 
 function levels(...ls: number[]) {
@@ -213,6 +214,23 @@ describe('keepNewest', () => {
 		const record = { a: { time: 1 }, b: { time: 2 } }
 		keepNewest(record, 1)
 		assert.deepEqual(record, { a: { time: 1 }, b: { time: 2 } })
+	})
+})
+
+describe('thumbMetrics', () => {
+	test('sizes the thumb by how much of the list is visible', () => {
+		assert.deepEqual(thumbMetrics(200, 800, 0), { height: 50, top: 0 })
+	})
+	test('moves the thumb from the top to the bottom of the track as the list scrolls', () => {
+		assert.equal(thumbMetrics(200, 800, 300).top, 75)
+		assert.equal(thumbMetrics(200, 800, 600).top, 150)
+	})
+	test('keeps the thumb of a long list easy to grab', () => {
+		assert.equal(thumbMetrics(200, 100000, 0).height, 20)
+		assert.equal(thumbMetrics(200, 100000, 99800).top, 180)
+	})
+	test('fills the track when everything is visible', () => {
+		assert.deepEqual(thumbMetrics(200, 200, 0), { height: 200, top: 0 })
 	})
 })
 

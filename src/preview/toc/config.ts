@@ -11,6 +11,7 @@ const FALLBACKS: PreviewConfig = {
 	topHeading: 'list',
 	numbering: 'false',
 	collapsible: 'false',
+	scrollbar: 'visible',
 }
 
 /** Current value of a setting, or the fallback when the config element isn't there (yet). */

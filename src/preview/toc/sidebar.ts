@@ -8,6 +8,7 @@ import { assignRawHeadingIds, setDocumentHeadingMenuContexts, setHeadingMenuCont
 import { onNavKeydown, setTabStop } from './keyboard.ts'
 import { buildEntries, hasChildren } from './outline.ts'
 import { updateResizerValue } from './resizer.ts'
+import { overlayScrollbar } from './scrollbar.ts'
 import { updateSettingsMenu } from './settings-menu.ts'
 import { updateToggle } from './toggle.ts'
 import type { Entry } from '../../types/preview.ts'
@@ -56,13 +57,16 @@ function getNav(): HTMLElement {
 	return nav
 }
 
-/** Applies the settings from the config element: sidebar side, toggle icon and the menu's links. */
+/** Applies the settings from the config element: sidebar side, scrollbar, toggle icon and the menu's links. */
 function applyConfig(): void {
 	const config = document.getElementById(CONFIG_ELEMENT_ID)
+	const scrollbar = readConfig('scrollbar')
 
 	// Without the config element (src/extension.ts not active), settings can't be changed from here.
 	document.body.classList.toggle('md-toc-configurable', !!(config && config.dataset.uriBase))
 	document.body.classList.toggle('md-toc-left', sidebarPosition() === 'left')
+	document.body.classList.toggle('md-toc-scrollbar-hover', scrollbar === 'hover')
+	document.body.classList.toggle('md-toc-scrollbar-hidden', scrollbar === 'hidden')
 
 	updateToggle()
 	updateSettingsMenu()
@@ -211,6 +215,7 @@ class Sidebar {
 		nav.classList.toggle('md-toc-has-doc-title', !!titleEntry)
 		nav.replaceChildren(createHeader(titleEntry), list)
 		document.body.classList.add('md-toc-visible')
+		overlayScrollbar.attach(nav, list)
 
 		collapsedSections.load()
 		collapsedSections.apply()
