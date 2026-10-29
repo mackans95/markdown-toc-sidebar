@@ -63,7 +63,7 @@ function createResizer(): HTMLDivElement {
 	resizer.setAttribute('aria-controls', NAV_ID)
 	resizer.setAttribute('aria-label', 'Resize table of contents')
 	resizer.setAttribute('aria-valuemin', String(MIN_WIDTH))
-	resizer.title = 'Drag to resize, double-click to reset'
+	resizer.dataset.tooltip = 'Drag to resize, double-click to reset'
 
 	keepDoubleClickInside(resizer)
 

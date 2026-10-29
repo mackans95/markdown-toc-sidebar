@@ -61,6 +61,7 @@ export function updateToggle(): void {
 		toggle.dataset.icon = icon
 		toggle.innerHTML = icon === 'show' ? ICON_SHOW : icon === 'hide-left' ? ICON_HIDE_LEFT : ICON_HIDE_RIGHT
 	}
+	toggle.dataset.tooltip = label
 	toggle.setAttribute('aria-label', label)
 	toggle.setAttribute('aria-expanded', String(!hidden))
 }

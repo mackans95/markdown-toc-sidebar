@@ -125,6 +125,7 @@ function createSettingsButton(): HTMLButtonElement {
 	button.type = 'button'
 	button.innerHTML = ICON_SETTINGS
 
+	button.dataset.tooltip = 'Table of contents settings'
 	button.setAttribute('aria-label', 'Table of contents settings')
 	button.setAttribute('aria-haspopup', 'menu')
 	button.setAttribute('aria-controls', SETTINGS_MENU_ID)
@@ -147,6 +148,7 @@ function createMenuHeader(button: HTMLButtonElement): HTMLDivElement {
 	closeBtn.type = 'button'
 	closeBtn.className = 'md-toc-menu-close'
 	closeBtn.innerHTML = ICON_CLOSE
+	closeBtn.dataset.tooltip = 'Close settings'
 	closeBtn.setAttribute('aria-label', 'Close settings')
 	closeBtn.addEventListener('click', () => {
 		closeSettingsMenu()
@@ -302,6 +304,7 @@ export function initRefresh(): void {
 	const button = document.createElement('a')
 	button.id = REFRESH_BUTTON_ID
 	button.setAttribute('role', 'button')
+	button.dataset.tooltip = 'Refresh preview'
 	button.innerHTML = ICON_REFRESH
 	button.setAttribute('aria-label', 'Refresh preview')
 	keepDoubleClickInside(button)

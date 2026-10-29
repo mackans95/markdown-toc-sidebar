@@ -79,7 +79,7 @@ function createLink(entry: Entry): HTMLAnchorElement {
 	link.textContent = entry.text
 	link.dataset.target = entry.id
 	link.dataset.level = String(entry.level)
-	link.title = entry.text
+	link.dataset.tooltip = entry.text
 
 	// activeHighlight.highlight makes one entry the tab stop; the arrow keys move between them.
 	link.tabIndex = -1

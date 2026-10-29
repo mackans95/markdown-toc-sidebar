@@ -128,29 +128,26 @@ body.md-toc-visible.md-toc-configurable:not(.md-toc-collapsed) #md-toc-refresh-b
 	outline-offset: -1px;
 }
 
-/* Tooltips: the webview doesn't show the native ones for title, so the buttons show their
-   aria-label below them on hover, after the same short delay as VS Code's own hovers. Not on keyboard
-   focus: the focused button's tooltip would stay up next to the one under the pointer. They open
-   towards the middle of the preview, so they stay inside it. */
-#md-toc-toggle::after,
-#md-toc-settings-button::after,
-#md-toc-refresh-button::after,
-#md-toc-settings-menu .md-toc-menu-close::after {
-	content: attr(aria-label);
-	position: absolute;
-	top: calc(100% + 6px);
-	right: 0;
-	z-index: 1;
+/* Tooltips (tooltip.ts): the webview doesn't show the native ones for title. They look like VS Code's
+   own hovers, and fade in once tooltip.ts has placed them. Long entries wrap instead of running off
+   the window. */
+#md-toc-tooltip {
+	position: fixed;
+	top: 0;
+	left: 0;
+	z-index: 20;
+	box-sizing: border-box;
+	max-width: min(400px, calc(100vw - 8px));
 	padding: 2px 8px;
 	border: 1px solid var(--vscode-editorHoverWidget-border, var(--vscode-widget-border, rgba(128, 128, 128, 0.35)));
 	border-radius: 3px;
 	background: var(--vscode-editorHoverWidget-background, var(--vscode-editorWidget-background));
 	color: var(--vscode-editorHoverWidget-foreground, var(--vscode-foreground));
 	box-shadow: 0 2px 8px var(--vscode-widget-shadow, rgba(0, 0, 0, 0.36));
+	font-family: var(--vscode-font-family);
 	font-size: 12px;
-	font-weight: normal;
 	line-height: 18px;
-	white-space: nowrap;
+	overflow-wrap: anywhere;
 	pointer-events: none;
 	opacity: 0;
 	visibility: hidden;
@@ -159,27 +156,10 @@ body.md-toc-visible.md-toc-configurable:not(.md-toc-collapsed) #md-toc-refresh-b
 		visibility 0s linear 0.1s;
 }
 
-#md-toc-toggle:hover::after,
-#md-toc-settings-button:hover::after,
-#md-toc-refresh-button:hover::after,
-#md-toc-settings-menu .md-toc-menu-close:hover::after {
+#md-toc-tooltip.md-toc-tooltip-visible {
 	opacity: 1;
 	visibility: visible;
-	transition:
-		opacity 0.1s ease-out 0.5s,
-		visibility 0s linear 0.5s;
-}
-
-/* The open menu is answer enough to what the cog does. */
-#md-toc-settings-button[aria-expanded='true']::after {
-	display: none;
-}
-
-body.md-toc-left #md-toc-toggle::after,
-body.md-toc-left #md-toc-settings-button::after,
-body.md-toc-left #md-toc-refresh-button::after {
-	right: auto;
-	left: 0;
+	transition: opacity 0.1s ease-out;
 }
 
 /* The cog makes a quarter turn while the menu is open; its teeth line up again afterwards. */
@@ -294,8 +274,6 @@ body.md-toc-visible.md-toc-collapsed {
 }
 
 #md-toc-settings-menu .md-toc-menu-close {
-	/* Holds its tooltip. */
-	position: relative;
 	display: flex;
 	align-items: center;
 	justify-content: center;

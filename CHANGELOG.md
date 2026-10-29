@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Entries whose text is cut off show it in full in a tooltip when you hover over them, and the collapse arrows and the resize edge now have tooltips like the header buttons.
+
 ## 0.3.0
 
 - `markdownTocSidebar.scrollbar` setting, also in the cog menu, to show the list's scrollbar only on top of the entries while the pointer is over the sidebar, so it takes no space, or not at all ([#7](https://github.com/mackans95/markdown-toc-sidebar/issues/7)).

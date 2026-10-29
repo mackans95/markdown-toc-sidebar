@@ -81,7 +81,7 @@ class CollapsedSections {
 				const collapsed = this.ids.has(entries[i].id)
 				chevron.setAttribute('aria-expanded', String(!collapsed))
 				chevron.setAttribute('aria-label', (collapsed ? 'Expand ' : 'Collapse ') + chevron.dataset.text)
-				chevron.title = collapsed ? 'Expand section' : 'Collapse section'
+				chevron.dataset.tooltip = collapsed ? 'Expand section' : 'Collapse section'
 			}
 		})
 	}

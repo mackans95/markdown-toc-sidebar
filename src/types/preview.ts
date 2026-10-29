@@ -52,3 +52,23 @@ export interface PreviewConfig {
 	collapsible: 'true' | 'false'
 	scrollbar: 'visible' | 'hover' | 'hidden'
 }
+
+/** The edges of a box on screen, in viewport pixels; a DOMRect has them too. */
+export interface Box {
+	left: number
+	right: number
+	top: number
+	bottom: number
+}
+
+/** What tooltipPosition needs to place a tooltip. */
+export interface TooltipPositionParams {
+	/** The element the tooltip belongs to, or the pointer as a zero-size box. */
+	anchor: Box
+	size: { width: number; height: number }
+	viewport: { width: number; height: number }
+	/** Which side of the anchor it goes on; flipped when there's no room there. */
+	placement: 'above' | 'below'
+	/** 'start' lines up the left edges, 'end' the right edges. */
+	align: 'start' | 'end'
+}
