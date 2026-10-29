@@ -1,0 +1,8 @@
+{
+  // The build and release scripts, which Node runs straight from TypeScript.
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node"]
+  },
+  "include": ["."]
+}

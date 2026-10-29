@@ -141,10 +141,14 @@ The tests run in Node straight from TypeScript and cover the parts of `src/previ
 
 ### Releasing
 
-1. Bump `version` in `package.json` and move the changelog's *Unreleased* notes under the new version.
-2. Push a tag for it, like `v0.3.0`. The release workflow packages the extension and attaches the `.vsix` to the GitHub release, creating a draft release if there isn't one yet.
-3. Write the notes and publish the GitHub release. The publish workflow then uploads its `.vsix` to the [VS Code Marketplace](https://marketplace.visualstudio.com/manage/publishers/mackans95) through Trusted Publishing, so it needs no token. If that fails, upload the `.vsix` on the publisher page instead.
-4. Publish the `.vsix` to Open VSX with `npx ovsx publish markdown-toc-sidebar-0.3.0.vsix -p <token>`.
+Write what changed under `## Unreleased` in `CHANGELOG.md`, then run `npm run release -- minor` (or `patch`, `major` or an exact version) on an up-to-date `main`. It needs the GitHub CLI signed in as `mackans95`. The script:
+
+1. Bumps `version` in `package.json` and `package-lock.json`, renames the *Unreleased* section to the new version, runs all the checks and commits *Release x.y.z* on `main`.
+2. Tags the commit and, once you confirm, pushes `main` and the tag together. The release workflow then packages the extension and attaches the `.vsix` to a draft GitHub release.
+3. Writes the release notes from the changelog and, once you confirm, publishes the release. That starts the publish workflow, which uploads the same `.vsix` to the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=mackans95.markdown-toc-sidebar) and [Open VSX](https://open-vsx.org/extension/mackans95/markdown-toc-sidebar) through Trusted Publishing, so no tokens are stored anywhere.
+4. Follows the publish workflow, and offers to re-run it if it fails.
+
+Every step skips itself once it's done, so if something fails, fix it and run `npm run release` again, without an argument, to carry on.
 
 ## License
 

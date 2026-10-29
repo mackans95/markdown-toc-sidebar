@@ -1,11 +1,10 @@
-// Builds src/ into dist/ with esbuild. `node scripts/build.mjs --watch` rebuilds on every change.
+// Builds src/ into dist/ with esbuild. `node scripts/build.ts --watch` rebuilds on every change.
 // Type checking is separate (npm run typecheck): esbuild only strips the types.
 import * as esbuild from 'esbuild'
 
 const watch = process.argv.includes('--watch')
 
-/** @type {esbuild.BuildOptions} */
-const extension = {
+const extension: esbuild.BuildOptions = {
 	entryPoints: ['src/extension.ts'],
 	outfile: 'dist/extension.js',
 	bundle: true,
@@ -23,8 +22,7 @@ const extension = {
 
 // The scripts package.json adds to the Markdown preview. The preview loads each as a plain
 // <script>, which can't import anything, so each one becomes a single self-contained file.
-/** @type {esbuild.BuildOptions} */
-const preview = {
+const preview: esbuild.BuildOptions = {
 	entryPoints: {
 		'smooth-scroll-sync': 'src/preview/smooth-scroll-sync.ts',
 		toc: 'src/preview/toc/index.ts',
@@ -43,8 +41,7 @@ const preview = {
 // tasks.json waits for these lines before starting a debug session. With several builds running
 // at once, only the first start and the last finish are logged.
 let running = 0
-/** @type {esbuild.Plugin} */
-const watchLog = {
+const watchLog: esbuild.Plugin = {
 	name: 'watch-log',
 	setup(build) {
 		build.onStart(() => {
