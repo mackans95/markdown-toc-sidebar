@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.3.0
 
 - `markdownTocSidebar.scrollbar` setting, also in the cog menu, to show the list's scrollbar only on top of the entries while the pointer is over the sidebar, so it takes no space, or not at all ([#7](https://github.com/mackans95/markdown-toc-sidebar/issues/7)).
 - A preview whose tab comes back from the background now shows the edits you made before it went there, instead of how it was last fully rendered.
