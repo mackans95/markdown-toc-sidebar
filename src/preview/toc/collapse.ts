@@ -2,7 +2,7 @@
 import { keepNewest, readStoredJson, writeStored } from '../storage.ts'
 import { activeHighlight } from './active.ts'
 import { readConfig } from './config.ts'
-import { NAV_ID } from './dom.ts'
+import { FOLD_ALL_ID, keepDoubleClickInside, NAV_ID } from './dom.ts'
 import { ICON_CHEVRON, ICON_FOLD_ALL, ICON_UNFOLD_ALL } from './icons.ts'
 import { allFolded, followCollapsedIds, hasChildren, hiddenIndices } from './outline.ts'
 import type { CollapsedStore } from '../../types/preview.ts'
@@ -35,8 +35,8 @@ function isFollowing(): boolean {
 }
 
 /** Show Unfold All once everything you can see is folded, and Fold All otherwise. */
-function updateFoldAllButton(nav: HTMLElement, folded: boolean): void {
-	const button = nav.querySelector<HTMLButtonElement>('.md-toc-fold-all')
+function updateFoldAllButton(folded: boolean): void {
+	const button = document.getElementById(FOLD_ALL_ID)
 
 	if (!button) return
 
@@ -108,13 +108,17 @@ class CollapsedSections {
 		return spacer
 	}
 
-	/** The button next to "Contents" that folds every section, or unfolds them all once they are. apply() gives it its icon and label. */
-	createFoldAllButton(): HTMLButtonElement {
+	/**
+	 * Adds Fold All to the header buttons. Like them it sits outside the sidebar, so a rebuild leaves it
+	 * alone; the md-toc-can-fold class on <body> shows it, and apply() gives it its icon and label.
+	 */
+	initFoldAll(): void {
 		const button = document.createElement('button')
+		button.id = FOLD_ALL_ID
 		button.type = 'button'
-		button.className = 'md-toc-fold-all'
+		keepDoubleClickInside(button)
 		button.addEventListener('click', () => this.toggleAll())
-		return button
+		document.body.appendChild(button)
 	}
 
 	/** In follow mode, folds the list around the entry the highlight picked, unless it already is. */
@@ -149,7 +153,7 @@ class CollapsedSections {
 			}
 		})
 
-		updateFoldAllButton(nav, allFolded(entries, ids))
+		updateFoldAllButton(allFolded(entries, ids))
 	}
 
 	/** The collapsed sections the list shows: follow mode's own, or the saved ones. */

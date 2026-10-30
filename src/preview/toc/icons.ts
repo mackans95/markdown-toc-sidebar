@@ -15,6 +15,6 @@ export const ICON_REFRESH =
 export const ICON_CHEVRON =
 	'<svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>'
 export const ICON_FOLD_ALL =
-	'<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M5.5 2.5h7a1 1 0 0 1 1 1v7" fill="none" stroke="currentColor" stroke-width="1.2"/><rect x="2.5" y="5.5" width="8" height="8" rx="1" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M4.5 9.5h4" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>'
+	'<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M5.5 2.5h7a1 1 0 0 1 1 1v7" fill="none" stroke="currentColor" stroke-width="1.2"/><rect x="2.5" y="5.5" width="8" height="8" rx="1" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M4.5 9.5h4" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>'
 export const ICON_UNFOLD_ALL =
-	'<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M5.5 2.5h7a1 1 0 0 1 1 1v7" fill="none" stroke="currentColor" stroke-width="1.2"/><rect x="2.5" y="5.5" width="8" height="8" rx="1" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M4.5 9.5h4M6.5 7.5v4" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>'
+	'<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M5.5 2.5h7a1 1 0 0 1 1 1v7" fill="none" stroke="currentColor" stroke-width="1.2"/><rect x="2.5" y="5.5" width="8" height="8" rx="1" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M4.5 9.5h4M6.5 7.5v4" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>'
