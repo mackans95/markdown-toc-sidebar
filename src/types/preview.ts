@@ -54,6 +54,9 @@ export interface PreviewConfig {
 	collapsible: 'true' | 'false'
 	autoCollapse: 'true' | 'false'
 	scrollbar: 'visible' | 'hover' | 'hidden'
+	indentGuides: 'auto' | 'onHover' | 'always' | 'none'
+	/** VS Code's workbench.tree.renderIndentGuides, which indentGuides 'auto' follows; not a setting of ours. */
+	treeIndentGuides: 'onHover' | 'always' | 'none'
 }
 
 /** The edges of a box on screen, in viewport pixels; a DOMRect has them too. */

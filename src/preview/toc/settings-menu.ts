@@ -79,6 +79,16 @@ const SETTING_GROUPS: SettingGroup[] = [
 			['hidden', 'Hidden'],
 		],
 	},
+	{
+		key: 'indentGuides',
+		label: 'Indent guides',
+		options: [
+			['auto', 'Auto'],
+			['onHover', 'On hover'],
+			['always', 'Always'],
+			['none', 'Off'],
+		],
+	},
 ]
 
 // Other open previews share this page's storage, so a key written here reaches them as a

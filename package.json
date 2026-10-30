@@ -145,6 +145,24 @@
           "default": "visible",
           "markdownDescription": "How to show the table of contents' scrollbar when the list is too long to fit.",
           "order": 8
+        },
+        "markdownTocSidebar.indentGuides": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "onHover",
+            "always",
+            "none"
+          ],
+          "enumDescriptions": [
+            "Follow VS Code's own indent guides setting, like the Explorer.",
+            "Show the guides while the pointer is over the sidebar.",
+            "Always show the guides.",
+            "Never show the guides."
+          ],
+          "default": "auto",
+          "markdownDescription": "Vertical lines in the table of contents that show which entries belong to which section. `auto` follows `#workbench.tree.renderIndentGuides#`.",
+          "order": 9
         }
       }
     },

@@ -2,7 +2,7 @@
 import { CONFIG_ELEMENT_ID } from '../../shared/constants.ts'
 import { activeHighlight } from './active.ts'
 import { collapsedSections } from './collapse.ts'
-import { readConfig, sidebarPosition } from './config.ts'
+import { indentGuides, readConfig, sidebarPosition } from './config.ts'
 import { HEADING_SELECTOR, keepDoubleClickInside, NAV_ID } from './dom.ts'
 import { assignRawHeadingIds, setDocumentHeadingMenuContexts, setHeadingMenuContext } from './headings.ts'
 import { onNavKeydown, setTabStop } from './keyboard.ts'
@@ -57,16 +57,19 @@ function getNav(): HTMLElement {
 	return nav
 }
 
-/** Applies the settings from the config element: sidebar side, scrollbar, toggle icon and the menu's links. */
+/** Applies the settings from the config element: sidebar side, scrollbar, indent guides, toggle icon and the menu's links. */
 function applyConfig(): void {
 	const config = document.getElementById(CONFIG_ELEMENT_ID)
 	const scrollbar = readConfig('scrollbar')
+	const guides = indentGuides()
 
 	// Without the config element (src/extension.ts not active), settings can't be changed from here.
 	document.body.classList.toggle('md-toc-configurable', !!(config && config.dataset.uriBase))
 	document.body.classList.toggle('md-toc-left', sidebarPosition() === 'left')
 	document.body.classList.toggle('md-toc-scrollbar-hover', scrollbar === 'hover')
 	document.body.classList.toggle('md-toc-scrollbar-hidden', scrollbar === 'hidden')
+	document.body.classList.toggle('md-toc-guides-hover', guides === 'onHover')
+	document.body.classList.toggle('md-toc-guides-always', guides === 'always')
 
 	updateToggle()
 	updateSettingsMenu()
