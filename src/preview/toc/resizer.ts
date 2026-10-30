@@ -35,7 +35,7 @@ function clampWidth(width: number): number {
 }
 
 /**
- * A user-chosen width overrides the responsive default from toc.css; undefined restores it.
+ * A user-chosen width overrides the responsive default from styles/variables.css; undefined restores it.
  * The stored value is kept unclamped so a narrow window doesn't permanently shrink it.
  */
 function applyWidth(width: number | undefined): void {
@@ -99,7 +99,7 @@ function endDrag(e: PointerEvent, resizer: HTMLElement): void {
 	writeWidth(dragWidth)
 }
 
-/** Goes back to the default width from toc.css. */
+/** Goes back to the default width from styles/variables.css. */
 function resetWidth(): void {
 	writeWidth(undefined)
 	applyWidth(undefined)

@@ -1,0 +1,66 @@
+/* Collapsible sections (markdownTocSidebar.collapsible): an arrow, or a same-width gap, before each
+   entry's link. */
+#md-toc-sidebar.md-toc-collapsible li {
+	display: flex;
+	align-items: center;
+}
+
+/* The flex layout above would otherwise show entries hidden by a collapsed section. */
+#md-toc-sidebar li[hidden] {
+	display: none;
+}
+
+#md-toc-sidebar.md-toc-collapsible li > a {
+	flex: 1;
+	min-width: 0;
+}
+
+#md-toc-sidebar .md-toc-chevron,
+#md-toc-sidebar .md-toc-chevron-spacer {
+	flex: none;
+	width: 16px;
+	height: 16px;
+}
+
+#md-toc-sidebar .md-toc-chevron {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0;
+	border: none;
+	border-radius: 3px;
+	background: transparent;
+	color: var(--vscode-foreground);
+	opacity: 0.7;
+	cursor: pointer;
+}
+
+#md-toc-sidebar .md-toc-chevron:hover {
+	background: var(--vscode-toolbar-hoverBackground, var(--vscode-list-hoverBackground));
+	opacity: 1;
+}
+
+#md-toc-sidebar .md-toc-chevron:focus {
+	outline: none;
+}
+
+#md-toc-sidebar .md-toc-chevron:focus-visible {
+	outline: 1px solid var(--vscode-focusBorder);
+	outline-offset: -1px;
+}
+
+/* Collapsed: the arrow points at the entry instead of down at its sections, and turns between the two. */
+#md-toc-sidebar .md-toc-chevron svg {
+	transition: transform 0.15s ease-out;
+}
+
+#md-toc-sidebar .md-toc-chevron[aria-expanded='false'] svg {
+	transform: rotate(-90deg);
+}
+
+/* Reduced motion: nothing moves or turns. Fades stay. */
+@media (prefers-reduced-motion: reduce) {
+	#md-toc-sidebar .md-toc-chevron svg {
+		transition: none;
+	}
+}

@@ -1,6 +1,6 @@
 // The list's scrollbar for markdownTocSidebar.scrollbar 'hover'. The list's own scrollbar takes space
 // beside the entries; this one is drawn on top of them instead and only shows while the pointer is over
-// the sidebar, so it takes no space and nothing shifts when it appears. toc.css hides the list's own.
+// the sidebar, so it takes no space and nothing shifts when it appears. styles/scrollbar.css hides the list's own.
 import { readConfig } from './config.ts'
 
 // The thumb never gets shorter than this, so it stays easy to grab in a long list.

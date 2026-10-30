@@ -1,0 +1,33 @@
+/* Tooltips (tooltip.ts): the webview doesn't show the native ones for title. They look like VS Code's
+   own hovers, and fade in once tooltip.ts has placed them. Long entries wrap instead of running off
+   the window. */
+#md-toc-tooltip {
+	position: fixed;
+	top: 0;
+	left: 0;
+	z-index: 20;
+	box-sizing: border-box;
+	max-width: min(400px, calc(100vw - 8px));
+	padding: 2px 8px;
+	border: 1px solid var(--vscode-editorHoverWidget-border, var(--vscode-widget-border, rgba(128, 128, 128, 0.35)));
+	border-radius: 3px;
+	background: var(--vscode-editorHoverWidget-background, var(--vscode-editorWidget-background));
+	color: var(--vscode-editorHoverWidget-foreground, var(--vscode-foreground));
+	box-shadow: 0 2px 8px var(--vscode-widget-shadow, rgba(0, 0, 0, 0.36));
+	font-family: var(--vscode-font-family);
+	font-size: 12px;
+	line-height: 18px;
+	overflow-wrap: anywhere;
+	pointer-events: none;
+	opacity: 0;
+	visibility: hidden;
+	transition:
+		opacity 0.1s ease-out,
+		visibility 0s linear 0.1s;
+}
+
+#md-toc-tooltip.md-toc-tooltip-visible {
+	opacity: 1;
+	visibility: visible;
+	transition: opacity 0.1s ease-out;
+}

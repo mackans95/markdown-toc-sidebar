@@ -15,7 +15,7 @@ import type { Entry } from '../../types/preview.ts'
 
 /**
  * Scrolling over the sidebar never moves the document behind it. Over a list long enough to scroll,
- * the browser scrolls the list, and toc.css stops it at the ends. Anywhere else in the sidebar, the
+ * the browser scrolls the list, and styles/list.css stops it at the ends. Anywhere else in the sidebar, the
  * wheel does nothing. Ctrl+wheel (zooming) is left alone.
  */
 function keepWheelInList(e: WheelEvent, nav: HTMLElement): void {
