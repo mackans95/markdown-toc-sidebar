@@ -1,0 +1,9 @@
+/* Sizes and colors the other files share. */
+
+:root {
+	/* Scales with the preview width so it still fits in a split pane. */
+	--md-toc-width: clamp(140px, 30vw, 260px);
+	/* Space left above a heading after jumping to it. */
+	--md-toc-scroll-margin: 16px;
+	--md-toc-flash-color: color-mix(in srgb, var(--vscode-textLink-foreground) 25%, transparent);
+}

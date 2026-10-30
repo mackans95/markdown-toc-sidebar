@@ -1,0 +1,79 @@
+/* The list of entries (sidebar.ts): its scrolling, the indent, and how an entry looks when it's
+   hovered, focused, current, or contains the current one. */
+
+#md-toc-sidebar ul {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+/* The list scrolls on its own, below the header (see sidebar.css). At its ends the scrolling stops
+   there instead of moving on to the document; sidebar.ts also keeps the wheel off the document
+   when the list doesn't scroll. */
+#md-toc-sidebar > ul {
+	flex: 1;
+	min-height: 0;
+	overflow-y: auto;
+	overscroll-behavior: contain;
+	/* The webview sets scrollbar-color on the whole page, which draws a plain native scrollbar.
+	   Resetting it here lets the ::-webkit-scrollbar rules in scrollbar.css round the track like the slider. */
+	scrollbar-color: auto;
+}
+
+/* Indented by depth. Positioned for the indent guides in indent-guides.css. */
+#md-toc-sidebar li {
+	position: relative;
+	margin: 0;
+	padding-left: calc(var(--md-toc-depth, 0) * 12px);
+}
+
+#md-toc-sidebar a {
+	display: block;
+	padding: 2px 6px;
+	border-left: 2px solid transparent;
+	border-radius: 2px;
+	color: var(--vscode-foreground);
+	text-decoration: none;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	opacity: 0.85;
+}
+
+/* Outline number before the text (markdownTocSidebar.numbering), quieter than the text itself. */
+#md-toc-sidebar .md-toc-number {
+	margin-right: 0.4em;
+	opacity: 0.7;
+	font-variant-numeric: tabular-nums;
+}
+
+/* The preview's own stylesheet outlines every focused link, which made clicked entries look boxed in.
+   Keep a focus ring for keyboard navigation only, in the theme's focus color. */
+#md-toc-sidebar a:focus {
+	outline: none;
+}
+
+#md-toc-sidebar a:focus-visible {
+	outline: 1px solid var(--vscode-focusBorder);
+	outline-offset: -1px;
+}
+
+#md-toc-sidebar a:hover {
+	background: var(--vscode-list-hoverBackground);
+	opacity: 1;
+}
+
+/* Sections that contain the current one: tinted, but quieter than the current entry itself. */
+#md-toc-sidebar a.active-ancestor {
+	color: var(--vscode-textLink-foreground);
+	/* Same bar as the current entry, in the parent's own quieter color. */
+	border-left-color: currentColor;
+	opacity: 0.85;
+}
+
+#md-toc-sidebar a.active {
+	color: var(--vscode-textLink-foreground);
+	border-left-color: var(--vscode-textLink-foreground);
+	opacity: 1;
+	font-weight: 600;
+}

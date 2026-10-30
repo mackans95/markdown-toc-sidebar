@@ -209,7 +209,7 @@
       "./dist/preview/scroll-restore.js"
     ],
     "markdown.previewStyles": [
-      "./media/toc.css"
+      "./dist/preview/toc.css"
     ]
   },
   "devDependencies": {

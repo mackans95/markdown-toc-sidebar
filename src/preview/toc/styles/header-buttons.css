@@ -1,0 +1,171 @@
+/* Header buttons: the hide/show toggle, the settings cog, refresh and Fold All. Fixed rather than
+   inside the nav so the toggle stays visible while the sidebar is hidden. */
+#md-toc-toggle,
+#md-toc-settings-button,
+#md-toc-refresh-button,
+#md-toc-fold-all-button {
+	position: fixed;
+	top: 16px;
+	z-index: 11;
+	display: none;
+	align-items: center;
+	justify-content: center;
+	width: 24px;
+	height: 24px;
+	padding: 0;
+	border: 1px solid transparent;
+	border-radius: 4px;
+	background: transparent;
+	color: var(--vscode-foreground);
+	opacity: 0.75;
+	cursor: pointer;
+	transition:
+		background-color 0.1s ease-out,
+		opacity 0.1s ease-out;
+}
+
+#md-toc-toggle {
+	right: 12px;
+}
+
+#md-toc-settings-button {
+	right: 40px;
+}
+
+#md-toc-refresh-button {
+	right: 68px;
+	box-sizing: border-box;
+	text-decoration: none;
+}
+
+#md-toc-fold-all-button {
+	right: 96px;
+}
+
+body.md-toc-visible #md-toc-toggle,
+body.md-toc-visible.md-toc-configurable:not(.md-toc-collapsed) #md-toc-settings-button,
+body.md-toc-visible.md-toc-configurable:not(.md-toc-collapsed) #md-toc-refresh-button,
+body.md-toc-visible.md-toc-can-fold:not(.md-toc-collapsed) #md-toc-fold-all-button {
+	display: flex;
+}
+
+#md-toc-toggle:hover,
+#md-toc-toggle:focus-visible,
+#md-toc-settings-button:hover,
+#md-toc-settings-button:focus-visible,
+#md-toc-settings-button[aria-expanded='true'],
+#md-toc-refresh-button:hover,
+#md-toc-refresh-button:focus-visible,
+#md-toc-fold-all-button:hover,
+#md-toc-fold-all-button:focus-visible {
+	background: var(--vscode-toolbar-hoverBackground, var(--vscode-list-hoverBackground));
+	color: var(--vscode-foreground);
+	opacity: 1;
+}
+
+/* The preview's own stylesheet outlines every focused link, which flashed on the refresh button when
+   clicked. Like the others, it only gets a focus ring from the keyboard. */
+#md-toc-refresh-button:focus {
+	outline: none;
+}
+
+#md-toc-toggle:focus-visible,
+#md-toc-settings-button:focus-visible,
+#md-toc-refresh-button:focus-visible,
+#md-toc-fold-all-button:focus-visible {
+	outline: 1px solid var(--vscode-focusBorder);
+	outline-offset: -1px;
+}
+
+/* The cog makes a quarter turn while the menu is open; its teeth line up again afterwards. */
+#md-toc-settings-button svg {
+	transition: transform 0.2s ease-out;
+}
+
+#md-toc-settings-button[aria-expanded='true'] svg {
+	transform: rotate(90deg);
+}
+
+/* The refresh icon spins from the click until the page is replaced, and the new page finishes the
+   turn (see initRefresh in settings-menu.ts). */
+#md-toc-refresh-button.md-toc-refreshing svg {
+	animation: md-toc-spin 0.8s linear infinite;
+}
+
+#md-toc-refresh-button.md-toc-refreshed svg {
+	animation: md-toc-spin-finish 0.6s ease-out;
+}
+
+@keyframes md-toc-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+/* From the angle the old page's spin had reached (--md-toc-spin-from) to a full turn. */
+@keyframes md-toc-spin-finish {
+	from {
+		transform: rotate(var(--md-toc-spin-from, 0deg));
+	}
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+/* Collapsed: the toggle floats over the content, so give it a solid backing. */
+body.md-toc-collapsed #md-toc-toggle {
+	background: var(--vscode-sideBar-background, var(--vscode-editor-background));
+	border-color: var(--vscode-panel-border, rgba(128, 128, 128, 0.35));
+}
+
+body.md-toc-collapsed #md-toc-toggle:hover {
+	background: var(--vscode-toolbar-hoverBackground, var(--vscode-list-hoverBackground));
+}
+
+/* Sidebar on the left (markdownTocSidebar.position): the header buttons stay at the end of the
+   sidebar's header; collapsed, the toggle sits at the left edge. */
+body.md-toc-left #md-toc-toggle {
+	right: auto;
+	left: calc(var(--md-toc-width) - 36px);
+}
+
+body.md-toc-left.md-toc-collapsed #md-toc-toggle {
+	left: 12px;
+}
+
+body.md-toc-left #md-toc-settings-button {
+	right: auto;
+	left: calc(var(--md-toc-width) - 64px);
+}
+
+body.md-toc-left #md-toc-refresh-button {
+	right: auto;
+	left: calc(var(--md-toc-width) - 92px);
+}
+
+body.md-toc-left #md-toc-fold-all-button {
+	right: auto;
+	left: calc(var(--md-toc-width) - 120px);
+}
+
+/* Too narrow for a sidebar (see sidebar.css). */
+@media (max-width: 360px) {
+	body.md-toc-visible #md-toc-toggle,
+	body.md-toc-visible.md-toc-configurable:not(.md-toc-collapsed) #md-toc-settings-button,
+	body.md-toc-visible.md-toc-configurable:not(.md-toc-collapsed) #md-toc-refresh-button,
+	body.md-toc-visible.md-toc-can-fold:not(.md-toc-collapsed) #md-toc-fold-all-button {
+		display: none;
+	}
+}
+
+/* Reduced motion: nothing moves or turns. Fades stay. */
+@media (prefers-reduced-motion: reduce) {
+	#md-toc-refresh-button.md-toc-refreshing svg,
+	#md-toc-refresh-button.md-toc-refreshed svg {
+		animation: none;
+	}
+
+	#md-toc-settings-button svg {
+		transition: none;
+	}
+}

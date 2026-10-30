@@ -1,0 +1,62 @@
+/* Drag handle straddling the sidebar's left border, styled like VS Code's own sashes. */
+#md-toc-resizer {
+	position: fixed;
+	top: 0;
+	bottom: 0;
+	right: calc(var(--md-toc-width) - 3px);
+	z-index: 12;
+	display: none;
+	width: 6px;
+	cursor: col-resize;
+	touch-action: none;
+	user-select: none;
+}
+
+body.md-toc-visible:not(.md-toc-collapsed) #md-toc-resizer {
+	display: block;
+}
+
+#md-toc-resizer::after {
+	content: '';
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 2px;
+	width: 2px;
+	background: transparent;
+	transition: background-color 0.1s ease-out;
+}
+
+#md-toc-resizer:hover::after,
+#md-toc-resizer:focus-visible::after,
+body.md-toc-resizing #md-toc-resizer::after {
+	background: var(--vscode-sash-hoverBorder, var(--vscode-focusBorder));
+}
+
+#md-toc-resizer:hover::after {
+	/* Same short delay as VS Code's sashes, so just passing over the edge doesn't flash. */
+	transition-delay: 0.2s;
+}
+
+#md-toc-resizer:focus-visible {
+	outline: none;
+}
+
+/* While dragging: keep the resize cursor everywhere and don't select text. */
+body.md-toc-resizing {
+	cursor: col-resize;
+	user-select: none;
+}
+
+/* Sidebar on the left (markdownTocSidebar.position). */
+body.md-toc-left #md-toc-resizer {
+	right: auto;
+	left: calc(var(--md-toc-width) - 3px);
+}
+
+/* Too narrow for a sidebar (see sidebar.css). */
+@media (max-width: 360px) {
+	body.md-toc-visible:not(.md-toc-collapsed) #md-toc-resizer {
+		display: none;
+	}
+}

@@ -38,6 +38,17 @@ const preview: esbuild.BuildOptions = {
 	logLevel: watch ? 'silent' : 'warning',
 }
 
+// The stylesheet package.json adds to the Markdown preview: styles/index.css and the files it
+// imports, bundled into one dist/preview/toc.css.
+const styles: esbuild.BuildOptions = {
+	entryPoints: { toc: 'src/preview/toc/styles/index.css' },
+	outdir: 'dist/preview',
+	bundle: true,
+	target: 'chrome114',
+	sourcemap: watch,
+	logLevel: watch ? 'silent' : 'warning',
+}
+
 // tasks.json waits for these lines before starting a debug session. With several builds running
 // at once, only the first start and the last finish are logged.
 let running = 0
@@ -60,7 +71,7 @@ const watchLog: esbuild.Plugin = {
 	},
 }
 
-const builds = [extension, preview]
+const builds = [extension, preview, styles]
 if (watch) {
 	for (const options of builds) {
 		const context = await esbuild.context({ ...options, plugins: [watchLog] })

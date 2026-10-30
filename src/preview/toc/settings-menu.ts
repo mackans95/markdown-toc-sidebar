@@ -99,7 +99,7 @@ const LIVE_SETTING_KEY = 'md-toc-sidebar.live-setting'
 const REFRESH_CLICK_KEY = 'md-toc-sidebar.refresh-clicked'
 // How soon after a click a new page still counts as that refresh.
 const REFRESH_SPIN_MS = 3000
-// How long one turn of the spin takes; the same as md-toc-refreshing's animation in toc.css.
+// How long one turn of the spin takes; the same as md-toc-refreshing's animation in styles/header-buttons.css.
 const REFRESH_TURN_MS = 800
 // The class that plays the menu's closing animation; see closeSettingsMenu.
 const CLOSING_CLASS = 'md-toc-menu-closing'

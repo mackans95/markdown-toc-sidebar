@@ -1,0 +1,53 @@
+/* What the sidebar changes in the document itself: room for jumping to a heading, the flash on the
+   heading you jumped to, and the padding that keeps the text clear of the sidebar. */
+
+.markdown-body :is(h1, h2, h3, h4, h5, h6)[id] {
+	scroll-margin-top: var(--md-toc-scroll-margin);
+}
+
+/* Short highlight on a heading after jumping to it from the sidebar. The box-shadow widens the
+   highlight past the text without changing the layout. */
+.markdown-body .md-toc-flash {
+	border-radius: 3px;
+	animation: md-toc-flash 1.2s ease-out;
+}
+
+@keyframes md-toc-flash {
+	0%,
+	25% {
+		background-color: var(--md-toc-flash-color);
+		box-shadow: 0 0 0 6px var(--md-toc-flash-color);
+	}
+	100% {
+		background-color: transparent;
+		box-shadow: 0 0 0 6px transparent;
+	}
+}
+
+body.md-toc-visible {
+	padding-right: calc(var(--md-toc-width) + 20px) !important;
+}
+
+/* Sidebar hidden: just room for the toggle. */
+body.md-toc-visible.md-toc-collapsed {
+	padding-right: 26px !important;
+}
+
+/* Sidebar on the left (markdownTocSidebar.position). */
+body.md-toc-visible.md-toc-left {
+	padding-right: 26px !important;
+	padding-left: calc(var(--md-toc-width) + 20px) !important;
+}
+
+body.md-toc-visible.md-toc-left.md-toc-collapsed {
+	padding-left: 26px !important;
+}
+
+/* Too narrow for a sidebar (see sidebar.css): the content gets the full width back. */
+@media (max-width: 360px) {
+	body.md-toc-visible,
+	body.md-toc-visible.md-toc-left {
+		padding-right: 26px !important;
+		padding-left: 26px !important;
+	}
+}

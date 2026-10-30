@@ -1,0 +1,183 @@
+/* Settings menu. Opens beside the sidebar, level with its header, so the sidebar stays in view while
+   you change settings; it covers the edge of the document instead. */
+#md-toc-settings-menu {
+	position: fixed;
+	top: 12px;
+	right: calc(var(--md-toc-width) + 8px);
+	z-index: 13;
+	box-sizing: border-box;
+	width: 252px;
+	/* The resizer always leaves the document at least 240px; keep 12px free at the far edge too. */
+	max-width: calc(100% - var(--md-toc-width) - 20px);
+	padding: 10px;
+	border: 1px solid
+		var(--vscode-menu-border, var(--vscode-widget-border, var(--vscode-panel-border, rgba(128, 128, 128, 0.35))));
+	border-radius: 6px;
+	background: var(--vscode-menu-background, var(--vscode-editorWidget-background, var(--vscode-editor-background)));
+	color: var(--vscode-menu-foreground, var(--vscode-foreground));
+	box-shadow: 0 2px 8px var(--vscode-widget-shadow, rgba(0, 0, 0, 0.36));
+	font-size: 0.85em;
+	line-height: 1.4;
+	/* Grows out of the cog and shrinks back into it. The origin is the cog's middle (right: 52px,
+	   top: 28px in the preview), measured from the menu's top right corner. */
+	transform-origin: calc(100% + var(--md-toc-width) - 44px) 16px;
+	animation: md-toc-menu-open 0.15s ease-out;
+}
+
+#md-toc-settings-menu[hidden] {
+	display: none;
+}
+
+/* Groups for a setting that needs another one turned on (settings-menu.ts), while it's off. */
+#md-toc-settings-menu [data-requires][hidden] {
+	display: none;
+}
+
+/* Set by closeSettingsMenu, which hides the menu once this has finished. */
+#md-toc-settings-menu.md-toc-menu-closing {
+	animation: md-toc-menu-close 0.1s ease-in forwards;
+}
+
+@keyframes md-toc-menu-open {
+	from {
+		opacity: 0;
+		transform: scale(0.85);
+	}
+}
+
+@keyframes md-toc-menu-close {
+	to {
+		opacity: 0;
+		transform: scale(0.85);
+	}
+}
+
+#md-toc-settings-menu .md-toc-menu-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin: -2px -4px 8px 0;
+	font-weight: 600;
+	user-select: none;
+}
+
+#md-toc-settings-menu .md-toc-menu-close {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 20px;
+	height: 20px;
+	padding: 0;
+	border: none;
+	border-radius: 4px;
+	background: transparent;
+	color: inherit;
+	opacity: 0.75;
+	cursor: pointer;
+}
+
+#md-toc-settings-menu .md-toc-menu-close:hover {
+	background: var(--vscode-toolbar-hoverBackground, var(--vscode-list-hoverBackground));
+	opacity: 1;
+}
+
+#md-toc-settings-menu .md-toc-menu-close:focus-visible {
+	outline: 1px solid var(--vscode-focusBorder);
+	outline-offset: -1px;
+}
+
+#md-toc-settings-menu .md-toc-menu-label {
+	margin-bottom: 4px;
+	font-weight: 600;
+	opacity: 0.8;
+	user-select: none;
+}
+
+#md-toc-settings-menu .md-toc-menu-options {
+	display: flex;
+	gap: 4px;
+	margin-bottom: 12px;
+}
+
+#md-toc-settings-menu a {
+	color: inherit;
+	text-decoration: none;
+	user-select: none;
+}
+
+#md-toc-settings-menu a:focus {
+	outline: none;
+}
+
+#md-toc-settings-menu a:focus-visible {
+	outline: 1px solid var(--vscode-focusBorder);
+	outline-offset: 1px;
+}
+
+/* Segmented choice; the current value is drawn like a primary button with a strong border. */
+#md-toc-settings-menu .md-toc-menu-option {
+	flex: 1;
+	/* Lets the options share a narrow menu (see max-width above) instead of running past its edge,
+	   down to H1-H6 in a 220px menu. */
+	min-width: 0;
+	padding: 2px 4px;
+	white-space: nowrap;
+	/* Same border width on every option, so selecting one doesn't shift the layout. The faint
+	   outline keeps unselected options looking like buttons, even in themes where the secondary
+	   button background is transparent. */
+	border: 2px solid color-mix(in srgb, var(--vscode-foreground) 20%, transparent);
+	border-radius: 4px;
+	background: var(--vscode-button-secondaryBackground, rgba(128, 128, 128, 0.2));
+	color: var(--vscode-button-secondaryForeground, inherit);
+	text-align: center;
+	cursor: pointer;
+}
+
+#md-toc-settings-menu .md-toc-menu-option:hover {
+	background: var(--vscode-button-secondaryHoverBackground, rgba(128, 128, 128, 0.3));
+}
+
+#md-toc-settings-menu .md-toc-menu-option[aria-checked='true'] {
+	background: var(--vscode-button-background);
+	color: var(--vscode-button-foreground);
+	/* The text color contrasts with the menu background in every theme (the focus color is too
+	   close to the button fill, and the button text color disappears on light menus). */
+	border-color: var(--vscode-contrastActiveBorder, var(--vscode-foreground));
+	font-weight: 600;
+	cursor: default;
+}
+
+#md-toc-settings-menu .md-toc-menu-link {
+	display: block;
+	padding-top: 8px;
+	border-top: 1px solid var(--vscode-menu-separatorBackground, var(--vscode-panel-border, rgba(128, 128, 128, 0.35)));
+	color: var(--vscode-textLink-foreground);
+	cursor: pointer;
+}
+
+#md-toc-settings-menu .md-toc-menu-link:hover {
+	text-decoration: underline;
+}
+
+/* Sidebar on the left (markdownTocSidebar.position). */
+body.md-toc-left #md-toc-settings-menu {
+	right: auto;
+	left: calc(var(--md-toc-width) + 8px);
+	/* The cog's middle is at left: calc(var(--md-toc-width) - 52px), 60px left of the menu. */
+	transform-origin: -60px 16px;
+}
+
+/* Too narrow for a sidebar (see sidebar.css). */
+@media (max-width: 360px) {
+	#md-toc-settings-menu {
+		display: none;
+	}
+}
+
+/* Reduced motion: the menu just appears and disappears. */
+@media (prefers-reduced-motion: reduce) {
+	#md-toc-settings-menu,
+	#md-toc-settings-menu.md-toc-menu-closing {
+		animation: none;
+	}
+}
