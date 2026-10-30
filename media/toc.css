@@ -613,8 +613,38 @@ body:is(.md-toc-scrollbar-hover, .md-toc-scrollbar-hidden) #md-toc-sidebar > ul:
 }
 
 #md-toc-sidebar li {
+	position: relative;
 	margin: 0;
 	padding-left: calc(var(--md-toc-depth, 0) * 12px);
+}
+
+/* Indent guides (markdownTocSidebar.indentGuides): a line for each level in the entry's indent, 8px
+   into the level, under the parent's arrow or the start of its text. The rows below each other join
+   up into one line per section. */
+body:is(.md-toc-guides-hover, .md-toc-guides-always) #md-toc-sidebar li::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	width: calc(var(--md-toc-depth, 0) * 12px);
+	background: repeating-linear-gradient(
+		to right,
+		transparent 0 8px,
+		var(--vscode-tree-indentGuidesStroke, rgba(128, 128, 128, 0.4)) 8px 9px,
+		transparent 9px 12px
+	);
+	pointer-events: none;
+}
+
+/* 'onHover': like VS Code's trees, only while the pointer is over the sidebar. */
+body.md-toc-guides-hover #md-toc-sidebar li::before {
+	opacity: 0;
+	transition: opacity 0.1s ease-out;
+}
+
+body.md-toc-guides-hover #md-toc-sidebar:hover li::before {
+	opacity: 1;
 }
 
 /* Collapsible sections (markdownTocSidebar.collapsible): an arrow, or a same-width gap, before each

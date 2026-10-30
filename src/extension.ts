@@ -16,6 +16,8 @@ import type { HeadingContext, HeadingLinks } from './types/shared.ts'
 
 // The markdown-it token type (and rule name) that renders the hidden config element.
 const CONFIG_TOKEN_TYPE = 'md_toc_sidebar_config'
+// VS Code's own indent guides setting, which markdownTocSidebar.indentGuides 'auto' follows.
+const TREE_INDENT_GUIDES = 'workbench.tree.renderIndentGuides'
 
 /**
  * The heading context menu in the preview. VS Code passes the right-clicked element's
@@ -30,6 +32,12 @@ function copyHeadingLink(field: keyof HeadingLinks): (item?: Partial<HeadingCont
 	}
 }
 
+/** VS Code's indent guides setting for trees like the Explorer; its default, 'onHover', when it isn't one of its values. */
+function treeIndentGuides(): string {
+	const value = vscode.workspace.getConfiguration().get(TREE_INDENT_GUIDES)
+	return value === 'none' || value === 'always' ? value : 'onHover'
+}
+
 /** Registers a listener for configuration changes, and refreshes open previews when a setting changed. */
 function registerConfigListener(
 	settings: Settings,
@@ -38,7 +46,10 @@ function registerConfigListener(
 ): void {
 	context.subscriptions.push(
 		vscode.workspace.onDidChangeConfiguration(e => {
-			if (settings.changedOutsideMenu(e)) {
+			const isTreeGuidesFollowed =
+				e.affectsConfiguration(TREE_INDENT_GUIDES) && settings.read('indentGuides') === 'auto'
+
+			if (settings.changedOutsideMenu(e) || isTreeGuidesFollowed) {
 				refresher.refresh()
 			}
 		}),
@@ -198,6 +209,7 @@ export function activate(context: vscode.ExtensionContext): MarkdownItPlugin {
 					key => `data-${toKebabCase(key)}="${escapeAttribute(settings.read(key))}"`,
 				)
 				attributes.push(`data-uri-base="${escapeAttribute(uriBase)}"`)
+				attributes.push(`data-tree-indent-guides="${escapeAttribute(treeIndentGuides())}"`)
 				// For src/preview/scroll-restore.ts: which file this is, and whether a refresh rendered it.
 				if (env?.currentDocument) {
 					attributes.push(`data-document="${escapeAttribute(env.currentDocument.toString())}"`)

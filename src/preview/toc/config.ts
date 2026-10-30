@@ -13,6 +13,8 @@ const FALLBACKS: PreviewConfig = {
 	collapsible: 'false',
 	autoCollapse: 'false',
 	scrollbar: 'visible',
+	indentGuides: 'auto',
+	treeIndentGuides: 'onHover',
 }
 
 /** Current value of a setting, or the fallback when the config element isn't there (yet). */
@@ -34,4 +36,10 @@ export function scrollBehavior(): 'smooth' | 'instant' {
 /** 'left' or 'right', from the markdownTocSidebar.position setting. */
 export function sidebarPosition(): 'left' | 'right' {
 	return readConfig('position')
+}
+
+/** 'onHover', 'always' or 'none', from the markdownTocSidebar.indentGuides setting; 'auto' follows VS Code's workbench.tree.renderIndentGuides. */
+export function indentGuides(): 'onHover' | 'always' | 'none' {
+	const value = readConfig('indentGuides')
+	return value === 'auto' ? readConfig('treeIndentGuides') : value
 }
