@@ -20,10 +20,31 @@
           "message": 4
         },
         "background": {
-          "activeBegin": "^\\[watch\\] build started",
-          "activeEnd": "^\\[watch\\] build finished"
+          "activeOnStart": true,
+          "beginsPattern": "^\\[watch\\] build started",
+          "endsPattern": "^\\[watch\\] build finished"
         }
       }
+    },
+    {
+      // Stops the watch task when the debug window closes; launch.json runs it as postDebugTask.
+      // The input runs VS Code's Terminate Task for "watch", so echo has nothing to print.
+      // An extension debug session ends in two parts, and each runs postDebugTask. The second run
+      // would otherwise ask which running "stop watch" to end, with an empty list, so it's dropped.
+      "label": "stop watch",
+      "type": "shell",
+      "command": "echo ${input:terminateWatch}",
+      "presentation": { "reveal": "never" },
+      "problemMatcher": [],
+      "runOptions": { "instancePolicy": "silent" }
+    }
+  ],
+  "inputs": [
+    {
+      "id": "terminateWatch",
+      "type": "command",
+      "command": "workbench.action.tasks.terminate",
+      "args": "watch"
     }
   ]
 }

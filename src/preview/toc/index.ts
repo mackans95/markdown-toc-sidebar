@@ -33,6 +33,7 @@ function start(): void {
 	initResizer()
 	initSettings()
 	initRefresh()
+	collapsedSections.initFoldAll()
 	tooltip.init()
 	setSidebarHidden(readHidden())
 	sidebar.scheduleBuild()

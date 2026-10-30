@@ -6,6 +6,7 @@ export const SETTINGS_BUTTON_ID = 'md-toc-settings-button'
 export const SETTINGS_MENU_ID = 'md-toc-settings-menu'
 export const REFRESH_BUTTON_ID = 'md-toc-refresh-button'
 export const TOOLTIP_ID = 'md-toc-tooltip'
+export const FOLD_ALL_ID = 'md-toc-fold-all-button'
 
 // Everything above, so changes inside our own UI can be told apart from the preview's.
 export const OWN_UI_SELECTOR = [
@@ -16,6 +17,7 @@ export const OWN_UI_SELECTOR = [
 	SETTINGS_MENU_ID,
 	REFRESH_BUTTON_ID,
 	TOOLTIP_ID,
+	FOLD_ALL_ID,
 ]
 	.map(id => '#' + id)
 	.join(', ')

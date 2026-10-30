@@ -4,7 +4,7 @@
 
 - `markdownTocSidebar.indentGuides` setting, also in the cog menu, for vertical lines that show which entries belong to which section. By default they follow VS Code's own `workbench.tree.renderIndentGuides`, so they show on hover like in the Explorer, and you can turn them on or off for the sidebar alone.
 - `markdownTocSidebar.autoCollapse` setting, also in the cog menu, to fold sections away as you read, so only the section you're in and the sections containing it stay open. It works with collapsible sections, and leaves the sections you've folded yourself as they were for when you turn it off.
-- With collapsible sections on, a button next to "Contents" folds every section at once, and unfolds them all again once everything you can see is folded.
+- With collapsible sections on, a new header button next to refresh folds every section at once, and unfolds them all again once everything you can see is folded ([#17](https://github.com/mackans95/markdown-toc-sidebar/issues/17)).
 - Entries whose text is cut off show it in full in a tooltip when you hover over them, and the collapse arrows and the resize edge now have tooltips like the header buttons.
 
 ## 0.3.0
@@ -32,11 +32,11 @@
 - `markdownTocSidebar.numbering` setting to number the entries by their place in the outline, like `1`, `1.1` and `1.2`.
 - `markdownTocSidebar.collapsible` setting for arrows that collapse and expand sections. Collapsed sections are remembered for each file.
 - All new settings are in the cog menu too. The menu now opens next to the sidebar instead of over it, so you can see each change in the list.
-- Right-click an entry, or a heading in the document, to copy a link to it: *Copy Link to Heading* or *Copy Markdown Link to Heading*.
+- Right-click an entry, or a heading in the document, to copy a link to it: _Copy Link to Heading_ or _Copy Markdown Link to Heading_.
 - Headings written as HTML, like `<h2>`, are listed.
 - Keyboard navigation: the list is a single Tab stop that lands on the current section; the arrow keys, `Home` and `End` move within it, and `Left`/`Right` also collapse and expand sections.
 - The current entry is announced to screen readers (`aria-current`).
-- Refresh button in the sidebar's header that re-renders the preview from the file (VS Code's *Markdown: Refresh Preview*).
+- Refresh button in the sidebar's header that re-renders the preview from the file (VS Code's _Markdown: Refresh Preview_).
 - The sidebar's "Contents" title no longer wraps onto several lines when the sidebar is narrow; it's hidden instead.
 - Works in vscode.dev and github.dev.
 - Requires VS Code 1.82 or later (was 1.80).
