@@ -6,6 +6,7 @@
       "type": "extensionHost",
       "request": "launch",
       "preLaunchTask": "watch",
+      "postDebugTask": "stop watch",
       "outFiles": ["${workspaceFolder}/dist/**/*.js"],
       "args": ["--extensionDevelopmentPath=${workspaceFolder}", "${workspaceFolder}/sample.md"]
     },
@@ -16,6 +17,7 @@
       "type": "extensionHost",
       "request": "launch",
       "preLaunchTask": "watch",
+      "postDebugTask": "stop watch",
       "outFiles": ["${workspaceFolder}/dist/**/*.js"],
       "args": ["--disable-extensions", "--extensionDevelopmentPath=${workspaceFolder}", "${workspaceFolder}/sample.md"]
     }
