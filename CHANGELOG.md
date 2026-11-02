@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.4.1
 
 - The settings menu's "On hover" options no longer run past the edges of their buttons. With a large preview font, options that don't fit on one line wrap onto the next.
 - In a short preview, or with a large preview font, the settings menu scrolls with a thin scrollbar instead of running off the bottom of the preview.
