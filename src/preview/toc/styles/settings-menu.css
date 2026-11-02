@@ -9,6 +9,15 @@
 	width: 252px;
 	/* The resizer always leaves the document at least 240px; keep 12px free at the far edge too. */
 	max-width: calc(100% - var(--md-toc-width) - 20px);
+	/* In a short preview or with a large preview font, the menu scrolls instead of running off the
+	   bottom, with a thin scrollbar (below). At its ends the scrolling stops there instead of moving
+	   on to the document. */
+	max-height: calc(100vh - 24px);
+	overflow-y: auto;
+	overscroll-behavior: contain;
+	/* The webview's scrollbar-color would draw a plain native scrollbar; resetting it lets the
+	   ::-webkit-scrollbar rules below make it thin. */
+	scrollbar-color: auto;
 	padding: 10px;
 	border: 1px solid
 		var(--vscode-menu-border, var(--vscode-widget-border, var(--vscode-panel-border, rgba(128, 128, 128, 0.35))));
@@ -26,6 +35,20 @@
 
 #md-toc-settings-menu[hidden] {
 	display: none;
+}
+
+#md-toc-settings-menu::-webkit-scrollbar {
+	width: 4px;
+}
+
+/* Kept clear of the rounded corners. */
+#md-toc-settings-menu::-webkit-scrollbar-track {
+	margin: 6px 0;
+	background: transparent;
+}
+
+#md-toc-settings-menu::-webkit-scrollbar-thumb {
+	border-radius: 2px;
 }
 
 /* Groups for a setting that needs another one turned on (settings-menu.ts), while it's off. */
@@ -93,8 +116,11 @@
 	user-select: none;
 }
 
+/* Options that don't fit on one line, in a narrow menu or with a large preview font, wrap onto the
+   next one instead of running past the menu's edge. */
 #md-toc-settings-menu .md-toc-menu-options {
 	display: flex;
+	flex-wrap: wrap;
 	gap: 4px;
 	margin-bottom: 12px;
 }
@@ -116,10 +142,9 @@
 
 /* Segmented choice; the current value is drawn like a primary button with a strong border. */
 #md-toc-settings-menu .md-toc-menu-option {
+	/* Equal widths, except that an option never gets narrower than its text, like "On hover" next to
+	   three shorter ones. */
 	flex: 1;
-	/* Lets the options share a narrow menu (see max-width above) instead of running past its edge,
-	   down to H1-H6 in a 220px menu. */
-	min-width: 0;
 	padding: 2px 4px;
 	white-space: nowrap;
 	/* Same border width on every option, so selecting one doesn't shift the layout. The faint

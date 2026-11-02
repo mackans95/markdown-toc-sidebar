@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- The settings menu's "On hover" options no longer run past the edges of their buttons. With a large preview font, options that don't fit on one line wrap onto the next.
+- In a short preview, or with a large preview font, the settings menu scrolls with a thin scrollbar instead of running off the bottom of the preview.
+
 ## 0.4.0
 
 - `markdownTocSidebar.indentGuides` setting, also in the cog menu, for vertical lines that show which entries belong to which section. By default they follow VS Code's own `workbench.tree.renderIndentGuides`, so they show on hover like in the Explorer, and you can turn them on or off for the sidebar alone.
