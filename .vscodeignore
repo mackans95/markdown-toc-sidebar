@@ -4,6 +4,7 @@
 .gitignore
 .git-blame-ignore-revs
 sample.md
+CONTRIBUTING.md
 test/**
 src/**
 scripts/**
