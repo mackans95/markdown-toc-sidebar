@@ -14,6 +14,7 @@ const FALLBACKS: PreviewConfig = {
 	autoCollapse: 'false',
 	scrollbar: 'visible',
 	indentGuides: 'auto',
+	minHeadings: '1',
 	treeIndentGuides: 'onHover',
 }
 

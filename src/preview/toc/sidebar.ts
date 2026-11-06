@@ -10,7 +10,7 @@ import { buildEntries, hasChildren } from './outline.ts'
 import { updateResizerValue } from './resizer.ts'
 import { overlayScrollbar } from './scrollbar.ts'
 import { updateSettingsMenu } from './settings-menu.ts'
-import { updateToggle } from './toggle.ts'
+import { readHidden, setSidebarHidden, updateToggle } from './toggle.ts'
 import type { Entry } from '../../types/preview.ts'
 
 /**
@@ -170,6 +170,8 @@ class Sidebar {
 	private lastSignature = ''
 	// The frame a rebuild is waiting for, so calls within one frame share it; 0 when none is waiting.
 	private buildFrame = 0
+	// Whether the document had fewer listed headings than minHeadings at the last build.
+	private short = false
 
 	/** Rebuilds the sidebar on the next frame if the headings or the settings changed; calls within one frame share a rebuild. */
 	scheduleBuild(): void {
@@ -227,6 +229,16 @@ class Sidebar {
 		collapsedSections.apply()
 		updateResizerValue()
 		activeHighlight.update()
+
+		// A document that becomes short hides the sidebar without remembering it, so other documents
+		// keep theirs, and one that stops being short goes back to what's remembered. Only on that
+		// change, so the toggle can still show the sidebar while the document stays short.
+		const short = entries.length < Number(readConfig('minHeadings'))
+
+		if (short !== this.short) {
+			this.short = short
+			setSidebarHidden(short || readHidden(), false)
+		}
 	}
 }
 

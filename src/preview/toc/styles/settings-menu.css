@@ -206,3 +206,21 @@ body.md-toc-left #md-toc-settings-menu {
 		animation: none;
 	}
 }
+
+/* High contrast themes: the options that aren't chosen get the theme's border, like VS Code's
+   buttons, and hovering outlines the close button and the options instead of tinting them. */
+body.vscode-high-contrast #md-toc-settings-menu .md-toc-menu-option:not([aria-checked='true']) {
+	border-color: var(--vscode-contrastBorder);
+}
+
+body.vscode-high-contrast #md-toc-settings-menu .md-toc-menu-close:hover:not(:focus-visible) {
+	outline: 1px dashed var(--vscode-contrastActiveBorder);
+	outline-offset: -1px;
+}
+
+body.vscode-high-contrast
+	#md-toc-settings-menu
+	.md-toc-menu-option:not([aria-checked='true']):hover:not(:focus-visible) {
+	outline: 1px dashed var(--vscode-contrastActiveBorder);
+	outline-offset: 1px;
+}

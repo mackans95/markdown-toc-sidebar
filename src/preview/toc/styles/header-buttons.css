@@ -169,3 +169,18 @@ body.md-toc-left #md-toc-fold-all-button {
 		transition: none;
 	}
 }
+
+/* High contrast themes: hovering outlines the buttons instead of tinting them, like VS Code's
+   toolbars, and the cog keeps a solid outline while its menu is open. */
+body.vscode-high-contrast
+	:is(#md-toc-toggle, #md-toc-settings-button, #md-toc-refresh-button, #md-toc-fold-all-button):hover:not(
+		:focus-visible
+	) {
+	outline: 1px dashed var(--vscode-toolbar-hoverOutline, var(--vscode-contrastActiveBorder));
+	outline-offset: -1px;
+}
+
+body.vscode-high-contrast #md-toc-settings-button[aria-expanded='true']:not(:focus-visible) {
+	outline: 1px solid var(--vscode-contrastActiveBorder);
+	outline-offset: -1px;
+}

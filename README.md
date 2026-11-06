@@ -13,7 +13,7 @@ Adds a table of contents sidebar to VS Code's built-in Markdown preview, built f
 - **Shape the list.** Choose how deep it goes, show a single `#` title above the list, number the entries like `1.1`, show indent guides, and put the sidebar on the left or right. See [Settings](#settings).
 - **Copy a link to a heading.** Right-click an entry, or a heading in the document, for _Copy Link to Heading_ (`#getting-started`) or _Copy Markdown Link to Heading_ (`[Getting Started](#getting-started)`). The anchors are the ones GitHub uses, so the links work there too.
 - **Keyboard friendly.** The list is a single Tab stop that lands on the section you're reading. Move with the arrow keys, `Home` and `End`; `Left` and `Right` also fold and unfold sections.
-- **Out of your way.** Hide the sidebar with the arrow in its header, or drag its edge to resize it, and it remembers both. The cog opens a [settings menu](#changing-settings-from-the-sidebar) next to the sidebar, and the refresh button re-renders the preview. Every button has a tooltip, and entries that are cut off show in full when you hover over them.
+- **Out of your way.** Hide the sidebar with the arrow in its header, or drag its edge to resize it, and it remembers both. In short documents it can start hidden. The cog opens a [settings menu](#changing-settings-from-the-sidebar) next to the sidebar, and the refresh button re-renders the preview. Every button has a tooltip, and entries that are cut off show in full when you hover over them.
 - **Better preview scrolling.** The preview glides instead of jumping when you scroll the editor, and stays where you left it when you switch tabs and come back.
 
 ## Install
@@ -47,6 +47,7 @@ If the preview is very narrow (under 360px), the sidebar hides itself so the doc
 | `markdownTocSidebar.autoCollapse` | `false` | Fold sections away as you read, so only the section you're in and the sections containing it stay open. Needs `collapsible`. |
 | `markdownTocSidebar.scrollbar` | `visible` | How to show the list's scrollbar when it's too long to fit: `visible` always, beside the entries; `hover` on top of the entries while the pointer is over the sidebar, so it takes no space; `hidden` never. The list still scrolls with the mouse wheel, touchpad and keyboard. |
 | `markdownTocSidebar.indentGuides` | `auto` | Vertical lines that show which entries belong to which section: `auto` follows VS Code's `workbench.tree.renderIndentGuides`, like the Explorer; `onHover` shows them while the pointer is over the sidebar; `always`; or `none`. |
+| `markdownTocSidebar.minHeadings` | `1` | Start with the sidebar hidden in documents with fewer listed headings than this: `1` (never), `3`, `5` or `10`. The toggle button still shows it. |
 
 You can change these from the cog menu in the sidebar, or in VS Code's Settings (search for "Markdown TOC Sidebar"). Either way, open previews update right away.
 

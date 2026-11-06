@@ -163,6 +163,24 @@
           "default": "auto",
           "markdownDescription": "Vertical lines in the table of contents that show which entries belong to which section. `auto` follows `#workbench.tree.renderIndentGuides#`.",
           "order": 9
+        },
+        "markdownTocSidebar.minHeadings": {
+          "type": "number",
+          "enum": [
+            1,
+            3,
+            5,
+            10
+          ],
+          "enumDescriptions": [
+            "Show the sidebar in every document with headings.",
+            "Start with the sidebar hidden in documents with fewer than 3 headings.",
+            "Start with the sidebar hidden in documents with fewer than 5 headings.",
+            "Start with the sidebar hidden in documents with fewer than 10 headings."
+          ],
+          "default": 1,
+          "markdownDescription": "Start with the sidebar hidden in short documents, with fewer listed headings than this. The toggle button still shows it, and other documents keep the sidebar as you left it. Only the headings `#markdownTocSidebar.maxDepth#` lists count.",
+          "order": 10
         }
       }
     },

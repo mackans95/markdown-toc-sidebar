@@ -7,3 +7,9 @@
 	--md-toc-scroll-margin: 16px;
 	--md-toc-flash-color: color-mix(in srgb, var(--vscode-textLink-foreground) 25%, transparent);
 }
+
+/* High contrast themes: a tint of the link color barely shows on their black or white background,
+   so the flash uses the theme's contrast color instead. */
+body.vscode-high-contrast {
+	--md-toc-flash-color: color-mix(in srgb, var(--vscode-contrastActiveBorder) 40%, transparent);
+}
