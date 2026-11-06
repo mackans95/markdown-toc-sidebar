@@ -37,13 +37,15 @@ export function readHidden(): boolean {
 	return readStored(HIDDEN_KEY) === 'true'
 }
 
-/** Hides or shows the sidebar, and remembers the choice. */
-export function setSidebarHidden(hidden: boolean): void {
+/** Hides or shows the sidebar, and remembers the choice unless remember is false. */
+export function setSidebarHidden(hidden: boolean, remember = true): void {
 	activeHighlight.reset()
 	document.body.classList.toggle(HIDDEN_CLASS, hidden)
 	updateToggle()
 	closeSettingsMenu()
-	writeHidden(hidden)
+	if (remember) {
+		writeHidden(hidden)
+	}
 	if (!hidden) {
 		activeHighlight.update()
 	}

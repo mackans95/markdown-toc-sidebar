@@ -64,3 +64,9 @@
 		transition: none;
 	}
 }
+
+/* High contrast themes: hovering outlines the arrow instead of tinting it, like VS Code's toolbars. */
+body.vscode-high-contrast #md-toc-sidebar .md-toc-chevron:hover:not(:focus-visible) {
+	outline: 1px dashed var(--vscode-toolbar-hoverOutline, var(--vscode-contrastActiveBorder));
+	outline-offset: -1px;
+}

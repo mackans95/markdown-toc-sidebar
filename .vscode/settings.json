@@ -25,5 +25,6 @@
   "[yaml]": {
     "editor.defaultFormatter": "oxc.oxc-vscode"
   },
-  "files.insertFinalNewline": true
+  "files.insertFinalNewline": true,
+  "js/ts.tsdk.path": "node_modules/typescript"
 }

@@ -55,6 +55,7 @@ export interface PreviewConfig {
 	autoCollapse: 'true' | 'false'
 	scrollbar: 'visible' | 'hover' | 'hidden'
 	indentGuides: 'auto' | 'onHover' | 'always' | 'none'
+	minHeadings: '1' | '3' | '5' | '10'
 	/** VS Code's workbench.tree.renderIndentGuides, which indentGuides 'auto' follows; not a setting of ours. */
 	treeIndentGuides: 'onHover' | 'always' | 'none'
 }

@@ -89,6 +89,16 @@ const SETTING_GROUPS: SettingGroup[] = [
 			['none', 'Off'],
 		],
 	},
+	{
+		key: 'minHeadings',
+		label: 'Hide in short documents',
+		options: [
+			['1', 'Off'],
+			['3', 'Under 3'],
+			['5', 'Under 5'],
+			['10', 'Under 10'],
+		],
+	},
 ]
 
 // Other open previews share this page's storage, so a key written here reaches them as a

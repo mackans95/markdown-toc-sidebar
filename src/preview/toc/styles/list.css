@@ -77,3 +77,10 @@
 	opacity: 1;
 	font-weight: 600;
 }
+
+/* High contrast themes: the hover background barely shows there, so hovering outlines the entry
+   instead, like VS Code's own lists. Keyboard focus keeps its own ring. */
+body.vscode-high-contrast #md-toc-sidebar a:hover:not(:focus-visible) {
+	outline: 1px dashed var(--vscode-contrastActiveBorder);
+	outline-offset: -1px;
+}
