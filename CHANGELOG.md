@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.5.0
 
 - `markdownTocSidebar.minHeadings` setting, also in the cog menu, to start with the sidebar hidden in short documents, with fewer than 3, 5 or 10 headings. The toggle button still shows it, and other documents keep the sidebar as you left it.
 - In high contrast themes, hovering an entry, an arrow, a header button or a menu option outlines it like VS Code's own lists and toolbars, the menu's options get the theme's borders, and the heading you jump to flashes in the theme's contrast color.
